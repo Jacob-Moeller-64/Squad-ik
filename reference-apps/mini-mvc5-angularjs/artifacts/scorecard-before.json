@@ -1,0 +1,149 @@
+{
+  "engineVersion": "0.1.0",
+  "rubricVersion": "0.1.0",
+  "scoredAt": "2026-07-19T05:55:33+00:00",
+  "phase": "before",
+  "total": 43,
+  "dimensions": [
+    {
+      "key": "solid",
+      "kind": "mechanical",
+      "score": 15,
+      "max": 15,
+      "findings": []
+    },
+    {
+      "key": "twelve-factor",
+      "kind": "mechanical",
+      "score": 6,
+      "max": 15,
+      "findings": [
+        {
+          "id": "12f-config",
+          "summary": "Hardcoded credentials/secrets in config or code",
+          "location": "web.config",
+          "severity": "high"
+        },
+        {
+          "id": "12f-state",
+          "summary": "In-process session state \u2014 process is not stateless",
+          "location": "Controllers/OrdersController.cs",
+          "severity": "high"
+        },
+        {
+          "id": "12f-env",
+          "summary": "No environment-based configuration detected",
+          "severity": "medium"
+        }
+      ]
+    },
+    {
+      "key": "security-cve",
+      "kind": "mechanical",
+      "score": 11,
+      "max": 20,
+      "findings": [
+        {
+          "id": "CVE-2018-8014",
+          "summary": "Microsoft.AspNet.Mvc 5.2.3 < 5.2.4: Illustrative pin: MVC 5.x line requires latest patch level; verify with a live scanner when available",
+          "location": "packages.config",
+          "severity": "medium"
+        },
+        {
+          "id": "CVE-2024-21907",
+          "summary": "Newtonsoft.Json 6.0.8 < 13.0.1: Improper handling of exceptional conditions; DoS via crafted data",
+          "location": "packages.config",
+          "severity": "high"
+        },
+        {
+          "id": "CVE-2020-11022",
+          "summary": "jQuery 1.10.2 < 3.5.0: XSS via htmlPrefilter in DOM manipulation",
+          "location": "packages.config",
+          "severity": "medium"
+        }
+      ]
+    },
+    {
+      "key": "dependency-eol",
+      "kind": "mechanical",
+      "score": 4,
+      "max": 10,
+      "findings": [
+        {
+          "id": "eol-netfx",
+          "summary": ".NET Framework 4.x target: legacy platform, Windows-only, no cross-platform path",
+          "location": "LegacyApplication.csproj",
+          "severity": "high"
+        },
+        {
+          "id": "eol-jquery1",
+          "summary": "jQuery 1.10.2: jQuery 1.x/2.x lines are unmaintained",
+          "location": "packages.config",
+          "severity": "high"
+        }
+      ]
+    },
+    {
+      "key": "test-coverage",
+      "kind": "mechanical",
+      "score": 0,
+      "max": 15,
+      "findings": [
+        {
+          "id": "cov-none",
+          "summary": "No coverage report found (expected cobertura XML under artifacts/coverage/)",
+          "severity": "medium"
+        }
+      ]
+    },
+    {
+      "key": "complexity",
+      "kind": "mechanical",
+      "score": 5,
+      "max": 5,
+      "findings": []
+    },
+    {
+      "key": "ocp-readiness",
+      "kind": "mechanical",
+      "score": 2,
+      "max": 10,
+      "findings": [
+        {
+          "id": "ocp-session",
+          "summary": "In-process session state blocks multi-replica hosting",
+          "severity": "high"
+        },
+        {
+          "id": "ocp-files",
+          "summary": "Local filesystem writes \u2014 pods are ephemeral",
+          "location": "Controllers/OrdersController.cs",
+          "severity": "medium"
+        },
+        {
+          "id": "ocp-port",
+          "summary": "No configurable port detected (expect 8080 default via config)",
+          "severity": "low"
+        },
+        {
+          "id": "ocp-health",
+          "summary": "Health endpoints and/or forwarded-headers middleware missing",
+          "severity": "medium"
+        }
+      ]
+    },
+    {
+      "key": "qualitative",
+      "kind": "llm-judged",
+      "score": 0,
+      "max": 10,
+      "findings": [
+        {
+          "id": "qual-notrun",
+          "summary": "LLM-judged qualitative pass not run (artifacts/qualitative.json missing)",
+          "severity": "info"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+<p ng-if="loading" class="state">Loading…</p>
+<p ng-if="error" class="state error">{{error}}</p>
+<div ng-if="product" class="detail">
+  <h2>{{product.Name}}</h2>
+  <p class="cat">{{product.Category}}</p>
+  <p class="price">{{product.UnitPriceCents / 100 | currency}}</p>
+  <p class="stock">{{product.InStock ? "In stock" : "Out of stock"}}</p>
+  <a href="#!/products">Back to list</a>
+</div>

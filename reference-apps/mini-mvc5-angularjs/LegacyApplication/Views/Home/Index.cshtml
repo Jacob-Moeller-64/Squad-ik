@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Legacy Shop</title>
+    <link rel="stylesheet" href="~/Content/site.css" />
+</head>
+<body ng-app="shop">
+    <header class="topbar">
+        <h1>Legacy Shop</h1>
+        <nav>
+            <a href="#!/products">Products</a>
+            <a href="#!/order">New Order</a>
+        </nav>
+    </header>
+    <main ng-view></main>
+    <script src="~/Scripts/vendor/angular.min.js"></script>
+    <script src="~/Scripts/vendor/angular-route.min.js"></script>
+    <script src="~/Scripts/app/app.js"></script>
+    <script src="~/Scripts/app/controllers.js"></script>
+    <script src="~/Scripts/app/components.js"></script>
+</body>
+</html>

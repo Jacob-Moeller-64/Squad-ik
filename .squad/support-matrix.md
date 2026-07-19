@@ -12,7 +12,7 @@ Tier-2 run passing with a stable scorecard delta.
 
 | Profile | Adapter | Tier | Mini app |
 |---|---|---|---|
-| ASP.NET MVC 5 (.NET Framework) | `adapters/backend/mvc5` | Experimental | — |
+| ASP.NET MVC 5 (.NET Framework) | `adapters/backend/mvc5` | Experimental | `reference-apps/mini-mvc5-angularjs` |
 | ASP.NET Web API 2 | `adapters/backend/webapi2` | Experimental | — |
 | .NET Core 3.1 | `adapters/backend/netcore31` | Planned | — |
 | ASP.NET WebForms | `adapters/backend/webforms` | Planned | — |
@@ -21,7 +21,7 @@ Tier-2 run passing with a stable scorecard delta.
 
 | Profile | Adapter | Tier | Mini app |
 |---|---|---|---|
-| AngularJS (1.x) | `adapters/frontend/angularjs` | Experimental | — |
+| AngularJS (1.x) | `adapters/frontend/angularjs` | Experimental | `reference-apps/mini-mvc5-angularjs` |
 | Angular 8–13 | `adapters/frontend/angular-8-13` | Experimental | — |
 | Angular 14+ | `adapters/frontend/angular-14plus` | Planned | — |
 

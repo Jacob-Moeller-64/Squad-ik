@@ -1,0 +1,6 @@
+<h2>Products</h2>
+<p ng-if="loading" class="state">Loading…</p>
+<p ng-if="error" class="state error">{{error}}</p>
+<div class="grid" ng-if="!loading && !error">
+  <product-card ng-repeat="p in products" product="p"></product-card>
+</div>

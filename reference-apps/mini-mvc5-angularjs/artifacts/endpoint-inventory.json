@@ -1,0 +1,78 @@
+{
+  "capturedAt": "2026-07-19T00:00:00Z",
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/Products/List",
+      "auth": "public",
+      "goldens": [
+        {
+          "name": "all-products",
+          "requestFile": "goldens/empty.req.json",
+          "responseFile": "goldens/products-list.res.json",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/Products/Detail/2",
+      "auth": "public",
+      "goldens": [
+        {
+          "name": "found",
+          "requestFile": "goldens/empty.req.json",
+          "responseFile": "goldens/product-detail-2.res.json",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/Products/Detail/99",
+      "auth": "public",
+      "goldens": [
+        {
+          "name": "missing",
+          "requestFile": "goldens/empty.req.json",
+          "responseFile": "goldens/product-detail-missing.res.json",
+          "status": 404
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/Orders/Create",
+      "auth": "public",
+      "goldens": [
+        {
+          "name": "vip-ignored-at-top-tier",
+          "requestFile": "goldens/order-vip-top-tier.req.json",
+          "responseFile": "goldens/order-vip-top-tier.res.json",
+          "status": 200,
+          "normalizedFields": ["orderId"]
+        },
+        {
+          "name": "bulk-plus-tier-truncation",
+          "requestFile": "goldens/order-bulk.req.json",
+          "responseFile": "goldens/order-bulk.res.json",
+          "status": 200,
+          "normalizedFields": ["orderId"]
+        },
+        {
+          "name": "vip-stacks-at-mid-tier",
+          "requestFile": "goldens/order-vip-mid.req.json",
+          "responseFile": "goldens/order-vip-mid.res.json",
+          "status": 200,
+          "normalizedFields": ["orderId"]
+        },
+        {
+          "name": "bad-quantity-rejected",
+          "requestFile": "goldens/order-bad-qty.req.json",
+          "responseFile": "goldens/order-bad-qty.res.json",
+          "status": 400
+        }
+      ]
+    }
+  ]
+}

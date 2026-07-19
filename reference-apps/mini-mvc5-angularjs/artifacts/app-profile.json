@@ -1,0 +1,26 @@
+{
+  "appName": "mini-mvc5-angularjs",
+  "backend": {
+    "flavor": "mvc5",
+    "version": "5.2.3 on .NET Framework 4.8",
+    "adapter": "adapters/backend/mvc5"
+  },
+  "frontend": {
+    "flavor": "angularjs",
+    "version": "1.8.2",
+    "adapter": "adapters/frontend/angularjs"
+  },
+  "auth": {
+    "mechanism": "none",
+    "notes": "Mini app has no auth by design; Okta steps exercise wiring, not migration of an existing scheme."
+  },
+  "build": {
+    "backend": "msbuild",
+    "frontend": "none (script tags, vendored angular 1.8.2)"
+  },
+  "hazards": {
+    "inProcSessionState": true,
+    "localFileWrites": ["Controllers/OrdersController.cs: Server.MapPath(~/App_Data/orders.log)"],
+    "windowsDependencies": []
+  }
+}

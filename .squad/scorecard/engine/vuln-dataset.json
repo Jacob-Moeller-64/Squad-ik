@@ -1,0 +1,50 @@
+[
+  {
+    "id": "CVE-2024-21907",
+    "ecosystem": "nuget",
+    "package": "Newtonsoft.Json",
+    "vulnerable_below": "13.0.1",
+    "severity": "high",
+    "summary": "Improper handling of exceptional conditions; DoS via crafted data"
+  },
+  {
+    "id": "CVE-2020-11022",
+    "ecosystem": "nuget",
+    "package": "jQuery",
+    "vulnerable_below": "3.5.0",
+    "severity": "medium",
+    "summary": "XSS via htmlPrefilter in DOM manipulation"
+  },
+  {
+    "id": "CVE-2020-11022-npm",
+    "ecosystem": "npm",
+    "package": "jquery",
+    "vulnerable_below": "3.5.0",
+    "severity": "medium",
+    "summary": "XSS via htmlPrefilter in DOM manipulation"
+  },
+  {
+    "id": "CVE-2022-25844",
+    "ecosystem": "npm",
+    "package": "angular",
+    "vulnerable_below": "1.8.4",
+    "severity": "high",
+    "summary": "AngularJS ReDoS via input[url] validation (package is also EOL)"
+  },
+  {
+    "id": "CVE-2019-8331",
+    "ecosystem": "nuget",
+    "package": "bootstrap",
+    "vulnerable_below": "4.3.1",
+    "severity": "medium",
+    "summary": "XSS in tooltip/popover data-template"
+  },
+  {
+    "id": "CVE-2018-8014",
+    "ecosystem": "nuget",
+    "package": "Microsoft.AspNet.Mvc",
+    "vulnerable_below": "5.2.4",
+    "severity": "medium",
+    "summary": "Illustrative pin: MVC 5.x line requires latest patch level; verify with a live scanner when available"
+  }
+]

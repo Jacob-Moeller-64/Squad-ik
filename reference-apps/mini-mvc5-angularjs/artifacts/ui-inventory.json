@@ -1,0 +1,41 @@
+{
+  "capturedAt": "2026-07-19T00:00:00Z",
+  "routes": [
+    {
+      "path": "/#!/products",
+      "auth": "public",
+      "states": ["loaded"]
+    },
+    {
+      "path": "/#!/products/2",
+      "auth": "public",
+      "states": ["loaded"]
+    },
+    {
+      "path": "/#!/products/99",
+      "auth": "public",
+      "states": ["error"]
+    },
+    {
+      "path": "/#!/order",
+      "auth": "public",
+      "states": ["empty"]
+    }
+  ],
+  "components": [
+    {
+      "name": "productCard",
+      "sourcePath": "Scripts/app/components.js",
+      "usageSites": ["Scripts/app/templates/product-list.html"],
+      "propsOrBindings": ["product (two-way)"],
+      "variants": ["in-stock", "out-of-stock (oos)", "hover (link-fn DOM manipulation)"]
+    },
+    {
+      "name": "orderSummary",
+      "sourcePath": "Scripts/app/components.js",
+      "usageSites": ["Scripts/app/templates/order.html"],
+      "propsOrBindings": ["result (one-way)"],
+      "variants": ["hidden (no result)", "shown"]
+    }
+  ]
+}

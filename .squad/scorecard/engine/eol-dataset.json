@@ -1,0 +1,37 @@
+[
+  {
+    "id": "eol-netfx",
+    "kind": "pattern",
+    "pattern": "TargetFrameworkVersion>v4\\.",
+    "summary": ".NET Framework 4.x target: legacy platform, Windows-only, no cross-platform path"
+  },
+  {
+    "id": "eol-netcore31",
+    "kind": "pattern",
+    "pattern": "netcoreapp3\\.1",
+    "summary": ".NET Core 3.1 reached end of support 2022-12-13"
+  },
+  {
+    "id": "eol-angularjs",
+    "kind": "package",
+    "ecosystem": "npm",
+    "package": "angular",
+    "summary": "AngularJS (1.x) reached end of life 2021-12-31"
+  },
+  {
+    "id": "eol-angular-pre15",
+    "kind": "package",
+    "ecosystem": "npm",
+    "package": "@angular/core",
+    "below": "15.0.0",
+    "summary": "Angular versions below 15 are out of LTS"
+  },
+  {
+    "id": "eol-jquery1",
+    "kind": "package",
+    "ecosystem": "nuget",
+    "package": "jQuery",
+    "below": "3.0.0",
+    "summary": "jQuery 1.x/2.x lines are unmaintained"
+  }
+]

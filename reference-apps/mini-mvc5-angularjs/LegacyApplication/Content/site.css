@@ -1,0 +1,23 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Georgia, serif; background: #f4f1ea; color: #2b2b2b; }
+.topbar { display: flex; align-items: baseline; gap: 2rem; background: #35424a; color: #fff; padding: 0.75rem 1.5rem; }
+.topbar h1 { margin: 0; font-size: 1.25rem; }
+.topbar nav a { color: #e8c547; margin-right: 1rem; text-decoration: none; }
+main { max-width: 60rem; margin: 1.5rem auto; padding: 0 1rem; }
+.grid { display: flex; flex-wrap: wrap; gap: 1rem; }
+.product-card { border: 1px solid #c9c2b2; background: #fff; padding: 1rem; width: 13rem; }
+.product-card.hover { border-color: #35424a; }
+.product-card.oos { opacity: 0.55; }
+.product-card h3 { margin-top: 0; }
+.cat { color: #7a7361; font-size: 0.85rem; }
+.price { font-weight: bold; }
+.state { font-style: italic; }
+.state.error { color: #a02020; font-style: normal; }
+.order-form .line { margin-bottom: 0.5rem; }
+.order-form label { margin-right: 1rem; }
+.order-form input { width: 6rem; padding: 0.2rem; }
+button { background: #e8c547; border: 1px solid #b09425; padding: 0.35rem 0.9rem; cursor: pointer; }
+button.primary { background: #35424a; color: #fff; }
+.order-summary { margin-top: 1.5rem; border: 2px solid #35424a; background: #fff; padding: 1rem; }
+.order-summary dl { display: grid; grid-template-columns: auto auto; gap: 0.25rem 2rem; }
+.order-summary .total { font-weight: bold; }

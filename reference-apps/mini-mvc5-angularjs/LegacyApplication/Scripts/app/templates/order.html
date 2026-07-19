@@ -1,0 +1,13 @@
+<h2>New Order</h2>
+<div class="order-form">
+  <div class="line" ng-repeat="line in lines">
+    <label>Product ID <input type="number" ng-model="line.productId"></label>
+    <label>Qty <input type="number" ng-model="line.quantity"></label>
+    <label>Unit price (¢) <input type="number" ng-model="line.unitPriceCents"></label>
+  </div>
+  <button ng-click="addLine()">Add line</button>
+  <label>Promo code <input type="text" ng-model="promoCode"></label>
+  <button class="primary" ng-click="submit()">Place order</button>
+  <p ng-if="error" class="state error">{{error}}</p>
+</div>
+<order-summary result="result"></order-summary>
