@@ -16,4 +16,14 @@ add stack-specific team members as the support matrix grows.
 Judgment-heavy work (analysis, cleanup decisions, diff triage) gets the strong model.
 Mechanical work (applying restructure maps, running gates, filling mapping tables) gets
 the cheap tier. Steps flagged `judgment: high` in `pipeline.md` may escalate one tier.
-Pin exact model versions per kit release in `decisions.md`.
+Pin exact model IDs per kit release in `.squad/pins.json` (`models` block) — the kit is
+engine-agnostic, so the tiers map to whatever provider the org runs:
+
+| Tier | Claude (API / Claude Code) | GitHub Copilot (Squad CLI) |
+|---|---|---|
+| strong | `claude-fable-5` (or Opus-class) | best available premium model |
+| mid | `claude-sonnet-5` | standard model |
+| cheap | `claude-haiku-4-5-20251001` | lightweight/fast model |
+
+The tier split is the token-budget mechanism: most steps are `judgment: low` and run on
+cheap/mid; only analysis, cleanup, and triage earn the strong tier.
