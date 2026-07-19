@@ -1,0 +1,195 @@
+/* fusion-ui design system (stand-in for the Fusion Starter Kit look — RD-5).
+   Replaces the legacy 2019 corporate theme wholesale. Component stylesheets are
+   swapped to these shared tokens (fu-* counterparts per artifacts/component-map.json).
+   No animations or transitions (deterministic rendering for the visual gate). */
+
+:root {
+  --fu-primary: #4f46e5;
+  --fu-primary-dark: #4338ca;
+  --fu-ink: #111827;
+  --fu-ink-soft: #6b7280;
+  --fu-bg: #f7f8fb;
+  --fu-surface: #ffffff;
+  --fu-border: #e5e7eb;
+  --fu-ring: #c7d2fe;
+  --fu-green: #059669;
+  --fu-green-bg: #ecfdf5;
+  --fu-red: #dc2626;
+  --fu-red-bg: #fef2f2;
+  --fu-radius: 12px;
+  --fu-shadow: 0 1px 3px rgba(17, 24, 39, 0.07), 0 8px 24px rgba(17, 24, 39, 0.06);
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  background-color: var(--fu-bg);
+  color: var(--fu-ink);
+  font-family: Inter, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4 {
+  font-family: inherit;
+  color: var(--fu-ink);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0 0 12px 0;
+}
+
+h2 { font-size: 24px; border: none; padding-bottom: 0; margin-top: 4px; }
+h3 { font-size: 16px; }
+
+a { color: var(--fu-primary); text-decoration: none; }
+a:hover { color: var(--fu-primary-dark); }
+
+p { margin: 0 0 10px 0; }
+
+.container { width: 1020px; max-width: calc(100vw - 32px); margin: 0 auto; padding: 26px 10px 48px 10px; }
+
+.panel {
+  background-color: var(--fu-surface);
+  border: 1px solid var(--fu-border);
+  border-radius: var(--fu-radius);
+  box-shadow: var(--fu-shadow);
+  padding: 20px;
+  margin-bottom: 18px;
+}
+
+button, input[type="submit"] {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fu-ink);
+  background-color: var(--fu-surface);
+  border: 1px solid var(--fu-border);
+  padding: 8px 18px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+button:hover, input[type="submit"]:hover { background-color: #f3f4f6; }
+
+button:disabled, input[type="submit"]:disabled {
+  color: #9ca3af; background-color: #f3f4f6; border-color: var(--fu-border); cursor: default;
+}
+
+button.primary {
+  background-color: var(--fu-primary);
+  color: #ffffff;
+  border: 1px solid var(--fu-primary-dark);
+}
+
+button.primary:hover { background-color: var(--fu-primary-dark); }
+button.primary:disabled { background-color: #a5b4fc; border-color: #a5b4fc; color: #eef2ff; }
+
+input[type="text"], input[type="password"], input[type="number"], select {
+  font-family: inherit;
+  font-size: 14px;
+  padding: 8px 12px;
+  border: 1px solid var(--fu-border);
+  background-color: var(--fu-surface);
+  border-radius: 8px;
+  color: var(--fu-ink);
+}
+
+input:focus, select:focus { outline: 3px solid var(--fu-ring); border-color: var(--fu-primary); }
+
+fieldset { border: 1px solid var(--fu-border); border-radius: var(--fu-radius); padding: 16px; margin: 0; }
+legend { font-weight: 600; color: var(--fu-ink-soft); padding: 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+label { font-weight: 600; font-size: 13px; color: #374151; }
+
+table.data-table {
+  border-collapse: separate; border-spacing: 0; width: 100%;
+  background-color: var(--fu-surface);
+  border: 1px solid var(--fu-border); border-radius: var(--fu-radius);
+  overflow: hidden; box-shadow: var(--fu-shadow);
+}
+
+table.data-table th {
+  background-color: #f9fafb; color: var(--fu-ink-soft);
+  font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+  text-align: left; padding: 10px 14px; border: none; border-bottom: 1px solid var(--fu-border);
+}
+
+table.data-table td { border: none; border-bottom: 1px solid var(--fu-border); padding: 10px 14px; font-size: 13px; }
+table.data-table tr:nth-child(even) td { background-color: transparent; }
+table.data-table tr:last-child td { border-bottom: none; }
+
+.error-box {
+  border: 1px solid #fecaca; background-color: var(--fu-red-bg); color: #991b1b;
+  padding: 10px 14px; margin: 10px 0; font-size: 13px; border-radius: 8px;
+}
+
+.info-box {
+  border: 1px solid var(--fu-ring); background-color: #eef2ff; color: #3730a3;
+  padding: 10px 14px; margin: 10px 0; font-size: 13px; border-radius: 8px;
+}
+
+.muted { color: var(--fu-ink-soft); font-size: 12px; }
+
+/* ============ fu-topbar (swap: NavComponent) ============ */
+.topbar { background-color: var(--fu-surface); border-bottom: 1px solid var(--fu-border); box-shadow: 0 1px 2px rgba(17,24,39,0.04); }
+.topbar-inner { width: 1020px; max-width: calc(100vw - 32px); margin: 0 auto; display: flex; align-items: center; padding: 0 10px; height: 60px; }
+.brand { font-size: 19px; font-weight: 800; color: var(--fu-primary); letter-spacing: -0.02em; margin-right: 28px; }
+.brand:hover { color: var(--fu-primary-dark); }
+.nav-links { list-style: none; display: flex; gap: 6px; margin: 0; padding: 0; flex: 1; }
+.nav-links li a {
+  display: block; padding: 7px 14px; border-radius: 999px;
+  color: #374151; font-weight: 600; font-size: 13px; text-transform: none; letter-spacing: 0;
+}
+.nav-links li a:hover { background-color: #f3f4f6; color: var(--fu-ink); }
+.nav-links li a.active { background-color: #eef2ff; color: var(--fu-primary); }
+.account { display: flex; align-items: center; gap: 12px; }
+.welcome { color: var(--fu-ink-soft); font-size: 13px; }
+.welcome strong { color: var(--fu-ink); }
+.logout-btn { font-size: 12px; padding: 6px 14px; }
+.login-link { font-weight: 600; font-size: 13px; padding: 7px 16px; border-radius: 999px; background-color: var(--fu-primary); color: #fff; }
+.login-link:hover { background-color: var(--fu-primary-dark); color: #fff; }
+
+/* ============ fu-card (swap: ProductCardComponent) ============ */
+.product-card {
+  background-color: var(--fu-surface); border: 1px solid var(--fu-border);
+  border-radius: var(--fu-radius); box-shadow: var(--fu-shadow); padding: 18px;
+}
+.product-card.out-of-stock { opacity: 0.6; }
+.product-name { margin-bottom: 2px; }
+.product-name a { color: var(--fu-ink); font-weight: 700; }
+.product-name a:hover { color: var(--fu-primary); }
+.product-category { color: var(--fu-ink-soft); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+.product-price { font-size: 18px; font-weight: 800; color: var(--fu-ink); margin-bottom: 12px; }
+.stock-badge { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; border: none; }
+.stock-badge.in { background-color: var(--fu-green-bg); color: var(--fu-green); }
+.stock-badge.out { background-color: var(--fu-red-bg); color: var(--fu-red); }
+
+/* ============ fu-summary-panel (swap: OrderSummaryComponent) ============ */
+.summary-panel {
+  background-color: var(--fu-surface); border: 1px solid var(--fu-border);
+  border-left: 4px solid var(--fu-primary); border-radius: var(--fu-radius);
+  box-shadow: var(--fu-shadow); padding: 20px; margin-top: 18px;
+}
+.summary-panel h3 { color: var(--fu-primary); }
+.order-id { color: var(--fu-ink-soft); font-size: 13px; }
+.summary-table { border-collapse: collapse; margin-top: 10px; min-width: 300px; }
+.summary-table td { padding: 7px 18px 7px 0; font-size: 14px; border-bottom: 1px solid var(--fu-border); }
+.summary-table td.label { color: var(--fu-ink-soft); }
+.summary-table td.amount { text-align: right; font-weight: 600; }
+.summary-table tr.total-row td { border-bottom: none; font-size: 16px; font-weight: 800; color: var(--fu-ink); }
+.summary-table tr.total-row td.label { color: var(--fu-ink); }
+
+/* ============ fu-auth-panel (swap: LoginComponent) / fu-spinner ============ */
+.login-panel, .auth-panel {
+  background-color: var(--fu-surface); border: 1px solid var(--fu-border);
+  border-radius: var(--fu-radius); box-shadow: var(--fu-shadow);
+  padding: 32px; max-width: 400px; margin: 40px auto;
+}
+.spinner, .loading { color: var(--fu-ink-soft); font-size: 13px; }
+
+/* fu-grid (page-shell layout tokens for survive components) */
+.product-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.form-row { margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.form-row label { min-width: 110px; }
+.submit-row { margin-top: 16px; }

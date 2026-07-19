@@ -1,0 +1,18 @@
+<div class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" routerLink="/products">LegacyShop</a>
+    <ul class="nav-links">
+      <li><a routerLink="/products" routerLinkActive="active">Products</a></li>
+      <li><a routerLink="/order" routerLinkActive="active">Place Order</a></li>
+      <li><a routerLink="/history" routerLinkActive="active">Order History</a></li>
+    </ul>
+    <div class="account">
+      @if (auth.isLoggedIn()) {
+        <span class="welcome">Signed in as <strong>{{ auth.user() }}</strong></span>
+        <button type="button" class="logout-btn" (click)="onLogout()">Log out</button>
+      } @else {
+        <a class="login-link" routerLink="/login" routerLinkActive="active">Log in</a>
+      }
+    </div>
+  </div>
+</div>

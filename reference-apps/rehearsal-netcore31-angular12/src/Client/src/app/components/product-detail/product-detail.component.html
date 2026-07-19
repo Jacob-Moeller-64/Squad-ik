@@ -1,0 +1,45 @@
+<h2>Product Details</h2>
+
+@if (loading) {
+  <app-spinner></app-spinner>
+}
+@if (error) {
+  <div class="error-box">{{ error }}</div>
+}
+
+@if (product; as p) {
+  <div class="panel">
+    <h3 class="detail-name">{{ p.name }}</h3>
+    <table class="detail-table">
+      <tr>
+        <th>Product ID</th>
+        <td>{{ p.id }}</td>
+      </tr>
+      <tr>
+        <th>Category</th>
+        <td>{{ p.category }}</td>
+      </tr>
+      <tr>
+        <th>Unit Price</th>
+        <td class="price">{{ p.unitPriceCents | cents }}</td>
+      </tr>
+      <tr>
+        <th>Availability</th>
+        <td>
+          @if (p.inStock) {
+            <span class="stock in">In stock &mdash; {{ p.stockQty }} unit(s) available</span>
+          } @else {
+            <span class="stock out">Out of stock</span>
+          }
+        </td>
+      </tr>
+    </table>
+    <div class="detail-actions">
+      <a routerLink="/order">Order this product</a>
+    </div>
+  </div>
+}
+
+<p class="back-link">
+  <a routerLink="/products">&laquo; Back to product catalog</a>
+</p>

@@ -1,0 +1,12 @@
+<div class="product-card" [class.out-of-stock]="!product().inStock">
+  <h3 class="product-name">
+    <a [routerLink]="['/products', product().id]">{{ product().name }}</a>
+  </h3>
+  <div class="product-category">{{ product().category }}</div>
+  <div class="product-price">{{ product().unitPriceCents | cents }}</div>
+  @if (product().inStock) {
+    <span class="stock-badge in">In stock ({{ product().stockQty }})</span>
+  } @else {
+    <span class="stock-badge out">Out of stock</span>
+  }
+</div>

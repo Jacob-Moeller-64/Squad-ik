@@ -1,0 +1,17 @@
+<h2>Account Login</h2>
+
+<div class="panel login-panel">
+  <div class="sso-row">
+    <button type="button" class="primary sso-btn" (click)="loginWithSso()">Sign in with SSO</button>
+  </div>
+  <p class="muted sso-hint">Use your corporate single sign-on account.</p>
+  @if (error) {
+    <div class="error-box">{{ error }}</div>
+  }
+</div>
+
+@if (loading) {
+  <app-spinner></app-spinner>
+}
+
+<p class="muted">Access to order history requires a valid corporate account.</p>

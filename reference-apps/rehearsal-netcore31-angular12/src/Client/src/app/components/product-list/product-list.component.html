@@ -1,0 +1,20 @@
+<h2>Product Catalog</h2>
+<p class="muted">Browse our complete range of quality office supplies.</p>
+
+@if (loading) {
+  <app-spinner></app-spinner>
+}
+@if (error) {
+  <div class="error-box">{{ error }}</div>
+}
+
+@if (!loading && !error) {
+  <div class="product-grid">
+    @for (p of products; track p.id) {
+      <app-product-card [product]="p"></app-product-card>
+    }
+    @if (products.length === 0) {
+      <p class="muted">No products are currently available.</p>
+    }
+  </div>
+}

@@ -1,5 +1,4 @@
 using LegacyShop.Library.Services;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Scalar.AspNetCore;
@@ -17,27 +16,11 @@ builder.Services.AddSingleton<PricingService>();
 builder.Services.AddSingleton<ShippingCalculator>();
 builder.Services.AddSingleton<InventoryAllocator>();
 
-// Auth strangler step 1 (D-004): dual-stack. Legacy cookie auth stays fully working for
-// the legacy frontend; OIDC bearer (Okta-shaped: authority + audience from config) is
-// validated side by side. Step 17 removes the cookie path.
+// Auth strangler step 3 complete (D-004, run decision RD-3): the legacy cookie path is
+// removed. OIDC bearer (Okta-shaped: authority + audience from config) is the sole
+// authentication scheme.
 var oidcIssuer = builder.Configuration["Oidc:Issuer"] ?? "http://127.0.0.1:8321";
-builder.Services.AddAuthentication("Smart")
-    .AddPolicyScheme("Smart", "Cookie or Bearer", options =>
-    {
-        options.ForwardDefaultSelector = ctx =>
-            ctx.Request.Headers.Authorization.ToString().StartsWith("Bearer ")
-                ? JwtBearerDefaults.AuthenticationScheme
-                : CookieAuthenticationDefaults.AuthenticationScheme;
-    })
-    .AddCookie(options =>
-    {
-        options.Cookie.Name = "LegacyShopAuth";
-        options.Events.OnRedirectToLogin = ctx =>
-        {
-            ctx.Response.StatusCode = 401;
-            return Task.CompletedTask;
-        };
-    })
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.Authority = oidcIssuer;

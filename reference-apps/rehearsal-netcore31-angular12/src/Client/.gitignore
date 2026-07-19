@@ -1,0 +1,8 @@
+# Dependencies and build output
+/node_modules
+/dist
+/out-tsc
+
+# IDE / misc
+.angular
+npm-debug.log

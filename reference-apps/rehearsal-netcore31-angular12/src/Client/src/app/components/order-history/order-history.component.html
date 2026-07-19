@@ -1,0 +1,36 @@
+<h2>Order History</h2>
+
+@if (loading) {
+  <app-spinner></app-spinner>
+}
+@if (error) {
+  <div class="error-box">{{ error }}</div>
+}
+
+@if (!loading && !error) {
+  <div class="panel">
+    <table class="data-table history-table">
+      <thead>
+        <tr>
+          <th>Order #</th>
+          <th>Placed At</th>
+          <th class="amount-col">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (o of orders; track o.orderId) {
+          <tr>
+            <td>{{ o.orderId }}</td>
+            <td>{{ o.placedAt | date:'yyyy-MM-dd HH:mm':'UTC' }}</td>
+            <td class="amount-col">{{ o.totalCents | cents }}</td>
+          </tr>
+        }
+        @if (orders.length === 0) {
+          <tr>
+            <td colspan="3" class="empty">You have not placed any orders yet.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

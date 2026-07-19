@@ -1,0 +1,65 @@
+{
+  "fusionMcpVersion": "stand-in (local fusion-ui design system \u2014 RD-5; real MCP lookup substituted per rehearsal environment)",
+  "rows": [
+    {
+      "component": "NavComponent",
+      "classification": "swap",
+      "fusionCounterpart": "fu-topbar",
+      "status": "done"
+    },
+    {
+      "component": "ProductCardComponent",
+      "classification": "swap",
+      "fusionCounterpart": "fu-card",
+      "status": "done"
+    },
+    {
+      "component": "OrderSummaryComponent",
+      "classification": "swap",
+      "fusionCounterpart": "fu-summary-panel",
+      "status": "done"
+    },
+    {
+      "component": "LoginComponent",
+      "classification": "swap",
+      "fusionCounterpart": "fu-auth-panel",
+      "status": "done"
+    },
+    {
+      "component": "SpinnerComponent",
+      "classification": "swap",
+      "fusionCounterpart": "fu-spinner",
+      "status": "done"
+    },
+    {
+      "component": "ProductListComponent",
+      "classification": "survive",
+      "status": "done",
+      "notes": "page shell; restyled via fusion global tokens only"
+    },
+    {
+      "component": "ProductDetailComponent",
+      "classification": "survive",
+      "status": "done",
+      "notes": "page shell"
+    },
+    {
+      "component": "OrderFormComponent",
+      "classification": "survive",
+      "status": "done",
+      "notes": "page shell; controls inherit fu-input/fu-btn tokens"
+    },
+    {
+      "component": "OrderHistoryComponent",
+      "classification": "survive",
+      "status": "done",
+      "notes": "page shell; table inherits fu-table tokens"
+    },
+    {
+      "component": "CentsPipe",
+      "classification": "survive",
+      "status": "done",
+      "notes": "pure formatting; no visual surface"
+    }
+  ]
+}
