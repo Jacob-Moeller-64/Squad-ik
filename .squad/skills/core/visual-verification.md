@@ -4,6 +4,10 @@ The perceptual gate: build/tests can't see a broken layout.
 
 ## Baseline capture (step 02)
 - One screenshot per route/state in `ui-inventory.json`, from the running legacy app.
+  Flat layout: `baselines/<route>--<state>.png` (as the visual tool writes them).
+- A route with multiple states must declare `stateUrls` (state → URL path) in the UI
+  inventory, or per-state fixtures — otherwise every state captures the same page and
+  the tool warns. Identical multi-state baselines are a capture bug, not coverage.
 - Normalize dynamic content: seeded data, fixed clock, animations disabled, fonts
   loaded. Unnormalized baselines produce noise that trains everyone to ignore the gate.
 

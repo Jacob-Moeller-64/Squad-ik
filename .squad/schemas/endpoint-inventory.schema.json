@@ -21,10 +21,11 @@
           "goldens": {
             "type": "array",
             "minItems": 1,
-            "description": "Golden request/response pairs; response bodies with dynamic fields normalized.",
+            "description": "Golden request/response pairs; response bodies with dynamic fields normalized. requestFile is optional (absent = bare request), matching the replayer.",
             "items": {
               "type": "object",
-              "required": ["name", "requestFile", "responseFile", "status"],
+              "required": ["name", "responseFile", "status"],
+              "additionalProperties": false,
               "properties": {
                 "name": { "type": "string" },
                 "requestFile": { "type": "string" },

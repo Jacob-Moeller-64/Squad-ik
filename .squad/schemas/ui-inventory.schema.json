@@ -21,6 +21,11 @@
             "minItems": 1,
             "description": "Meaningful states to baseline: e.g. empty, loaded, error.",
             "items": { "type": "string" }
+          },
+          "stateUrls": {
+            "type": "object",
+            "description": "state -> URL path override. Required in practice when a route has >1 state: distinct states need distinct URLs (or fixtures) or every state captures the same page.",
+            "additionalProperties": { "type": "string" }
           }
         }
       }

@@ -1,49 +1,76 @@
 #!/usr/bin/env bash
 # Gate: validate run artifacts against the narrow-waist schemas.
-# Usage: validate-artifacts.sh <artifact-name>... | all
-# Artifact names: app-profile, endpoint-inventory, ui-inventory, component-map, scorecard
-# Expects artifacts in $ARTIFACTS_DIR (default: ./artifacts) and schemas next to this script.
+# Usage: validate-artifacts.sh <target>... | all
+# Targets (each REQUIRES its file(s) to exist and validate):
+#   app-profile          -> app-profile.json
+#   endpoint-inventory   -> endpoint-inventory.json
+#   ui-inventory         -> ui-inventory.json
+#   component-map        -> component-map.json
+#   scorecard-before     -> scorecard-before.json
+#   scorecard-after      -> scorecard-after.json
+#   all                  -> app-profile, endpoint-inventory, ui-inventory, scorecard-before
+#                           required; component-map and scorecard-after validated only if
+#                           present (they don't exist until steps 12/19).
+# Expects artifacts in $ARTIFACTS_DIR (default: ./artifacts); schemas live next to this script.
+# Requires python jsonschema; exits 1 if unavailable unless ALLOW_SYNTAX_ONLY=1 — a gate
+# that silently degrades to a syntax check is a false green.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCHEMA_DIR="$SCRIPT_DIR/../schemas"
 ARTIFACTS_DIR="${ARTIFACTS_DIR:-./artifacts}"
 
-declare -A FILES=(
-  [app-profile]="app-profile.json"
-  [endpoint-inventory]="endpoint-inventory.json"
-  [ui-inventory]="ui-inventory.json"
-  [component-map]="component-map.json"
-  [scorecard]="scorecard-before.json scorecard-after.json"
-)
+schema_for() {
+  case "$1" in
+    scorecard-before|scorecard-after) echo "$SCHEMA_DIR/scorecard.schema.json" ;;
+    *) echo "$SCHEMA_DIR/$1.schema.json" ;;
+  esac
+}
 
-targets=("$@")
-[[ ${#targets[@]} -eq 0 || "${targets[0]}" == "all" ]] && targets=("${!FILES[@]}")
-
-fail=0
-for name in "${targets[@]}"; do
-  schema="$SCHEMA_DIR/$name.schema.json"
-  [[ -f "$schema" ]] || { echo "FAIL: unknown artifact '$name'"; fail=1; continue; }
-  for f in ${FILES[$name]}; do
-    path="$ARTIFACTS_DIR/$f"
-    if [[ ! -f "$path" ]]; then
-      # scorecard-after only exists at step 19; missing files fail only when named explicitly
-      [[ "$name" == "scorecard" && "$f" == "scorecard-after.json" && $# -gt 0 && "$1" != "scorecard" ]] && continue
-      echo "FAIL: missing artifact $path"; fail=1; continue
-    fi
-    if python3 - "$schema" "$path" <<'PY'
-import json, sys
+validate_file() { # <schema> <file>  -> 0 valid / 1 invalid
+  python3 - "$1" "$2" <<'PY'
+import json, os, sys
 try:
     import jsonschema
 except ImportError:
-    sys.stderr.write("WARN: python jsonschema not installed; JSON syntax check only\n")
-    json.load(open(sys.argv[2])); sys.exit(0)
+    if os.environ.get("ALLOW_SYNTAX_ONLY") == "1":
+        sys.stderr.write("WARN: jsonschema unavailable; syntax check only (ALLOW_SYNTAX_ONLY=1)\n")
+        json.load(open(sys.argv[2])); sys.exit(0)
+    sys.stderr.write("FAIL: python jsonschema not installed (pip install jsonschema), "
+                     "or set ALLOW_SYNTAX_ONLY=1 to accept a weaker syntax-only check\n")
+    sys.exit(1)
 schema = json.load(open(sys.argv[1])); doc = json.load(open(sys.argv[2]))
 jsonschema.validate(doc, schema)
 PY
-    then echo "ok:   $f"
-    else echo "FAIL: $f does not conform to $name schema"; fail=1
-    fi
-  done
+}
+
+check() { # <target> <required:0|1>
+  local name="$1" required="$2"
+  local file="$ARTIFACTS_DIR/$name.json"
+  local schema; schema="$(schema_for "$name")"
+  [[ -f "$schema" ]] || { echo "FAIL: unknown target '$name'"; return 1; }
+  if [[ ! -f "$file" ]]; then
+    if [[ "$required" == "1" ]]; then echo "FAIL: missing artifact $file"; return 1; fi
+    echo "skip: $name.json (not yet produced)"; return 0
+  fi
+  if validate_file "$schema" "$file"; then echo "ok:   $name.json"; else
+    echo "FAIL: $name.json does not conform to schema"; return 1; fi
+}
+
+targets=("$@")
+[[ ${#targets[@]} -eq 0 ]] && targets=(all)
+
+fail=0
+for t in "${targets[@]}"; do
+  if [[ "$t" == "all" ]]; then
+    for req in app-profile endpoint-inventory ui-inventory scorecard-before; do
+      check "$req" 1 || fail=1
+    done
+    for opt in component-map scorecard-after; do
+      check "$opt" 0 || fail=1
+    done
+  else
+    check "$t" 1 || fail=1
+  fi
 done
 exit $fail

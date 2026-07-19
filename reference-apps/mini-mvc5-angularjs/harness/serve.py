@@ -101,10 +101,10 @@ class Handler(BaseHTTPRequestHandler):
             lines = body.get("Lines") or body.get("lines") or []
             promo = body.get("PromoCode") or body.get("promoCode") or ""
             result = price(lines, promo)
+        except json.JSONDecodeError:  # must precede ValueError: JSONDecodeError subclasses it
+            return self._send(400, {"error": "bad json"})
         except ValueError as e:
             return self._send(400, {"error": str(e)})
-        except json.JSONDecodeError:
-            return self._send(400, {"error": "bad json"})
         result = {"orderId": uuid.uuid4().hex, **result}
         return self._send(200, result)
 

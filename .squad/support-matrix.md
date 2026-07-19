@@ -1,8 +1,8 @@
 # Support Matrix
 
 Tiers:
-- **Supported** — adapter complete, mini reference app exists, exercised by every kit release (Tier-2 eval).
-- **Experimental** — adapter exists; runs require human supervision; no mini app yet.
+- **Supported** — adapter complete, mini reference app exists, AND a full Tier-2 run passes with a stable scorecard delta on every kit release.
+- **Experimental** — adapter exists; runs require human supervision. A mini app may exist without conferring Supported status until the full Tier-2 run passes.
 - **Planned** — directory stub only. Profile detection reports these as unsupported (halt).
 
 Promotion to Supported requires: adapter skills complete + mini app built + a full

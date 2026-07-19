@@ -28,8 +28,10 @@ DECISION_HOTSPOT = 50
 
 
 def walk(root: Path, exts):
+    # Match SKIP_DIRS against path components BELOW root only — components of root's own
+    # location (e.g. a checkout under packages/ or dist/) must never disable the scan.
     for p in sorted(root.rglob("*")):
-        if p.is_file() and p.suffix in exts and not (set(p.parts) & SKIP_DIRS):
+        if p.is_file() and p.suffix in exts and not (set(p.relative_to(root).parts[:-1]) & SKIP_DIRS):
             yield p
 
 
@@ -79,12 +81,17 @@ def parse_manifests(root: Path):
 
 
 def ver_tuple(v: str):
-    nums = re.findall(r"\d+", v)
+    # Strip prerelease/build suffixes ("1.0.0-beta1" -> "1.0.0") so their digits don't
+    # inflate the tuple, then compare numerically.
+    nums = re.findall(r"\d+", v.split("-")[0].split("+")[0])
     return tuple(int(n) for n in nums[:4]) or (0,)
 
 
 def ver_lt(a: str, b: str) -> bool:
-    return ver_tuple(a) < ver_tuple(b)
+    # Zero-pad to equal length: "3.5" must equal "3.5.0", not sort below it.
+    ta, tb = ver_tuple(a), ver_tuple(b)
+    width = max(len(ta), len(tb))
+    return ta + (0,) * (width - len(ta)) < tb + (0,) * (width - len(tb))
 
 
 # ---------- dimensions ----------
@@ -125,7 +132,12 @@ def dim_twelve_factor(root: Path):
         findings.append(finding("12f-config", "Hardcoded credentials/secrets in config or code", loc, "high"))
     else:
         pts += 3
-    loc = anywhere(r'(?i)initializeData\s*=\s*"[^"]*\.log"|WriteToFile|log4net.*RollingFile')
+    loc = anywhere(
+        r'(?i)initializeData\s*=\s*"[^"]*\.log"|WriteToFile|RollingFile'
+        r'|value\s*=\s*"[^"]*\.log"'                           # config setting pointing at a log file
+        r'|File\.(?:AppendAllText|WriteAllText)\('             # direct file logging in code
+        r'|MapPath\([^)]*\.log'
+    )
     if loc:
         findings.append(finding("12f-logs", "File-based logging configured; logs should go to stdout", loc, "medium"))
     else:
@@ -184,14 +196,16 @@ def dim_dependency_eol(root: Path, deps):
 
 
 def dim_test_coverage(root: Path, artifacts: Path):
-    reports = list(artifacts.glob("coverage/*.xml")) + list(artifacts.glob("coverage*.xml"))
+    reports = sorted(artifacts.glob("coverage/*.xml")) + sorted(artifacts.glob("coverage*.xml"))
     if not reports:
         return 0, [finding("cov-none", "No coverage report found (expected cobertura XML under artifacts/coverage/)", severity="medium")]
     try:
         rate = float(ET.parse(reports[0]).getroot().get("branch-rate", 0))
     except (ET.ParseError, TypeError, ValueError):
         return 0, [finding("cov-parse", f"Could not parse {reports[0].name}", severity="medium")]
-    score = round(15 * min(1.0, rate / 0.70))
+    # Full marks require actually meeting the threshold: rounding must never lift a
+    # below-threshold rate to 15, because the enforce gate keys on score == 15.
+    score = 15 if rate >= 0.70 else min(14, round(15 * rate / 0.70))
     fnd = [] if rate >= 0.70 else [finding("cov-low", f"Branch coverage {rate:.0%} below 70% threshold", severity="medium")]
     return score, fnd
 
@@ -316,6 +330,8 @@ def main():
             for d in dimensions:
                 if d["key"] in prev and d["score"] < prev[d["key"]]:
                     errors.append(f"dimension {d['key']} regressed ({prev[d['key']]} -> {d['score']})")
+        else:
+            errors.append("scorecard-before.json missing — no-regression check impossible")
         if errors:
             print("GATE FAIL: " + "; ".join(errors), file=sys.stderr)
             print(THRESHOLDS_NOTE, file=sys.stderr)

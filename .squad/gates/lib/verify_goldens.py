@@ -27,6 +27,30 @@ def normalize(obj, fields):
     return obj
 
 
+def strict_equal(a, b):
+    """Type-aware JSON equality: Python's == says True == 1 and 1 == 1.0, which would
+    let serializer type changes (bool->int, int->float) pass the gate. A type change on
+    the wire is a contract break — compare types first, then structure."""
+    if type(a) is not type(b):
+        return False
+    if isinstance(a, dict):
+        return a.keys() == b.keys() and all(strict_equal(a[k], b[k]) for k in a)
+    if isinstance(a, list):
+        return len(a) == len(b) and all(strict_equal(x, y) for x, y in zip(a, b))
+    return a == b
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Golden replay must observe the actual 3xx response, not follow it — otherwise a
+    redirect golden can never pass and a changed redirect target is invisible."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+_OPENER = urllib.request.build_opener(_NoRedirect)
+
+
 def replay(base_url, inv_path):
     inv = json.loads(Path(inv_path).read_text())
     inv_dir = Path(inv_path).parent
@@ -52,7 +76,7 @@ def replay(base_url, inv_path):
                     if os.environ.get("TEST_COOKIE"):
                         req.add_header("Cookie", os.environ["TEST_COOKIE"])
                 try:
-                    with urllib.request.urlopen(req, timeout=15) as resp:
+                    with _OPENER.open(req, timeout=15) as resp:
                         status, raw = resp.status, resp.read()
                 except urllib.error.HTTPError as e:
                     status, raw = e.code, e.read()
@@ -65,8 +89,8 @@ def replay(base_url, inv_path):
                 try:
                     actual = normalize(json.loads(raw.decode()), fields)
                     expected = normalize(json.loads(expected_raw), fields)
-                    ok = actual == expected
-                    detail = "" if ok else "body mismatch (JSON)"
+                    ok = strict_equal(actual, expected)
+                    detail = "" if ok else "body mismatch (JSON, type-strict)"
                 except json.JSONDecodeError:
                     ok = raw.decode().strip() == expected_raw.strip()
                     detail = "" if ok else "body mismatch (raw)"

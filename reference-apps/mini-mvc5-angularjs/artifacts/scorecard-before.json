@@ -1,9 +1,9 @@
 {
-  "engineVersion": "0.1.0",
+  "engineVersion": "0.2.0",
   "rubricVersion": "0.1.0",
-  "scoredAt": "2026-07-19T05:55:33+00:00",
+  "scoredAt": "2026-07-19T13:38:23+00:00",
   "phase": "before",
-  "total": 43,
+  "total": 42,
   "dimensions": [
     {
       "key": "solid",
@@ -15,7 +15,7 @@
     {
       "key": "twelve-factor",
       "kind": "mechanical",
-      "score": 6,
+      "score": 3,
       "max": 15,
       "findings": [
         {
@@ -23,6 +23,12 @@
           "summary": "Hardcoded credentials/secrets in config or code",
           "location": "web.config",
           "severity": "high"
+        },
+        {
+          "id": "12f-logs",
+          "summary": "File-based logging configured; logs should go to stdout",
+          "location": "Controllers/OrdersController.cs",
+          "severity": "medium"
         },
         {
           "id": "12f-state",
@@ -40,15 +46,9 @@
     {
       "key": "security-cve",
       "kind": "mechanical",
-      "score": 11,
+      "score": 13,
       "max": 20,
       "findings": [
-        {
-          "id": "CVE-2018-8014",
-          "summary": "Microsoft.AspNet.Mvc 5.2.3 < 5.2.4: Illustrative pin: MVC 5.x line requires latest patch level; verify with a live scanner when available",
-          "location": "packages.config",
-          "severity": "medium"
-        },
         {
           "id": "CVE-2024-21907",
           "summary": "Newtonsoft.Json 6.0.8 < 13.0.1: Improper handling of exceptional conditions; DoS via crafted data",

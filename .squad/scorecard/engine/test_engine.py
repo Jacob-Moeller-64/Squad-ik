@@ -52,6 +52,15 @@ class VersionCompare(unittest.TestCase):
         self.assertFalse(engine.ver_lt("13.0.1", "13.0.1"))
         self.assertFalse(engine.ver_lt("13.0.3", "13.0.1"))
 
+    def test_two_part_version_equals_three_part(self):
+        # "3.5" must NOT be flagged vulnerable_below "3.5.0"
+        self.assertFalse(engine.ver_lt("3.5", "3.5.0"))
+        self.assertTrue(engine.ver_lt("3.4", "3.5.0"))
+
+    def test_prerelease_suffix_does_not_inflate(self):
+        # "13.0.1-beta1" digits must not become (13,0,1,1) > (13,0,1)
+        self.assertFalse(engine.ver_lt("13.0.1", "13.0.1-beta1"))
+
 
 class Dimensions(unittest.TestCase):
     def test_cve_hits_legacy_packages(self):
@@ -86,6 +95,40 @@ class Dimensions(unittest.TestCase):
             (solid, findings), (cx, _) = engine.dim_solid_and_complexity(Path(d))
             self.assertTrue(any("Big.cs" in f.get("location", "") for f in findings))
             self.assertLess(cx, 5)
+
+    def test_12f_logs_catches_config_log_path_and_file_append(self):
+        with tempfile.TemporaryDirectory() as d:
+            make_repo(Path(d))
+            (Path(d) / "App" / "logging.config").write_text(
+                '<appSettings><add key="AuditLogPath" value="~/App_Data/orders.log" /></appSettings>'
+            )
+            (Path(d) / "App" / "Audit.cs").write_text(
+                'class A { void W(string p) { System.IO.File.AppendAllText(p, "x"); } }'
+            )
+            _, findings = engine.dim_twelve_factor(Path(d))
+            self.assertIn("12f-logs", {f["id"] for f in findings})
+
+    def test_skipdirs_only_applies_below_root(self):
+        # A repo checked out under a directory named 'packages' must still be scanned.
+        with tempfile.TemporaryDirectory() as d:
+            nested = Path(d) / "packages" / "legacy-app"
+            make_repo(nested)
+            deps = engine.parse_manifests(nested)
+            self.assertTrue(deps, "manifests must be found under a packages/ ancestor")
+            (solid, findings), _ = engine.dim_solid_and_complexity(nested)
+            self.assertTrue(any("Big.cs" in f.get("location", "") for f in findings))
+
+    def test_coverage_below_threshold_never_rounds_to_full(self):
+        with tempfile.TemporaryDirectory() as d:
+            art = Path(d) / "artifacts" / "coverage"
+            art.mkdir(parents=True)
+            (art / "coverage.xml").write_text('<coverage branch-rate="0.68"></coverage>')
+            score, findings = engine.dim_test_coverage(Path(d), Path(d) / "artifacts")
+            self.assertLess(score, 15)
+            self.assertIn("cov-low", {f["id"] for f in findings})
+            (art / "coverage.xml").write_text('<coverage branch-rate="0.70"></coverage>')
+            score, _ = engine.dim_test_coverage(Path(d), Path(d) / "artifacts")
+            self.assertEqual(score, 15)
 
 
 class EndToEnd(unittest.TestCase):

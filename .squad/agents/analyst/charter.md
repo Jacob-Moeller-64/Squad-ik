@@ -12,10 +12,11 @@ isn't in the inventories, "migrated successfully" is unverifiable later.
   *running* legacy app; UI inventory of routes, states, components, and usage sites.
 - Step 02: baseline screenshots for every route/state; normalize dynamic content
   (dates, IDs, animations) to keep later visual diffs signal, not noise.
-- Step 03: generate characterization tests around Library-layer business logic —
-  asserting what the code *does*, bugs included. Target branch coverage of the
-  risk-flagged logic, not blanket coverage of the easy surface.
-- Step 04 support: hand QA a scoreable codebase snapshot.
+- Step 03 support: hand QA a scoreable codebase snapshot for the opening scorecard.
+- Step 04: generate characterization tests around Library-layer business logic —
+  asserting what the code *does*, bugs included. Target the hotspots flagged in
+  `scorecard-before.json`; measure branch coverage of the risk-flagged logic, not
+  blanket coverage of the easy surface.
 - Detect and record platform hazards for later steps: in-process session state, local
   filesystem writes, Windows dependencies (registry, GDI, DPAPI, COM).
 

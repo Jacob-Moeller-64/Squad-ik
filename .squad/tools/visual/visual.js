@@ -77,9 +77,16 @@ async function main() {
 
   let failures = 0;
   for (const route of inv.routes) {
+    // Distinct states need distinct URLs: routes[].stateUrls maps state -> path override.
+    // Without it, every state of a route screenshots the same page — warn loudly so
+    // multi-state baselines are never silently identical.
+    if (route.states.length > 1 && !route.stateUrls) {
+      console.log(`WARN: ${route.path} has ${route.states.length} states but no stateUrls — all states will capture the same URL`);
+    }
     for (const state of route.states) {
       const file = slug(route.path, state);
-      const url = baseUrl.replace(/\/$/, '') + route.path;
+      const statePath = (route.stateUrls && route.stateUrls[state]) || route.path;
+      const url = baseUrl.replace(/\/$/, '') + statePath;
       const png = await shoot(page, url);
       if (cmd === 'capture') {
         fs.writeFileSync(path.join(outDir, file), png);

@@ -9,10 +9,11 @@
     "fusionMcpVersion": { "type": "string", "description": "Pinned MCP version used for counterpart lookups (D-006)." },
     "rows": {
       "type": "array",
-      "minItems": 1,
+      "description": "May be empty: an app with zero reusable components is legitimate.",
       "items": {
         "type": "object",
         "required": ["component", "classification", "status"],
+        "additionalProperties": false,
         "properties": {
           "component": { "type": "string", "description": "Name matching ui-inventory.components[].name" },
           "classification": { "enum": ["swap", "survive", "no-counterpart"] },

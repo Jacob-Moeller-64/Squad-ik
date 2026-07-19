@@ -8,8 +8,9 @@ backend wave (D-004). Three ordered moves:
   Okta bearer-token validation side by side.
 - Interim topology checks: CORS between legacy frontend origin and new backend; cookie
   `Secure` + `SameSite=None` if auth is cookie-based cross-site; base paths.
-- Gate: legacy frontend smoke suite passes against the new backend. This is the
-  shippable milestone — do not proceed until it's real.
+- Gate (smoke suite as defined in pipeline step 09): legacy frontend served against the
+  new backend, then goldens replay green + visual diff clean vs Phase-1 baselines. This
+  is the shippable milestone — do not proceed until it's real.
 
 ## Strangler step 2 — Frontend flip (step 14)
 - `src/Client` authenticates via Okta (OIDC). Redirect URIs registered per environment;
