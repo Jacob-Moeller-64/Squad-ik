@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "squad-ik/ui-inventory",
+  "title": "UI Inventory",
+  "description": "Every route, state, and component of the legacy frontend (step 01). Drives baseline capture (02), classification (12), visual verification (15/18), and the closed-loop gate (20).",
+  "type": "object",
+  "required": ["capturedAt", "routes", "components"],
+  "properties": {
+    "capturedAt": { "type": "string" },
+    "routes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["path", "auth", "states"],
+        "properties": {
+          "path": { "type": "string" },
+          "auth": { "enum": ["public", "protected"] },
+          "states": {
+            "type": "array",
+            "minItems": 1,
+            "description": "Meaningful states to baseline: e.g. empty, loaded, error.",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "sourcePath", "usageSites"],
+        "properties": {
+          "name": { "type": "string" },
+          "sourcePath": { "type": "string" },
+          "usageSites": { "type": "array", "items": { "type": "string" } },
+          "propsOrBindings": { "type": "array", "items": { "type": "string" } },
+          "variants": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

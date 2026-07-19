@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "squad-ik/component-map",
+  "title": "Component Map",
+  "description": "Produced at step 12; drives the step-16 swap loop. Status column is append-only per swap. Every component in ui-inventory must have exactly one row.",
+  "type": "object",
+  "required": ["fusionMcpVersion", "rows"],
+  "properties": {
+    "fusionMcpVersion": { "type": "string", "description": "Pinned MCP version used for counterpart lookups (D-006)." },
+    "rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["component", "classification", "status"],
+        "properties": {
+          "component": { "type": "string", "description": "Name matching ui-inventory.components[].name" },
+          "classification": { "enum": ["swap", "survive", "no-counterpart"] },
+          "fusionCounterpart": { "type": "string", "description": "Required when classification=swap; per MCP lookup." },
+          "disposition": { "type": "string", "description": "Required when classification=no-counterpart; default policy D-003 (wrap)." },
+          "status": { "enum": ["pending", "in-progress", "done", "blocked"] },
+          "commit": { "type": "string", "description": "One component per commit: the commit SHA that completed this row." },
+          "notes": { "type": "string" }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "classification": { "const": "swap" } } },
+            "then": { "required": ["fusionCounterpart"] }
+          },
+          {
+            "if": { "properties": { "classification": { "const": "no-counterpart" } } },
+            "then": { "required": ["disposition"] }
+          }
+        ]
+      }
+    }
+  }
+}

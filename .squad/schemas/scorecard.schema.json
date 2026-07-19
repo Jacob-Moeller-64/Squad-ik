@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "squad-ik/scorecard",
+  "title": "Scorecard",
+  "description": "Output of gates/run-scorecard.sh (frozen engine, D-008). Same schema for scorecard-before and scorecard-after; the delta report diffs the two.",
+  "type": "object",
+  "required": ["engineVersion", "rubricVersion", "scoredAt", "phase", "dimensions", "total"],
+  "properties": {
+    "engineVersion": { "type": "string" },
+    "rubricVersion": { "type": "string" },
+    "scoredAt": { "type": "string" },
+    "phase": { "enum": ["before", "after"] },
+    "total": { "type": "number", "minimum": 0, "maximum": 100 },
+    "dimensions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["key", "kind", "score", "max"],
+        "properties": {
+          "key": {
+            "enum": [
+              "solid", "twelve-factor", "security-cve", "dependency-eol",
+              "test-coverage", "complexity", "ocp-readiness", "qualitative"
+            ]
+          },
+          "kind": {
+            "enum": ["mechanical", "llm-judged"],
+            "description": "llm-judged dimensions use the pinned rubric + anchors, best-of-3 median."
+          },
+          "score": { "type": "number", "minimum": 0 },
+          "max": { "type": "number", "exclusiveMinimum": 0 },
+          "findings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "summary"],
+              "properties": {
+                "id": { "type": "string" },
+                "summary": { "type": "string" },
+                "location": { "type": "string" },
+                "severity": { "enum": ["info", "low", "medium", "high", "critical"] }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "squad-ik/app-profile",
+  "title": "App Profile",
+  "description": "Emitted by step 00. Selects adapters for every subsequent step. Unknown values => halt (D-009).",
+  "type": "object",
+  "required": ["appName", "backend", "frontend", "auth", "build", "hazards"],
+  "properties": {
+    "appName": { "type": "string", "minLength": 1 },
+    "backend": {
+      "type": "object",
+      "required": ["flavor", "version", "adapter"],
+      "properties": {
+        "flavor": { "enum": ["webforms", "mvc5", "webapi2", "netcore31", "unknown"] },
+        "version": { "type": "string" },
+        "adapter": { "type": "string", "description": "Path under skills/adapters/backend/, or 'UNSUPPORTED'" }
+      }
+    },
+    "frontend": {
+      "type": "object",
+      "required": ["flavor", "version", "adapter"],
+      "properties": {
+        "flavor": { "enum": ["angularjs", "angular-8-13", "angular-14plus", "unknown"] },
+        "version": { "type": "string" },
+        "adapter": { "type": "string", "description": "Path under skills/adapters/frontend/, or 'UNSUPPORTED'" }
+      }
+    },
+    "auth": {
+      "type": "object",
+      "required": ["mechanism"],
+      "properties": {
+        "mechanism": { "enum": ["forms-cookie", "windows", "jwt", "session", "none", "other"] },
+        "notes": { "type": "string" }
+      }
+    },
+    "build": {
+      "type": "object",
+      "required": ["backend", "frontend"],
+      "properties": {
+        "backend": { "type": "string", "description": "e.g. msbuild, dotnet" },
+        "frontend": { "type": "string", "description": "e.g. grunt, gulp, webpack, angular-cli" }
+      }
+    },
+    "hazards": {
+      "type": "object",
+      "description": "Platform hazards detected during analysis (D-010).",
+      "required": ["inProcSessionState", "localFileWrites", "windowsDependencies"],
+      "properties": {
+        "inProcSessionState": { "type": "boolean" },
+        "localFileWrites": { "type": "array", "items": { "type": "string" } },
+        "windowsDependencies": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}
