@@ -25,4 +25,6 @@ counterparts — one component per commit.
   the wrong standard to the wrong phase.
 
 ## Model
-Mid tier; steps flagged `judgment: high` (10, 12, 13, 14, 16) may escalate one tier.
+Mid tier standing, **strong at step 10** (frontend rewrite — hardest generation with the
+thinnest behavioral net until step 15; one of only two standing strong-tier uses).
+Elsewhere strong tier only via the failure-escalation rule (routing rule 7).

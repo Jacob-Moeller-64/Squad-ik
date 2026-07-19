@@ -4,8 +4,12 @@ The backbone. Fixed for every app; adapters change *how* a step is done, never *
 steps exist or what they must produce. Every step ends in a commit tagged
 `step-NN-done`. A step is complete only when its gate exits 0.
 
-Legend — **owner**: agent; **judgment**: low = mechanical (cheap model), high = may
-escalate one model tier; **fan-out**: parallelism allowed inside the step.
+Legend — **owner**: agent; **judgment**: low = cheap tier, high = mid tier; **fan-out**:
+parallelism allowed inside the step. The **strong (Opus-class) tier runs on exactly two
+standing steps — 04 and 10** (`model: strong` below; pinned in `pins.json`). All other
+steps may make one strong-tier attempt only via the failure-escalation rule (routing
+rule 7: 2nd consecutive gate failure → one escalated attempt; 3rd failure → halt to
+human; every escalation logged in the run report).
 
 Convention: all gate scripts run from the target app's repo root; run artifacts live in
 `./artifacts` (override with `ARTIFACTS_DIR`). Gate paths below are relative to the
@@ -40,7 +44,7 @@ owner: QA · judgment: low · fan-out: no
 - gate: `gates/validate-artifacts.sh scorecard-before`
 
 ### 04 · Characterization test generation
-owner: Analyst · judgment: high · fan-out: yes (per-module)
+owner: Analyst · judgment: high · **model: strong** (silent-failure step: a weak suite fails no gate, it weakens all of them) · fan-out: yes (per-module)
 - in: legacy code, pre-transformation; complexity/hotspot findings from `scorecard-before.json`
 - out: characterization suite asserting what the app *does* (bugs included, by design); branch-coverage report (cobertura XML) at `artifacts/coverage/coverage.xml` — .NET apps via `dotnet test --collect:"XPlat Code Coverage"`; reference runner: `reference-apps/mini-mvc5-angularjs/run-characterization.sh|.ps1`
 - gate: suite green against untouched legacy code; branch coverage of risk-flagged logic ≥ threshold in `scorecard/rubric.md`
@@ -78,7 +82,7 @@ owner: Backend Dev + QA · target: `target/okta` (strangler step 1) · judgment:
 ## Phase 3 — Frontend wave
 
 ### 10 · Frontend framework upgrade
-owner: Frontend Dev · adapter: `adapters/frontend/<profile>` · judgment: high · fan-out: no
+owner: Frontend Dev · adapter: `adapters/frontend/<profile>` · judgment: high · **model: strong** (hardest generation, thinnest net until step 15) · fan-out: no
 - gate: build green + app boots + goldens pass (frontend still talks to new backend)
 
 ### 11 · Frontend restructure → `src/Client`

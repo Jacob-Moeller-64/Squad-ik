@@ -25,4 +25,6 @@ keeping the characterization suite and endpoint goldens green at every step.
 - Structure and Fusion-convention questions go to the MCP tool, never answered from memory.
 
 ## Model
-Mid tier; steps flagged `judgment: high` (05, 07, 09) may escalate one tier.
+Mid tier standing — this role works inside the strongest nets in the kit (suite +
+goldens), so weaker-model failures are visible retries, never silent defects. Strong
+tier only via the failure-escalation rule (routing rule 7).

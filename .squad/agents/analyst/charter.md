@@ -26,4 +26,6 @@ isn't in the inventories, "migrated successfully" is unverifiable later.
   not a formatting preference.
 
 ## Model
-Strong tier (analysis quality caps the whole run's verifiability).
+Mid tier, **strong at step 04** (characterization generation — the silent-failure step:
+a weak suite fails no gate, it weakens all of them). One of only two standing
+strong-tier uses in the pipeline (pins.json).

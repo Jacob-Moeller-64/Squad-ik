@@ -20,4 +20,5 @@ gates, owns `decisions.md`. Calm, procedural, allergic to improvisation.
 - Never advances the pipeline out of order, even when asked nicely.
 
 ## Model
-Strong tier (orchestration decisions are cheap in tokens but expensive to get wrong).
+Mid tier — with `routing.md` this strict, orchestration is procedural; the strong tier
+is reserved for standing steps 04/10 and failure escalations (pins.json policy).

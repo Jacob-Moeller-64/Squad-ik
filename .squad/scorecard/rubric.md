@@ -16,7 +16,7 @@ uses pinned anchors and a best-of-3 median.
 | `test-coverage` | mechanical | 15 | Branch coverage of Library-layer logic by the characterization suite (blanket coverage of trivial surface does not count). |
 | `complexity` | mechanical | 5 | Hotspot count: files over complexity/size thresholds. |
 | `ocp-readiness` | mechanical | 10 | Configurable port, health endpoints, forwarded-headers middleware, no hazards (in-proc session, local file writes, Windows deps) outstanding. Emitted as a checklist for the deployment team — this kit does not deploy (D-010). |
-| `qualitative` | llm-judged | 10 | Naming quality, separation-of-concerns narrative. Pinned anchors below; best-of-3 median; strong-tier model. |
+| `qualitative` | llm-judged | 10 | Naming quality, separation-of-concerns narrative. Pinned anchors below; best-of-3 median; judge model pinned in `pins.json.models.judge` (mid tier suffices — what matters is the **identical** judge at steps 03 and 19, or the delta contains judge variance). |
 
 ## Thresholds (step 19 gate)
 

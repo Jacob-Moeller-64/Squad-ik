@@ -15,7 +15,9 @@ Work is routed by **pipeline position**, not by request content.
    Fusion MCP tool at its pinned version — never from memory.
 6. `app-profile.json` reports a stack with no adapter, or fails the support-matrix
    check → **halt and report "unsupported profile"**. Do not improvise a migration.
-7. A gate failure routes back to the same step's owner with the gate output. Three
-   consecutive failures on the same gate → halt and escalate to the human operator.
+7. A gate failure routes back to the same step's owner with the gate output. After the
+   **2nd consecutive failure**, the owner may make **one** strong-tier attempt (the only
+   strong-tier use outside standing steps 04/10; logged in the run report). A **3rd
+   consecutive failure** halts the run and escalates to the human operator.
 8. Any decision not already covered by `decisions.md` (kit-seeded or run-local) is made
    by the Lead, recorded in the run's `decisions.md` *before* work proceeds.
