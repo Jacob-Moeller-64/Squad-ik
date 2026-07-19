@@ -1,0 +1,10 @@
+<h2>Product Catalog</h2>
+<p class="muted">Browse our complete range of quality office supplies.</p>
+
+<app-spinner *ngIf="loading"></app-spinner>
+<div class="error-box" *ngIf="error">{{ error }}</div>
+
+<div class="product-grid" *ngIf="!loading && !error">
+  <app-product-card *ngFor="let p of products" [product]="p"></app-product-card>
+  <p class="muted" *ngIf="products.length === 0">No products are currently available.</p>
+</div>

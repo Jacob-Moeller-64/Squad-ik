@@ -1,0 +1,48 @@
+.detail-name {
+  margin-top: 0;
+}
+
+.detail-table {
+  border-collapse: collapse;
+  width: 60%;
+  margin-bottom: 12px;
+}
+
+.detail-table th {
+  text-align: left;
+  background-color: #e6ebf2;
+  color: #1f3a5f;
+  border: 1px solid #999999;
+  padding: 5px 10px;
+  font-size: 12px;
+  width: 140px;
+}
+
+.detail-table td {
+  border: 1px solid #999999;
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.detail-table td.price {
+  font-weight: bold;
+  color: #1f3a5f;
+}
+
+.stock.in {
+  color: #2f5f2f;
+}
+
+.stock.out {
+  color: #a94442;
+  font-weight: bold;
+}
+
+.detail-actions {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.back-link {
+  font-size: 12px;
+}

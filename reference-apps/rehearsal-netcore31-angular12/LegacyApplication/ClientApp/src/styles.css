@@ -1,0 +1,199 @@
+/* LegacyShop global styles — deliberately dated 2019-era corporate look.
+   No animations or transitions anywhere (deterministic rendering). */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #f0ede4;
+  color: #222222;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: Georgia, "Times New Roman", Times, serif;
+  color: #1f3a5f;
+  font-weight: bold;
+  margin: 0 0 12px 0;
+}
+
+h2 {
+  font-size: 22px;
+  border-bottom: 2px solid #1f3a5f;
+  padding-bottom: 4px;
+  margin-top: 4px;
+}
+
+h3 {
+  font-size: 17px;
+}
+
+a {
+  color: #0645ad;
+  text-decoration: underline;
+}
+
+a:hover {
+  color: #0b0080;
+}
+
+p {
+  margin: 0 0 10px 0;
+}
+
+.container {
+  width: 960px;
+  margin: 0 auto;
+  padding: 18px 10px 40px 10px;
+}
+
+/* Boxy bordered panels with sharp corners */
+.panel {
+  background-color: #ffffff;
+  border: 1px solid #8a8a8a;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+/* Buttons: flat, gray, bordered, no rounding */
+button,
+input[type="submit"] {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  color: #222222;
+  background-color: #e8e8e0;
+  border: 1px solid #7a7a7a;
+  padding: 4px 14px;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+button:hover,
+input[type="submit"]:hover {
+  background-color: #dcdcd0;
+}
+
+button:disabled,
+input[type="submit"]:disabled {
+  color: #999999;
+  background-color: #f0f0ea;
+  border-color: #bbbbbb;
+  cursor: default;
+}
+
+button.primary {
+  background-color: #1f3a5f;
+  color: #ffffff;
+  border: 1px solid #16293f;
+  font-weight: bold;
+}
+
+button.primary:hover {
+  background-color: #2a4d7c;
+}
+
+button.primary:disabled {
+  background-color: #8a99ac;
+  color: #e0e0e0;
+  border-color: #7a8798;
+}
+
+/* Form controls */
+input[type="text"],
+input[type="password"],
+input[type="number"],
+select {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  padding: 3px 5px;
+  border: 1px solid #8a8a8a;
+  background-color: #ffffff;
+  border-radius: 0;
+}
+
+input:focus,
+select:focus {
+  outline: 1px solid #1f3a5f;
+}
+
+fieldset {
+  border: 1px solid #8a8a8a;
+  padding: 12px;
+  margin: 0;
+}
+
+legend {
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-weight: bold;
+  color: #1f3a5f;
+  padding: 0 6px;
+}
+
+label {
+  font-weight: bold;
+  font-size: 12px;
+  color: #333333;
+}
+
+/* Data tables */
+table.data-table {
+  border-collapse: collapse;
+  width: 100%;
+  background-color: #ffffff;
+}
+
+table.data-table th {
+  background-color: #1f3a5f;
+  color: #ffffff;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 13px;
+  text-align: left;
+  padding: 6px 10px;
+  border: 1px solid #16293f;
+}
+
+table.data-table td {
+  border: 1px solid #999999;
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+table.data-table tr:nth-child(even) td {
+  background-color: #f5f3ec;
+}
+
+/* Message boxes */
+.error-box {
+  border: 1px solid #a94442;
+  background-color: #f6e4e4;
+  color: #7a2a2a;
+  padding: 8px 12px;
+  margin: 10px 0;
+  font-size: 12px;
+}
+
+.info-box {
+  border: 1px solid #7a8ea8;
+  background-color: #e6ebf2;
+  color: #1f3a5f;
+  padding: 8px 12px;
+  margin: 10px 0;
+  font-size: 12px;
+}
+
+.muted {
+  color: #666666;
+  font-size: 11px;
+}

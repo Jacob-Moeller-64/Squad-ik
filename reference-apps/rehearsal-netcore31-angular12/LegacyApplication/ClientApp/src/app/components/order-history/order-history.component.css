@@ -1,0 +1,14 @@
+.history-table .amount-col {
+  text-align: right;
+  width: 140px;
+}
+
+.history-table td.amount-col {
+  font-family: "Courier New", Courier, monospace;
+}
+
+.history-table td.empty {
+  text-align: center;
+  color: #666666;
+  font-style: italic;
+}

@@ -1,0 +1,11 @@
+.site-footer {
+  border-top: 3px solid #1f3a5f;
+  background-color: #e4e0d4;
+  color: #666666;
+  font-size: 11px;
+}
+
+.site-footer .container {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}

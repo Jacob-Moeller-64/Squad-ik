@@ -1,0 +1,19 @@
+<div class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" routerLink="/products">LegacyShop</a>
+    <ul class="nav-links">
+      <li><a routerLink="/products" routerLinkActive="active">Products</a></li>
+      <li><a routerLink="/order" routerLinkActive="active">Place Order</a></li>
+      <li><a routerLink="/history" routerLinkActive="active">Order History</a></li>
+    </ul>
+    <div class="account">
+      <ng-container *ngIf="auth.isLoggedIn$ | async; else loggedOut">
+        <span class="welcome">Signed in as <strong>{{ auth.user$ | async }}</strong></span>
+        <button type="button" class="logout-btn" (click)="onLogout()">Log out</button>
+      </ng-container>
+      <ng-template #loggedOut>
+        <a class="login-link" routerLink="/login" routerLinkActive="active">Log in</a>
+      </ng-template>
+    </div>
+  </div>
+</div>

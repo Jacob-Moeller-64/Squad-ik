@@ -1,0 +1,25 @@
+<h2>Account Login</h2>
+
+<div class="panel login-panel">
+  <form (ngSubmit)="onSubmit()">
+    <fieldset>
+      <legend>Please sign in</legend>
+      <div class="form-row">
+        <label for="username">Username</label>
+        <input id="username" type="text" name="username" [(ngModel)]="username" required>
+      </div>
+      <div class="form-row">
+        <label for="password">Password</label>
+        <input id="password" type="password" name="password" [(ngModel)]="password" required>
+      </div>
+      <div class="error-box" *ngIf="error">{{ error }}</div>
+      <div class="form-row submit-row">
+        <button type="submit" class="primary" [disabled]="loading">Log in</button>
+      </div>
+    </fieldset>
+  </form>
+</div>
+
+<app-spinner *ngIf="loading"></app-spinner>
+
+<p class="muted">Access to order history requires a valid corporate account.</p>

@@ -1,0 +1,11 @@
+/home/user/Squad-ik/reference-apps/rehearsal-netcore31-angular12/src/Library/bin/Debug/net10.0/LegacyShop.Library.deps.json
+/home/user/Squad-ik/reference-apps/rehearsal-netcore31-angular12/src/Library/bin/Debug/net10.0/LegacyShop.Library.dll
+/home/user/Squad-ik/reference-apps/rehearsal-netcore31-angular12/src/Library/bin/Debug/net10.0/LegacyShop.Library.pdb
+/home/user/Squad-ik/reference-apps/rehearsal-netcore31-angular12/src/Library/obj/Debug/net10.0/LegacyShop.Library.GeneratedMSBuildEditorConfig.editorconfig
+/home/user/Squad-ik/reference-apps/rehearsal-netcore31-angular12/src/Library/obj/Debug/net10.0/LegacyShop.Library.AssemblyInfoInputs.cache
+/home/user/Squad-ik/reference-apps/rehearsal-netcore31-angular12/src/Library/obj/Debug/net10.0/LegacyShop.Library.AssemblyInfo.cs
+/home/user/Squad-ik/reference-apps/rehearsal-netcore31-angular12/src/Library/obj/Debug/net10.0/LegacyShop.Library.csproj.CoreCompileInputs.cache
+/home/user/Squad-ik/reference-apps/rehearsal-netcore31-angular12/src/Library/obj/Debug/net10.0/LegacyShop.Library.dll
+/home/user/Squad-ik/reference-apps/rehearsal-netcore31-angular12/src/Library/obj/Debug/net10.0/refint/LegacyShop.Library.dll
+/home/user/Squad-ik/reference-apps/rehearsal-netcore31-angular12/src/Library/obj/Debug/net10.0/LegacyShop.Library.pdb
+/home/user/Squad-ik/reference-apps/rehearsal-netcore31-angular12/src/Library/obj/Debug/net10.0/ref/LegacyShop.Library.dll

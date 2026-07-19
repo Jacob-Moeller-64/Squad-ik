@@ -1,0 +1,11 @@
+.product-grid {
+  overflow: hidden;
+  margin: 0 -8px;
+}
+
+.product-grid app-product-card {
+  display: block;
+  float: left;
+  width: 33.333%;
+  padding: 0 8px 16px 8px;
+}

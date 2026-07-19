@@ -127,7 +127,9 @@ def dim_twelve_factor(root: Path):
         rx = re.compile(pattern)
         return next((loc for loc, t in code.items() if rx.search(t)), None)
 
-    loc = anywhere(r"connectionString\s*=\s*\"[^\"]*(password|pwd)\s*=") or anywhere(r"(?i)(api[_-]?key|secret)\s*[:=]\s*[\"'][A-Za-z0-9+/]{12,}")
+    loc = (anywhere(r"connectionString\s*=\s*\"[^\"]*(password|pwd)\s*=")           # web.config attribute style
+           or anywhere(r"(?i)\"[^\"]*\"\s*:\s*\"[^\"]*(password|pwd)\s*=[^\"]+\"")  # appsettings.json value style
+           or anywhere(r"(?i)(api[_-]?key|secret)\s*[:=]\s*[\"'][A-Za-z0-9+/]{12,}"))
     if loc:
         findings.append(finding("12f-config", "Hardcoded credentials/secrets in config or code", loc, "high"))
     else:
@@ -142,7 +144,9 @@ def dim_twelve_factor(root: Path):
         findings.append(finding("12f-logs", "File-based logging configured; logs should go to stdout", loc, "medium"))
     else:
         pts += 3
-    loc = anywhere(r"Session\[") or anywhere(r"HttpContext\.Current\.Session") or anywhere(r'sessionState[^>]*mode="InProc"')
+    loc = (anywhere(r"Session\[") or anywhere(r"HttpContext\.Current\.Session")
+           or anywhere(r'sessionState[^>]*mode="InProc"')
+           or anywhere(r"AddSession\(|UseSession\(|Session\.(Get|Set)(String|Int32)"))  # ASP.NET Core-era session
     if loc:
         findings.append(finding("12f-state", "In-process session state — process is not stateless", loc, "high"))
     else:
@@ -225,7 +229,7 @@ def dim_ocp_readiness(root: Path, artifacts: Path):
         rx = re.compile(pattern)
         return next((loc for loc, t in code.items() if rx.search(t)), None)
 
-    if profile.get("inProcSessionState") or anywhere(r"Session\[|InProc"):
+    if profile.get("inProcSessionState") or anywhere(r"Session\[|InProc|AddSession\(|Session\.(Get|Set)(String|Int32)"):
         findings.append(finding("ocp-session", "In-process session state blocks multi-replica hosting", severity="high"))
     else:
         pts += 2

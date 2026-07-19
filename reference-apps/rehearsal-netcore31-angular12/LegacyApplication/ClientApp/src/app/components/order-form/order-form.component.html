@@ -1,0 +1,60 @@
+<h2>Place an Order</h2>
+
+<form (ngSubmit)="onSubmit()">
+  <div class="panel">
+    <h3>Order Lines</h3>
+    <table class="data-table lines-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Product ID</th>
+          <th>Quantity</th>
+          <th>Unit Price (cents)</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let line of lines; let i = index">
+          <td class="row-num">{{ i + 1 }}</td>
+          <td>
+            <input type="number" [name]="'productId' + i" [(ngModel)]="line.productId" min="1" required>
+          </td>
+          <td>
+            <input type="number" [name]="'quantity' + i" [(ngModel)]="line.quantity" min="1" required>
+          </td>
+          <td>
+            <input type="number" [name]="'unitPriceCents' + i" [(ngModel)]="line.unitPriceCents" min="0" required>
+          </td>
+          <td>
+            <button type="button" (click)="removeLine(i)" [disabled]="lines.length === 1">Remove</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <button type="button" class="add-line-btn" (click)="addLine()">Add Line</button>
+  </div>
+
+  <div class="panel">
+    <h3>Order Options</h3>
+    <div class="form-row">
+      <label for="promoCode">Promo Code</label>
+      <input id="promoCode" type="text" name="promoCode" [(ngModel)]="promoCode" placeholder="(optional)">
+    </div>
+    <div class="form-row">
+      <label for="region">Ship To Region</label>
+      <select id="region" name="region" [(ngModel)]="region">
+        <option value="US">US</option>
+        <option value="EU">EU</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="submit-row">
+    <button type="submit" class="primary" [disabled]="submitting">Submit Order</button>
+  </div>
+</form>
+
+<app-spinner *ngIf="submitting"></app-spinner>
+<div class="error-box" *ngIf="error">{{ error }}</div>
+
+<app-order-summary *ngIf="result" [result]="result"></app-order-summary>

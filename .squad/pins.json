@@ -2,7 +2,7 @@
   "comment": "Version pins for everything the kit treats as an authority. gates/check-pins fails while any required pin is a placeholder — steps 06/11/12/16 must not run against an unspecified Fusion version. Update via kit release, never mid-run (D-006/D-008).",
   "fusionMcpVersion": "<SET-PER-RELEASE>",
   "fusionStarterKitVersion": "<SET-PER-RELEASE>",
-  "scorecardEngine": "0.2.0",
+  "scorecardEngine": "0.2.1",
   "squadCli": "0.11.0",
   "models": {
     "strong": "<org model id — Opus-class>",

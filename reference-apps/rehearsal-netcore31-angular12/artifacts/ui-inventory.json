@@ -1,0 +1,23 @@
+{
+  "capturedAt": "2026-07-19T00:00:00Z",
+  "routes": [
+    { "path": "/products", "auth": "public", "states": ["loaded"] },
+    { "path": "/products/2", "auth": "public", "states": ["loaded"] },
+    { "path": "/products/99", "auth": "public", "states": ["error"] },
+    { "path": "/order", "auth": "public", "states": ["empty"] },
+    { "path": "/history", "auth": "protected", "states": ["unauthenticated-redirect"] },
+    { "path": "/login", "auth": "public", "states": ["empty"] }
+  ],
+  "components": [
+    { "name": "NavComponent", "sourcePath": "ClientApp/src/app/nav", "usageSites": ["app.component.html"], "propsOrBindings": ["auth state"], "variants": ["logged-out", "logged-in"] },
+    { "name": "ProductCardComponent", "sourcePath": "ClientApp/src/app/product-card", "usageSites": ["product-list.component.html"], "propsOrBindings": ["@Input product"], "variants": ["in-stock", "out-of-stock"] },
+    { "name": "ProductListComponent", "sourcePath": "ClientApp/src/app/product-list", "usageSites": ["route /products"], "propsOrBindings": [], "variants": ["loading", "loaded"] },
+    { "name": "ProductDetailComponent", "sourcePath": "ClientApp/src/app/product-detail", "usageSites": ["route /products/:id"], "propsOrBindings": [], "variants": ["loaded", "error"] },
+    { "name": "OrderFormComponent", "sourcePath": "ClientApp/src/app/order-form", "usageSites": ["route /order"], "propsOrBindings": [], "variants": ["empty", "submitted"] },
+    { "name": "OrderSummaryComponent", "sourcePath": "ClientApp/src/app/order-summary", "usageSites": ["order-form.component.html"], "propsOrBindings": ["@Input result"], "variants": ["hidden", "shown"] },
+    { "name": "OrderHistoryComponent", "sourcePath": "ClientApp/src/app/order-history", "usageSites": ["route /history"], "propsOrBindings": [], "variants": ["table"] },
+    { "name": "LoginComponent", "sourcePath": "ClientApp/src/app/login", "usageSites": ["route /login"], "propsOrBindings": [], "variants": ["form", "error"] },
+    { "name": "SpinnerComponent", "sourcePath": "ClientApp/src/app/spinner", "usageSites": ["product-list", "product-detail"], "propsOrBindings": [], "variants": ["spinning"] },
+    { "name": "CentsPipe", "sourcePath": "ClientApp/src/app/cents.pipe.ts", "usageSites": ["product-card", "product-detail", "order-summary", "order-history"], "propsOrBindings": ["cents -> $"], "variants": [] }
+  ]
+}

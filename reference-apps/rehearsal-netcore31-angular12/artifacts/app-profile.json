@@ -1,0 +1,26 @@
+{
+  "appName": "rehearsal-netcore31-angular12 (LegacyShop)",
+  "backend": {
+    "flavor": "netcore31",
+    "version": ".NET Core 3.1 (netcoreapp3.1), Startup.cs-era; executed via DOTNET_ROLL_FORWARD on .NET 10 runtime because the 3.1 runtime is EOL and uninstallable in this environment",
+    "adapter": "adapters/backend/netcore31"
+  },
+  "frontend": {
+    "flavor": "angular-8-13",
+    "version": "Angular 12.2.17 (NgModule era, RxJS 6)",
+    "adapter": "adapters/frontend/angular-8-13"
+  },
+  "auth": {
+    "mechanism": "forms-cookie",
+    "notes": "ASP.NET Core cookie auth (LegacyShopAuth), demo/demo123; API returns 401 JSON for anonymous protected calls (SPA-era pattern, unlike the mini app's 302). Protected surface: GET /api/orders/history. Okta strangler target (D-004)."
+  },
+  "build": {
+    "backend": "dotnet (SDK 10 targeting netcoreapp3.1; NETSDK1138 EOL warning expected)",
+    "frontend": "angular-cli 12 (webpack; requires NODE_OPTIONS=--openssl-legacy-provider on modern Node)"
+  },
+  "hazards": {
+    "inProcSessionState": true,
+    "localFileWrites": ["Api/Controllers/OrdersController.cs: File.AppendAllText(App_Data/orders.log)"],
+    "windowsDependencies": []
+  }
+}

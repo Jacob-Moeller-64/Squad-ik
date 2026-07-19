@@ -1,0 +1,22 @@
+<div class="summary-panel">
+  <h3>Order Confirmation</h3>
+  <p class="order-id">Your order number is <strong>{{ result.orderId }}</strong>.</p>
+  <table class="summary-table">
+    <tr>
+      <td class="label">Subtotal</td>
+      <td class="amount">{{ result.subtotalCents | cents }}</td>
+    </tr>
+    <tr>
+      <td class="label">Discount ({{ result.discountPercent }}%)</td>
+      <td class="amount">-{{ result.discountCents | cents }}</td>
+    </tr>
+    <tr>
+      <td class="label">Shipping</td>
+      <td class="amount">{{ result.shippingCents | cents }}</td>
+    </tr>
+    <tr class="total-row">
+      <td class="label">Total</td>
+      <td class="amount">{{ result.totalCents | cents }}</td>
+    </tr>
+  </table>
+</div>

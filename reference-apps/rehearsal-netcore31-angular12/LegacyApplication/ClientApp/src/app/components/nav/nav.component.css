@@ -1,0 +1,85 @@
+.topbar {
+  background-color: #1f3a5f;
+  border-bottom: 3px solid #16293f;
+}
+
+.topbar-inner {
+  width: 960px;
+  margin: 0 auto;
+  padding: 0 10px;
+  overflow: hidden;
+}
+
+.brand {
+  float: left;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 20px;
+  font-weight: bold;
+  color: #ffffff;
+  text-decoration: none;
+  padding: 11px 22px 11px 0;
+}
+
+.brand:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.nav-links {
+  float: left;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nav-links li {
+  float: left;
+}
+
+.nav-links a {
+  display: block;
+  padding: 15px 14px;
+  color: #d8e0ec;
+  text-decoration: none;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.nav-links a:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.nav-links a.active {
+  background-color: #16293f;
+  color: #ffffff;
+}
+
+.account {
+  float: right;
+  padding: 12px 0;
+  color: #d8e0ec;
+  font-size: 12px;
+}
+
+.account .welcome {
+  margin-right: 8px;
+}
+
+.account .login-link {
+  color: #d8e0ec;
+  text-decoration: underline;
+}
+
+.account .login-link:hover {
+  color: #ffffff;
+}
+
+.logout-btn {
+  font-size: 11px;
+  padding: 2px 10px;
+  background-color: #e8e8e0;
+  border: 1px solid #16293f;
+  color: #1f3a5f;
+}

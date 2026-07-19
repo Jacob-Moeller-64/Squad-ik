@@ -1,0 +1,8 @@
+is_global = true
+build_property.RootNamespace = LegacyShop.Api
+build_property.ProjectDir = /home/user/Squad-ik/reference-apps/rehearsal-netcore31-angular12/LegacyApplication/Api/
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.CsWinRTUseWindowsUIXamlProjections = false
+build_property.EffectiveAnalysisLevelStyle = 
+build_property.EnableCodeStyleSeverity = 

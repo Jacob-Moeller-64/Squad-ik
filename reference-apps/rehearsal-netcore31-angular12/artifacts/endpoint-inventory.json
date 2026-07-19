@@ -1,0 +1,87 @@
+{
+  "capturedAt": "2026-07-19T00:00:00Z",
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/products",
+      "auth": "public",
+      "goldens": [{ "name": "all-products", "responseFile": "goldens/products-all.res.json", "status": 200 }]
+    },
+    {
+      "method": "GET",
+      "path": "/api/products/2",
+      "auth": "public",
+      "goldens": [{ "name": "found", "responseFile": "goldens/product-2.res.json", "status": 200 }]
+    },
+    {
+      "method": "GET",
+      "path": "/api/products/99",
+      "auth": "public",
+      "goldens": [{ "name": "missing", "responseFile": "goldens/product-missing.res.json", "status": 404 }]
+    },
+    {
+      "method": "GET",
+      "path": "/api/products/search",
+      "auth": "public",
+      "goldens": [{ "name": "hardware-category", "requestFile": "goldens/search-hardware.req.json", "responseFile": "goldens/search-hardware.res.json", "status": 200 }]
+    },
+    {
+      "method": "GET",
+      "path": "/api/customers",
+      "auth": "public",
+      "goldens": [{ "name": "all-customers", "responseFile": "goldens/customers-all.res.json", "status": 200 }]
+    },
+    {
+      "method": "GET",
+      "path": "/api/customers/3",
+      "auth": "public",
+      "goldens": [{ "name": "eu-customer", "responseFile": "goldens/customer-3.res.json", "status": 200 }]
+    },
+    {
+      "method": "GET",
+      "path": "/api/warehouse/stock",
+      "auth": "public",
+      "goldens": [{ "name": "pristine-stock", "responseFile": "goldens/stock-pristine.res.json", "status": 200 }]
+    },
+    {
+      "method": "POST",
+      "path": "/api/account/login",
+      "auth": "public",
+      "goldens": [
+        { "name": "valid-credentials", "requestFile": "goldens/login-ok.req.json", "responseFile": "goldens/login-ok.res.json", "status": 200 },
+        { "name": "invalid-credentials", "requestFile": "goldens/login-bad.req.json", "responseFile": "goldens/login-bad.res.json", "status": 401 }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/orders/history",
+      "auth": "authenticated",
+      "goldens": [{ "name": "seed-history-with-cookie", "responseFile": "goldens/history-authed.res.json", "status": 200 }]
+    },
+    {
+      "method": "GET",
+      "path": "/api/orders/history",
+      "auth": "public",
+      "goldens": [{ "name": "anonymous-401", "responseFile": "goldens/history-anon.res.json", "status": 401 }]
+    },
+    {
+      "method": "POST",
+      "path": "/api/orders",
+      "auth": "public",
+      "goldens": [
+        { "name": "oversize-free-ship-quirk", "requestFile": "goldens/order-oversize-free.req.json", "responseFile": "goldens/order-oversize-free.res.json", "status": 200, "normalizedFields": ["orderId"] },
+        { "name": "vip-mid-tier-eu-shipping", "requestFile": "goldens/order-vip-eu.req.json", "responseFile": "goldens/order-vip-eu.res.json", "status": 200, "normalizedFields": ["orderId"] },
+        { "name": "bad-quantity-rejected", "requestFile": "goldens/order-bad-qty.req.json", "responseFile": "goldens/order-bad-qty.res.json", "status": 400 }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/warehouse/allocate",
+      "auth": "public",
+      "goldens": [
+        { "name": "silent-partial-allocation-quirk", "requestFile": "goldens/alloc-partial.req.json", "responseFile": "goldens/alloc-partial.res.json", "status": 200 },
+        { "name": "bulk-desk-rejection-quirk", "requestFile": "goldens/alloc-bulk.req.json", "responseFile": "goldens/alloc-bulk.res.json", "status": 422 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+.summary-panel {
+  background-color: #ffffff;
+  border: 2px solid #1f3a5f;
+  padding: 14px;
+  margin: 16px 0;
+  width: 420px;
+}
+
+.summary-panel h3 {
+  margin-top: 0;
+  border-bottom: 1px solid #999999;
+  padding-bottom: 4px;
+}
+
+.order-id {
+  font-size: 12px;
+}
+
+.summary-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.summary-table td {
+  border: 1px solid #999999;
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.summary-table td.label {
+  background-color: #f5f3ec;
+  color: #333333;
+  width: 60%;
+}
+
+.summary-table td.amount {
+  text-align: right;
+  font-family: "Courier New", Courier, monospace;
+}
+
+.summary-table .total-row td {
+  font-weight: bold;
+  background-color: #e6ebf2;
+  color: #1f3a5f;
+  border-top: 2px solid #1f3a5f;
+}

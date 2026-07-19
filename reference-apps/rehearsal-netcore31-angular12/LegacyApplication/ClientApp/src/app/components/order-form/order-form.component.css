@@ -1,0 +1,39 @@
+.lines-table {
+  margin-bottom: 10px;
+}
+
+.lines-table input[type="number"] {
+  width: 110px;
+}
+
+.lines-table td.row-num {
+  width: 30px;
+  text-align: center;
+  color: #666666;
+}
+
+.add-line-btn {
+  margin-top: 2px;
+}
+
+.form-row {
+  margin-bottom: 10px;
+}
+
+.form-row label {
+  display: inline-block;
+  width: 140px;
+  vertical-align: middle;
+}
+
+.form-row input[type="text"] {
+  width: 220px;
+}
+
+.form-row select {
+  width: 100px;
+}
+
+.submit-row {
+  margin: 14px 0;
+}

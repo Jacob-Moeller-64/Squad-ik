@@ -1,0 +1,36 @@
+<h2>Product Details</h2>
+
+<app-spinner *ngIf="loading"></app-spinner>
+<div class="error-box" *ngIf="error">{{ error }}</div>
+
+<div class="panel" *ngIf="product">
+  <h3 class="detail-name">{{ product.name }}</h3>
+  <table class="detail-table">
+    <tr>
+      <th>Product ID</th>
+      <td>{{ product.id }}</td>
+    </tr>
+    <tr>
+      <th>Category</th>
+      <td>{{ product.category }}</td>
+    </tr>
+    <tr>
+      <th>Unit Price</th>
+      <td class="price">{{ product.unitPriceCents | cents }}</td>
+    </tr>
+    <tr>
+      <th>Availability</th>
+      <td>
+        <span class="stock in" *ngIf="product.inStock">In stock &mdash; {{ product.stockQty }} unit(s) available</span>
+        <span class="stock out" *ngIf="!product.inStock">Out of stock</span>
+      </td>
+    </tr>
+  </table>
+  <div class="detail-actions">
+    <a routerLink="/order">Order this product</a>
+  </div>
+</div>
+
+<p class="back-link">
+  <a routerLink="/products">&laquo; Back to product catalog</a>
+</p>

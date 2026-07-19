@@ -1,0 +1,26 @@
+<h2>Order History</h2>
+
+<app-spinner *ngIf="loading"></app-spinner>
+<div class="error-box" *ngIf="error">{{ error }}</div>
+
+<div class="panel" *ngIf="!loading && !error">
+  <table class="data-table history-table">
+    <thead>
+      <tr>
+        <th>Order #</th>
+        <th>Placed At</th>
+        <th class="amount-col">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let o of orders">
+        <td>{{ o.orderId }}</td>
+        <td>{{ o.placedAt | date:'yyyy-MM-dd HH:mm':'UTC' }}</td>
+        <td class="amount-col">{{ o.totalCents | cents }}</td>
+      </tr>
+      <tr *ngIf="orders.length === 0">
+        <td colspan="3" class="empty">You have not placed any orders yet.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

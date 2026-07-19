@@ -1,0 +1,9 @@
+<div class="product-card" [class.out-of-stock]="!product.inStock">
+  <h3 class="product-name">
+    <a [routerLink]="['/products', product.id]">{{ product.name }}</a>
+  </h3>
+  <div class="product-category">{{ product.category }}</div>
+  <div class="product-price">{{ product.unitPriceCents | cents }}</div>
+  <span class="stock-badge in" *ngIf="product.inStock">In stock ({{ product.stockQty }})</span>
+  <span class="stock-badge out" *ngIf="!product.inStock">Out of stock</span>
+</div>

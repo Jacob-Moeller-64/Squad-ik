@@ -96,6 +96,23 @@ class Dimensions(unittest.TestCase):
             self.assertTrue(any("Big.cs" in f.get("location", "") for f in findings))
             self.assertLess(cx, 5)
 
+    def test_12f_catches_json_connstring_and_core_session(self):
+        # Rehearsal-found blind spots: appsettings.json conn strings and Core-era session.
+        with tempfile.TemporaryDirectory() as d:
+            app = Path(d) / "App"
+            app.mkdir(parents=True)
+            (app / "appsettings.json").write_text(
+                '{"ConnectionStrings": {"ShopDb": "Server=db;User Id=svc;password=S3cret!"}}'
+            )
+            (app / "Startup.cs").write_text(
+                'public class Startup { void C(IServiceCollection s) { s.AddSession(); } '
+                'void O(HttpContext c) { c.Session.SetString("k", "v"); } }'
+            )
+            _, findings = engine.dim_twelve_factor(Path(d))
+            ids = {f["id"] for f in findings}
+            self.assertIn("12f-config", ids)
+            self.assertIn("12f-state", ids)
+
     def test_12f_logs_catches_config_log_path_and_file_append(self):
         with tempfile.TemporaryDirectory() as d:
             make_repo(Path(d))

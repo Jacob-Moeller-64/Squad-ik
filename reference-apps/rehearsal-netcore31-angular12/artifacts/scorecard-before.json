@@ -1,0 +1,143 @@
+{
+  "engineVersion": "0.2.1",
+  "rubricVersion": "0.1.0",
+  "scoredAt": "2026-07-19T23:12:42+00:00",
+  "phase": "before",
+  "total": 44,
+  "dimensions": [
+    {
+      "key": "solid",
+      "kind": "mechanical",
+      "score": 15,
+      "max": 15,
+      "findings": []
+    },
+    {
+      "key": "twelve-factor",
+      "kind": "mechanical",
+      "score": 3,
+      "max": 15,
+      "findings": [
+        {
+          "id": "12f-config",
+          "summary": "Hardcoded credentials/secrets in config or code",
+          "location": "Api/appsettings.json",
+          "severity": "high"
+        },
+        {
+          "id": "12f-logs",
+          "summary": "File-based logging configured; logs should go to stdout",
+          "location": "Api/Controllers/OrdersController.cs",
+          "severity": "medium"
+        },
+        {
+          "id": "12f-state",
+          "summary": "In-process session state \u2014 process is not stateless",
+          "location": "Api/Controllers/OrdersController.cs",
+          "severity": "high"
+        },
+        {
+          "id": "12f-env",
+          "summary": "No environment-based configuration detected",
+          "severity": "medium"
+        }
+      ]
+    },
+    {
+      "key": "security-cve",
+      "kind": "mechanical",
+      "score": 15,
+      "max": 20,
+      "findings": [
+        {
+          "id": "CVE-2024-21907",
+          "summary": "Newtonsoft.Json 12.0.1 < 13.0.1: Improper handling of exceptional conditions; DoS via crafted data",
+          "location": "Api/LegacyShop.Api.csproj",
+          "severity": "high"
+        }
+      ]
+    },
+    {
+      "key": "dependency-eol",
+      "kind": "mechanical",
+      "score": 4,
+      "max": 10,
+      "findings": [
+        {
+          "id": "eol-netcore31",
+          "summary": ".NET Core 3.1 reached end of support 2022-12-13",
+          "location": "Api/LegacyShop.Api.csproj",
+          "severity": "high"
+        },
+        {
+          "id": "eol-angular-pre15",
+          "summary": "@angular/core 12.2.17: Angular versions below 15 are out of LTS",
+          "location": "ClientApp/package.json",
+          "severity": "high"
+        }
+      ]
+    },
+    {
+      "key": "test-coverage",
+      "kind": "mechanical",
+      "score": 0,
+      "max": 15,
+      "findings": [
+        {
+          "id": "cov-none",
+          "summary": "No coverage report found (expected cobertura XML under artifacts/coverage/)",
+          "severity": "medium"
+        }
+      ]
+    },
+    {
+      "key": "complexity",
+      "kind": "mechanical",
+      "score": 5,
+      "max": 5,
+      "findings": []
+    },
+    {
+      "key": "ocp-readiness",
+      "kind": "mechanical",
+      "score": 2,
+      "max": 10,
+      "findings": [
+        {
+          "id": "ocp-session",
+          "summary": "In-process session state blocks multi-replica hosting",
+          "severity": "high"
+        },
+        {
+          "id": "ocp-files",
+          "summary": "Local filesystem writes \u2014 pods are ephemeral",
+          "location": "Api/Controllers/OrdersController.cs",
+          "severity": "medium"
+        },
+        {
+          "id": "ocp-port",
+          "summary": "No configurable port detected (expect 8080 default via config)",
+          "severity": "low"
+        },
+        {
+          "id": "ocp-health",
+          "summary": "Health endpoints and/or forwarded-headers middleware missing",
+          "severity": "medium"
+        }
+      ]
+    },
+    {
+      "key": "qualitative",
+      "kind": "llm-judged",
+      "score": 0,
+      "max": 10,
+      "findings": [
+        {
+          "id": "qual-notrun",
+          "summary": "LLM-judged qualitative pass not run (artifacts/qualitative.json missing)",
+          "severity": "info"
+        }
+      ]
+    }
+  ]
+}

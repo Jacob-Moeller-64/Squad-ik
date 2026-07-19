@@ -1,0 +1,22 @@
+.login-panel {
+  width: 380px;
+}
+
+.form-row {
+  margin-bottom: 10px;
+}
+
+.form-row label {
+  display: inline-block;
+  width: 90px;
+  vertical-align: middle;
+}
+
+.form-row input {
+  width: 200px;
+}
+
+.submit-row {
+  margin-bottom: 0;
+  padding-left: 94px;
+}
