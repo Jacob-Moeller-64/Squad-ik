@@ -14,6 +14,16 @@ These tests assert what the code *does* — bugs included, by design (D-001).
    Gate: ≥ 70% (rubric threshold).
 4. Suite must be green against the untouched legacy code before this step closes.
 
+## Tooling
+- .NET apps: MSTest/xUnit project; run `dotnet test --collect:"XPlat Code Coverage"`
+  and place the cobertura file at `artifacts/coverage/coverage.xml` — the scorecard's
+  test-coverage dimension reads it from there.
+- Reference implementation: `reference-apps/mini-mvc5-angularjs/characterization/`
+  (14 tests pinning the PricingService quirks) with `run-characterization.sh|.ps1`
+  producing the coverage artifact. On Linux eval machines it runs against the harness's
+  behavior-identical pricing port; on Windows the same assertions belong in a test
+  project against the real C#.
+
 ## Standing rules (all later steps)
 - The suite runs inside every subsequent gate. Red suite = red gate, no exceptions.
 - The restructure steps (06/11) move tests with the code; "suite green" is part of those

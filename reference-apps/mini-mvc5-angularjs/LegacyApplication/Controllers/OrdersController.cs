@@ -47,6 +47,19 @@ namespace LegacyApplication.Controllers
             });
         }
 
+        // GET /Orders/History — protected surface for the Okta strangler steps.
+        // Unauthenticated forms-auth requests get a 302 redirect to the login URL.
+        [Authorize]
+        public JsonResult History()
+        {
+            var recent = new[]
+            {
+                new { OrderId = "a1f0", TotalCents = 49500 },
+                new { OrderId = "b2e1", TotalCents = 16400 }
+            };
+            return Json(recent, JsonRequestBehavior.AllowGet);
+        }
+
         public class OrderRequest
         {
             public List<OrderLine> Lines { get; set; }

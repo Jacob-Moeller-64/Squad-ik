@@ -11,8 +11,8 @@
     "adapter": "adapters/frontend/angularjs"
   },
   "auth": {
-    "mechanism": "none",
-    "notes": "Mini app has no auth by design; Okta steps exercise wiring, not migration of an existing scheme."
+    "mechanism": "forms-cookie",
+    "notes": "Forms auth (web.config authentication mode=Forms, .ASPXAUTH cookie, demo/demo123 test user). Protected surface: GET /Orders/History ([Authorize], 302-redirects anonymous requests). This is the legacy scheme the Okta strangler (D-004) migrates."
   },
   "build": {
     "backend": "msbuild",

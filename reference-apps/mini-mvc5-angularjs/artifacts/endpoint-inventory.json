@@ -42,6 +42,49 @@
     },
     {
       "method": "POST",
+      "path": "/Account/Login",
+      "auth": "public",
+      "goldens": [
+        {
+          "name": "valid-credentials",
+          "requestFile": "goldens/login-ok.req.json",
+          "responseFile": "goldens/login-ok.res.json",
+          "status": 200
+        },
+        {
+          "name": "invalid-credentials",
+          "requestFile": "goldens/login-bad.req.json",
+          "responseFile": "goldens/login-bad.res.json",
+          "status": 401
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/Orders/History",
+      "auth": "authenticated",
+      "goldens": [
+        {
+          "name": "with-forms-cookie",
+          "responseFile": "goldens/history-authed.res.json",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/Orders/History",
+      "auth": "public",
+      "goldens": [
+        {
+          "name": "anonymous-redirected-to-login",
+          "responseFile": "goldens/history-anon.res.json",
+          "status": 302
+        }
+      ]
+    },
+    {
+      "method": "POST",
       "path": "/Orders/Create",
       "auth": "public",
       "goldens": [

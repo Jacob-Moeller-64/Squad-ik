@@ -32,6 +32,30 @@ scorecard proving the improvement.
 6. **Pin everything per release.** Fusion MCP version, starter-kit version, scorecard
    engine, model assignments. Same kit version ⇒ same output.
 
+## Scripts: what runs where (and the Windows story)
+
+The kit's philosophy: **prompts for judgment, scripts for verification.** Every script
+maps 1:1 to a gate or engine the pipeline depends on — there is deliberately no script
+that "helps"; each one *decides* something.
+
+| Entry point (`.sh` + `.ps1` pair) | Logic lives in | Decides |
+|---|---|---|
+| `gates/validate-artifacts` | `gates/lib/validate_artifacts.py` | artifacts conform to the narrow-waist schemas |
+| `gates/verify-goldens` | `gates/lib/verify_goldens.py` | API behavior parity (type-strict golden replay) |
+| `gates/visual-diff` | `tools/visual/visual.js` (Playwright) | UI fidelity vs. baselines |
+| `gates/check-structure` | `gates/lib/check_structure.py` | Fusion three-folder conformance (per phase) |
+| `gates/run-scorecard` | `scorecard/engine/engine.py` | before/after scores + step-19 thresholds |
+| `gates/check-pins` | `gates/lib/check_pins.py` | version pins set (`.squad/pins.json`) before pinned-authority steps |
+
+**Windows/PowerShell:** every gate ships paired thin launchers — `<name>.sh` (bash) and
+`<name>.ps1` (PowerShell 7) — over a single cross-platform Python/Node implementation.
+The logic is never written twice, so the dialects cannot drift; launchers are ~10 lines
+of path resolution each. Windows developers need Python 3.11+, Node 22+, and PowerShell 7
+(`#Requires -Version 7` is enforced). The `.ps1` launchers are authored to PS7 semantics
+but have not yet been exercised on a Windows machine — first Windows run should smoke-test
+all six. You can also bypass launchers entirely and invoke the Python/Node entry points
+directly on any OS.
+
 ## Kit vs. run
 
 This repo is the **kit** (source of truth, versioned, released). Each modernization

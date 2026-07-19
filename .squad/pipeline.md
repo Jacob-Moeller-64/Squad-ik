@@ -9,7 +9,10 @@ escalate one model tier; **fan-out**: parallelism allowed inside the step.
 
 Convention: all gate scripts run from the target app's repo root; run artifacts live in
 `./artifacts` (override with `ARTIFACTS_DIR`). Gate paths below are relative to the
-stamped kit (`.squad/gates/...`).
+stamped kit (`.squad/gates/...`). Every gate ships paired launchers — `gates/<name>.sh`
+(bash) and `gates/<name>.ps1` (PowerShell 7) — over one shared Python/Node
+implementation; docs cite the `.sh` form, Windows developers use the `.ps1` twin.
+Steps 06/11/12/16 additionally require `gates/check-pins` (Fusion MCP pin set — D-006).
 
 ## Phase 0 — Intake
 
@@ -39,7 +42,7 @@ owner: QA · judgment: low · fan-out: no
 ### 04 · Characterization test generation
 owner: Analyst · judgment: high · fan-out: yes (per-module)
 - in: legacy code, pre-transformation; complexity/hotspot findings from `scorecard-before.json`
-- out: characterization suite asserting what the app *does* (bugs included, by design); branch-coverage report over Library-layer logic
+- out: characterization suite asserting what the app *does* (bugs included, by design); branch-coverage report (cobertura XML) at `artifacts/coverage/coverage.xml` — .NET apps via `dotnet test --collect:"XPlat Code Coverage"`; reference runner: `reference-apps/mini-mvc5-angularjs/run-characterization.sh|.ps1`
 - gate: suite green against untouched legacy code; branch coverage of risk-flagged logic ≥ threshold in `scorecard/rubric.md`
 - Rule: from this step on, this suite runs inside **every** subsequent gate. It may only
   be modified with an intentional-behavior-change entry in `decisions.md`.

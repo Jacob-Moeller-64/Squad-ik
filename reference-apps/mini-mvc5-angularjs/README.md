@@ -29,9 +29,27 @@ the flagship profile handles, at minimum size.
 
 ```bash
 python3 harness/serve.py --port 8123
-# app:      http://localhost:8123/
+# app:       http://localhost:8123/
 # endpoints: GET /Products/List · GET /Products/Detail/{id} · POST /Orders/Create
+#            POST /Account/Login (demo/demo123) · GET /Orders/History (forms-auth)
 ```
+
+Auth: legacy forms auth (`.ASPXAUTH` cookie). Protected goldens replay with
+`TEST_COOKIE=".ASPXAUTH=demo-ticket"`; anonymous access to `/Orders/History` goldens the
+302 login redirect. This is the legacy scheme the Okta strangler (D-004) migrates.
+
+## Characterization suite (step-04 reference)
+
+`./run-characterization.sh` (or `.ps1`) runs 14 tests pinning the PricingService quirks
+(tier boundaries, VIP-ignored-above-top-tier, integer truncation) against the harness's
+`harness/pricing.py` port, and writes the cobertura report to
+`artifacts/coverage/coverage.xml` (100% branch coverage of the pricing logic). On
+Windows, port the same assertions to MSTest/xUnit against `Services/PricingService.cs`.
+
+**Reproducing `scorecard-before.json`:** the before-score is a step-03 artifact,
+captured *before* the characterization suite exists — regenerate it with
+`artifacts/coverage/` absent (temporarily move it aside), or the kit-generated coverage
+inflates the "legacy" score.
 
 ## Eval flow (Tier 2)
 

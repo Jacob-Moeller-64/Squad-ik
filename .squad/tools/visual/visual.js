@@ -63,12 +63,20 @@ async function shoot(page, url) {
 
 async function main() {
   const { cmd, baseUrl, opts } = parseArgs(process.argv.slice(2));
-  if (!['capture', 'diff'].includes(cmd) || !baseUrl || !opts.inventory) {
-    console.error('usage: visual.js capture|diff <base-url> --inventory FILE [--out DIR] [--baselines DIR] [--threshold PCT]');
+  // Defaults follow the kit convention: run artifacts live in $ARTIFACTS_DIR (./artifacts).
+  const artifacts = process.env.ARTIFACTS_DIR || './artifacts';
+  opts.inventory = opts.inventory || path.join(artifacts, 'ui-inventory.json');
+  opts.baselines = opts.baselines || path.join(artifacts, 'baselines');
+  if (!['capture', 'diff'].includes(cmd) || !baseUrl) {
+    console.error('usage: visual.js capture|diff <base-url> [--inventory FILE] [--out DIR] [--baselines DIR] [--threshold PCT]');
     process.exit(2);
   }
+  if (!fs.existsSync(opts.inventory)) {
+    console.error(`FAIL: ${opts.inventory} missing — run step 01 first`);
+    process.exit(1);
+  }
   const inv = JSON.parse(fs.readFileSync(opts.inventory, 'utf8'));
-  const outDir = opts.out || (cmd === 'capture' ? 'baselines' : 'visual-diffs');
+  const outDir = opts.out || path.join(artifacts, cmd === 'capture' ? 'baselines' : 'visual-diffs');
   fs.mkdirSync(outDir, { recursive: true });
 
   const executablePath = findExecutable();

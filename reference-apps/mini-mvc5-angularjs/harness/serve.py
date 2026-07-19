@@ -16,6 +16,8 @@ import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+from pricing import price
+
 LEGACY = Path(__file__).resolve().parent.parent / "LegacyApplication"
 
 # Keep in sync with Data/ProductRepository.cs (PascalCase: MVC5 JsonResult casing).
@@ -28,32 +30,14 @@ PRODUCTS = [
 
 STATIC_TYPES = {".js": "application/javascript", ".css": "text/css", ".html": "text/html", ".png": "image/png"}
 
-
-def price(lines, promo_code):
-    """Port of Services/PricingService.cs — quirks preserved exactly."""
-    if not lines:
-        raise ValueError("order has no lines")
-    subtotal = 0
-    for line in lines:
-        qty = int(line.get("Quantity", line.get("quantity", 0)))
-        unit = int(line.get("UnitPriceCents", line.get("unitPriceCents", 0)))
-        if qty <= 0:
-            raise ValueError("bad quantity")
-        subtotal += qty * unit
-
-    pct = 0
-    if subtotal > 50000:
-        pct += 10
-    elif subtotal > 20000:
-        pct += 5
-    if any(int(l.get("Quantity", l.get("quantity", 0))) >= 10 for l in lines):
-        pct += 2
-    if promo_code == "VIP" and subtotal <= 50000:
-        pct += 15
-
-    discount = subtotal * pct // 100  # C# int division: truncates
-    return {"subtotalCents": subtotal, "discountPercent": pct,
-            "discountCents": discount, "totalCents": subtotal - discount}
+# Forms-auth stand-in: fixed ticket value so goldens are deterministic (TEST_COOKIE env).
+AUTH_COOKIE_NAME = ".ASPXAUTH"
+AUTH_TICKET = "demo-ticket"
+DEMO_USER = ("demo", "demo123")
+ORDER_HISTORY = [
+    {"OrderId": "a1f0", "TotalCents": 49500},
+    {"OrderId": "b2e1", "TotalCents": 16400},
+]
 
 
 def index_html():
@@ -73,12 +57,25 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _authed(self):
+        cookies = self.headers.get("Cookie", "")
+        return f"{AUTH_COOKIE_NAME}={AUTH_TICKET}" in cookies
+
     def do_GET(self):
         path = self.path.split("?")[0]
         if path in ("/", "/Home/Index"):
             return self._send(200, index_html(), "text/html")
         if path == "/Products/List":
             return self._send(200, PRODUCTS)
+        if path == "/Orders/History":
+            if not self._authed():
+                # Real MVC5 forms auth: [Authorize] redirects to the login URL.
+                self.send_response(302)
+                self.send_header("Location", f"/Account/Login?ReturnUrl={self.path}")
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return None
+            return self._send(200, ORDER_HISTORY)
         m = re.fullmatch(r"/Products/Detail/(\d+)", path)
         if m:
             product = next((p for p in PRODUCTS if p["Id"] == int(m.group(1))), None)
@@ -94,7 +91,25 @@ class Handler(BaseHTTPRequestHandler):
         return self._send(404, {"error": "not found"})
 
     def do_POST(self):
-        if self.path.split("?")[0] != "/Orders/Create":
+        path = self.path.split("?")[0]
+        if path == "/Account/Login":
+            try:
+                body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
+            except json.JSONDecodeError:
+                return self._send(400, {"error": "bad json"})
+            user = body.get("Username") or body.get("username") or ""
+            pw = body.get("Password") or body.get("password") or ""
+            if (user, pw) == DEMO_USER:
+                data = json.dumps({"ok": True, "user": "demo"}).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Set-Cookie", f"{AUTH_COOKIE_NAME}={AUTH_TICKET}; Path=/; HttpOnly")
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+                return None
+            return self._send(401, {"error": "invalid credentials"})
+        if path != "/Orders/Create":
             return self._send(404, {"error": "not found"})
         try:
             body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")

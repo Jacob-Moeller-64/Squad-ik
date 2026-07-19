@@ -32,7 +32,9 @@ exposure of API docs is an explicit per-run decision, never a default. · active
 
 **D-006** · 2026-07-19 · **Fusion MCP is the sole authority on target structure**, at the
 version pinned for the current kit release. Agents never answer `src/` layout or Fusion
-convention questions from memory. Pin: `<FUSION_MCP_VERSION — set per release>`. · active
+convention questions from memory. Pins live in `.squad/pins.json` and are enforced by
+`gates/check-pins`, which is a precondition gate for steps 06/11/12/16 — those steps
+halt until the pin is a real version, never a placeholder. · active
 
 **D-007** · 2026-07-19 · **Behavior commits and move commits never mix.** Upgrade steps
 change behavior with no file moves; restructure steps move files with no behavior
