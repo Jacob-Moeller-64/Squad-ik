@@ -1,0 +1,29 @@
+name: verify-kit
+
+# The kit's Tier-0 layer on every commit: gate/engine unit tests, artifact schema
+# validation, the mini reference app's characterization suite, harness boot, and the
+# full goldens replay — all deterministic, no LLM involvement, no model spend.
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install kit Python dependencies
+        run: pip install jsonschema coverage
+
+      # Node is preinstalled on ubuntu-latest; the visual step self-reports as
+      # skipped when .squad/tools/visual has no node_modules (browser-dependent,
+      # exercised in full eval runs rather than CI).
+
+      - name: Run kit self-test
+        run: ./verify-kit.sh
