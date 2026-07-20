@@ -1,0 +1,62 @@
+/* FieldServe corporate theme, circa 2016. Dark green, boxy, dense. No rounded
+   corners, no animations — keep it dated on purpose. */
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Arial, Helvetica, sans-serif; font-size: 13px; background: #f4f7f4; color: #22301f; }
+
+.topbar { background: #1e4d2b; color: #fff; padding: 8px 16px; border-bottom: 4px solid #143920; }
+.topbar h1 { display: inline; margin: 0 12px 0 0; font-size: 18px; font-weight: bold; letter-spacing: 1px; }
+.topbar .tagline { color: #b7cdb7; font-size: 11px; margin-right: 24px; }
+.topbar nav { display: inline; }
+.topbar nav a { color: #d8e8d8; text-decoration: underline; margin-right: 14px; font-size: 12px; }
+.topbar nav a:hover { color: #ffffff; background: #2a6b3c; }
+
+main { max-width: 960px; margin: 14px auto; padding: 0 10px; }
+.pagefoot { max-width: 960px; margin: 20px auto; padding: 6px 10px; border-top: 1px solid #b9c9b9; color: #6c7c6c; font-size: 10px; }
+
+h2 { font-size: 15px; color: #1e4d2b; border-bottom: 2px solid #1e4d2b; padding-bottom: 3px; margin: 10px 0; }
+h3 { font-size: 13px; margin: 4px 0; }
+a { color: #1e4d2b; text-decoration: underline; }
+
+.panel { border: 1px solid #9db49d; background: #ffffff; padding: 10px; margin-bottom: 12px; }
+.panel legend, .panel .panel-title { font-weight: bold; font-size: 12px; color: #1e4d2b; text-transform: uppercase; }
+
+.grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.order-card { border: 1px solid #9db49d; border-top: 3px solid #1e4d2b; background: #fff; padding: 8px; width: 226px; font-size: 12px; }
+.order-card h3 { margin-top: 0; font-size: 12px; }
+.order-card .meta { color: #5c6c5c; font-size: 11px; margin: 2px 0; }
+.order-card .prio { font-weight: bold; }
+
+.badge { display: inline-block; padding: 1px 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; border: 1px solid; }
+.badge-open       { background: #fff4d6; border-color: #a58a2d; color: #6d5a13; }
+.badge-inprogress { background: #d9e9d9; border-color: #1e4d2b; color: #1e4d2b; }
+.badge-closed     { background: #e3e3e3; border-color: #8a8a8a; color: #555555; }
+
+table.listing { border-collapse: collapse; width: 100%; background: #fff; font-size: 12px; }
+table.listing th { background: #1e4d2b; color: #fff; text-align: left; padding: 4px 8px; font-size: 11px; }
+table.listing td { border: 1px solid #b9c9b9; padding: 4px 8px; }
+table.listing tr:nth-child(even) td { background: #eef4ee; }
+
+form.stacked label, .stacked label { display: block; margin: 6px 0 2px; font-size: 11px; font-weight: bold; color: #33452f; }
+input[type=text], input[type=number], input[type=password], select { border: 1px solid #7c937c; padding: 3px 4px; font-size: 12px; font-family: Arial, Helvetica, sans-serif; background: #fff; width: 220px; }
+input[type=checkbox] { width: auto; }
+
+button { background: #1e4d2b; color: #fff; border: 1px solid #143920; padding: 4px 14px; font-size: 12px; cursor: pointer; margin-top: 8px; }
+button:hover { background: #2a6b3c; }
+button.secondary { background: #e7eee7; color: #1e4d2b; border: 1px solid #7c937c; }
+
+.state { font-style: italic; color: #5c6c5c; }
+.state.error { color: #8c1a1a; font-style: normal; font-weight: bold; background: #f7e3e3; border: 1px solid #c99; padding: 4px 8px; display: inline-block; }
+.state.ok { color: #1e4d2b; font-style: normal; font-weight: bold; }
+
+.quote-summary { margin-top: 12px; border: 2px solid #1e4d2b; background: #fff; padding: 10px; width: 320px; }
+.quote-summary table { border-collapse: collapse; width: 100%; font-size: 12px; }
+.quote-summary td { padding: 3px 6px; border-bottom: 1px dotted #b9c9b9; }
+.quote-summary td.amt { text-align: right; font-family: "Courier New", monospace; }
+.quote-summary tr.total td { border-top: 2px solid #1e4d2b; border-bottom: none; font-weight: bold; }
+
+.parts-line { margin-bottom: 4px; }
+.parts-line input { width: 120px; }
+
+.detail dl { display: grid; grid-template-columns: 110px auto; gap: 3px 14px; background: #fff; border: 1px solid #9db49d; padding: 10px; max-width: 480px; font-size: 12px; }
+.detail dt { font-weight: bold; color: #33452f; }
+.detail dd { margin: 0; }

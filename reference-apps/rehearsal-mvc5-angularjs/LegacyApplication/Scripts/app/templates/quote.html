@@ -1,0 +1,16 @@
+<h2>Invoice Quote</h2>
+<div class="panel stacked">
+  <span class="panel-title">Job parameters</span>
+  <label>Labor hours <input type="number" ng-model="laborHours"></label>
+  <label>Hourly rate (&cent;) <input type="number" ng-model="hourlyRateCents"></label>
+  <label>Parts (&cent; each)</label>
+  <div class="parts-line" ng-repeat="p in parts">
+    <input type="number" ng-model="p.cents">
+    <button type="button" class="secondary" ng-click="removePart($index)" ng-if="parts.length > 1">Remove</button>
+  </div>
+  <button type="button" class="secondary" ng-click="addPart()">Add part line</button>
+  <label>Visits <input type="number" ng-model="visits"></label>
+  <button ng-click="submit()">Get quote</button>
+  <p ng-if="error" class="state error">{{error}}</p>
+</div>
+<quote-summary result="result"></quote-summary>

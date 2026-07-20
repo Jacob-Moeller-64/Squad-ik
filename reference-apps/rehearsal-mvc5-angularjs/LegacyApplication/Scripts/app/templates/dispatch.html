@@ -1,0 +1,24 @@
+<h2>Dispatch Board</h2>
+<div class="panel stacked">
+  <span class="panel-title">Assign technician</span>
+  <label>Work order
+    <select ng-model="form.workOrderId">
+      <option value="">-- select work order --</option>
+      <option ng-repeat="o in orders" value="{{o.Id}}">{{o.Id}} &mdash; {{o.Title}}</option>
+    </select>
+  </label>
+  <label>Technician
+    <select ng-model="form.technicianId">
+      <option value="">-- select technician --</option>
+      <option ng-repeat="t in technicians" value="{{t.Id}}">{{t.Name}} ({{t.Skill}}, {{t.Region}})</option>
+    </select>
+  </label>
+  <button ng-click="assign()">Assign</button>
+  <p ng-if="error" class="state error">{{error}}</p>
+  <p ng-if="result" class="state ok">
+    Assigned {{result.WorkOrderId}} to technician #{{result.TechnicianId}}.
+    Active load is now {{result.ActiveLoad}} of 3.
+  </p>
+</div>
+<p class="state">Note: a technician carries at most 3 active jobs. Re-assigning an
+already-assigned work order simply moves it (no error).</p>

@@ -1,0 +1,14 @@
+<h2>Recent Invoices</h2>
+<p ng-if="loading" class="state">Loading&hellip;</p>
+<table class="listing" ng-if="!loading">
+  <tr>
+    <th>Invoice</th>
+    <th>Issued</th>
+    <th>Total</th>
+  </tr>
+  <tr ng-repeat="inv in invoices">
+    <td>{{inv.InvoiceId}}</td>
+    <td>{{inv.IssuedAt}}</td>
+    <td>{{inv.TotalCents | moneyCents}}</td>
+  </tr>
+</table>

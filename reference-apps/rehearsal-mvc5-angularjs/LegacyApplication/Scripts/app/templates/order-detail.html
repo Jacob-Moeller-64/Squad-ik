@@ -1,0 +1,13 @@
+<h2>Work Order Detail</h2>
+<p ng-if="loading" class="state">Loading&hellip;</p>
+<p ng-if="error" class="state error">{{error}}</p>
+<div ng-if="order" class="detail">
+  <dl>
+    <dt>Id</dt><dd>{{order.Id}}</dd>
+    <dt>Title</dt><dd>{{order.Title}}</dd>
+    <dt>Status</dt><dd><status-badge status="{{order.Status}}"></status-badge></dd>
+    <dt>Priority</dt><dd>{{order.Priority}}</dd>
+    <dt>Site</dt><dd>{{order.Site}}</dd>
+  </dl>
+  <p><a href="#!/orders">Back to work orders</a></p>
+</div>
