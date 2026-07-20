@@ -1,0 +1,59 @@
+<h2>Work Orders</h2>
+
+<div class="panel stacked">
+  <span class="panel-title">New work order</span>
+  <label>Title <input type="text" [(ngModel)]="newOrder.Title"></label>
+  <label>Priority
+    <select [(ngModel)]="newOrder.Priority">
+      @for (p of priorities; track p) {
+        <option [value]="p">{{ p }}</option>
+      }
+    </select>
+  </label>
+  <label>Contract tier
+    <select [(ngModel)]="newOrder.ContractTier">
+      @for (t of tiers; track t) {
+        <option [value]="t">{{ t }}</option>
+      }
+    </select>
+  </label>
+  <label><input type="checkbox" [(ngModel)]="newOrder.Weekend"> Weekend call-out</label>
+  <button (click)="create()">Create work order</button>
+  @if (createError) {
+    <p class="state error">{{ createError }}</p>
+  }
+  @if (created; as c) {
+    <p class="state ok">
+      Created {{ c.WorkOrderId }} &mdash; "{{ c.Title }}" ({{ c.Priority }}), due in {{ c.DueInHours }}h.
+    </p>
+  }
+</div>
+
+<div class="panel">
+  <label>Filter by status:
+    <select [(ngModel)]="statusFilter" (ngModelChange)="reload()">
+      <option value="">(all)</option>
+      @for (s of statuses; track s) {
+        <option [value]="s">{{ s }}</option>
+      }
+    </select>
+  </label>
+</div>
+
+@if (loading) {
+  <p class="state">Loading&hellip;</p>
+}
+@if (error) {
+  <p class="state error">{{ error }}</p>
+}
+@if (!loading && !error && orders.length === 0) {
+  <p class="state">No work orders match.</p>
+}
+@if (!loading && !error) {
+  <div class="grid">
+    @for (o of orders; track o.Id) {
+      <order-card [orderId]="o.Id" [title]="o.Title" [status]="o.Status"
+                  [priority]="o.Priority" [site]="o.Site"></order-card>
+    }
+  </div>
+}

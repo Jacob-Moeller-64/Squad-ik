@@ -1,0 +1,7 @@
+<div class="order-card">
+  <h3>{{ title() }}</h3>
+  <p class="meta">{{ orderId() }} &middot; {{ site() }}</p>
+  <p class="meta prio">Priority: {{ priority() }}</p>
+  <status-badge [status]="status()"></status-badge>
+  <p><a [routerLink]="['/orders', orderId()]">Open record</a></p>
+</div>

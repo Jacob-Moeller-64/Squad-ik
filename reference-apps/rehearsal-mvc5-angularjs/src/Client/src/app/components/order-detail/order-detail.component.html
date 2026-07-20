@@ -1,0 +1,19 @@
+<h2>Work Order Detail</h2>
+@if (loading) {
+  <p class="state">Loading&hellip;</p>
+}
+@if (error) {
+  <p class="state error">{{ error }}</p>
+}
+@if (order; as o) {
+  <div class="detail">
+    <dl>
+      <dt>Id</dt><dd>{{ o.Id }}</dd>
+      <dt>Title</dt><dd>{{ o.Title }}</dd>
+      <dt>Status</dt><dd><status-badge [status]="o.Status"></status-badge></dd>
+      <dt>Priority</dt><dd>{{ o.Priority }}</dd>
+      <dt>Site</dt><dd>{{ o.Site }}</dd>
+    </dl>
+    <p><a routerLink="/orders">Back to work orders</a></p>
+  </div>
+}

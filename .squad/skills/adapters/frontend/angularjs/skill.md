@@ -31,3 +31,11 @@
 - Directives with `link`-function DOM manipulation are the classification hotspots:
   usually `no-counterpart` (wrap per D-003) or a behavior-losing swap — flag them early
   in the map rather than discovering at swap time.
+
+## Learned gotchas (promoted from run history)
+- **Inter-element whitespace**: modern Angular strips whitespace between elements by
+  default (`preserveWhitespaces: false`); AngularJS-era static shells rendered those
+  newlines as visible gaps between inline elements (nav links especially). Port shell
+  components with `preserveWhitespaces: true` or the visual gate fails with a uniform
+  small diff across every route. (Found: FieldServe run, step 15 — 0.255% nav-strip
+  diff on all pages.)

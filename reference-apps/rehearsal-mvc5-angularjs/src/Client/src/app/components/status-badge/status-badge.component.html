@@ -1,0 +1,4 @@
+<span class="badge"
+      [class.badge-open]="status() === 'Open'"
+      [class.badge-inprogress]="status() === 'InProgress'"
+      [class.badge-closed]="status() === 'Closed'">{{ status() }}</span>

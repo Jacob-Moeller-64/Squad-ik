@@ -1,0 +1,20 @@
+<h2>Recent Invoices</h2>
+@if (loading) {
+  <p class="state">Loading&hellip;</p>
+}
+@if (!loading) {
+  <table class="listing">
+    <tr>
+      <th>Invoice</th>
+      <th>Issued</th>
+      <th>Total</th>
+    </tr>
+    @for (inv of invoices; track inv.InvoiceId) {
+      <tr>
+        <td>{{ inv.InvoiceId }}</td>
+        <td>{{ inv.IssuedAt }}</td>
+        <td>{{ inv.TotalCents | moneyCents }}</td>
+      </tr>
+    }
+  </table>
+}

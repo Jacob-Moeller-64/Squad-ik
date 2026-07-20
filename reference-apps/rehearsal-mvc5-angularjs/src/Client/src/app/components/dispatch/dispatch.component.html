@@ -1,0 +1,32 @@
+<h2>Dispatch Board</h2>
+<div class="panel stacked">
+  <span class="panel-title">Assign technician</span>
+  <label>Work order
+    <select [(ngModel)]="form.workOrderId">
+      <option value="">-- select work order --</option>
+      @for (o of orders; track o.Id) {
+        <option value="{{ o.Id }}">{{ o.Id }} &mdash; {{ o.Title }}</option>
+      }
+    </select>
+  </label>
+  <label>Technician
+    <select [(ngModel)]="form.technicianId">
+      <option value="">-- select technician --</option>
+      @for (t of technicians; track t.Id) {
+        <option value="{{ t.Id }}">{{ t.Name }} ({{ t.Skill }}, {{ t.Region }})</option>
+      }
+    </select>
+  </label>
+  <button (click)="assign()">Assign</button>
+  @if (error) {
+    <p class="state error">{{ error }}</p>
+  }
+  @if (result; as r) {
+    <p class="state ok">
+      Assigned {{ r.WorkOrderId }} to technician #{{ r.TechnicianId }}.
+      Active load is now {{ r.ActiveLoad }} of 3.
+    </p>
+  }
+</div>
+<p class="state">Note: a technician carries at most 3 active jobs. Re-assigning an
+already-assigned work order simply moves it (no error).</p>

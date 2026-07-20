@@ -1,0 +1,22 @@
+<h2>Invoice Quote</h2>
+<div class="panel stacked">
+  <span class="panel-title">Job parameters</span>
+  <label>Labor hours <input type="number" [(ngModel)]="laborHours"></label>
+  <label>Hourly rate (&cent;) <input type="number" [(ngModel)]="hourlyRateCents"></label>
+  <label>Parts (&cent; each)</label>
+  @for (p of parts; track $index) {
+    <div class="parts-line">
+      <input type="number" [(ngModel)]="p.cents">
+      @if (parts.length > 1) {
+        <button type="button" class="secondary" (click)="removePart($index)">Remove</button>
+      }
+    </div>
+  }
+  <button type="button" class="secondary" (click)="addPart()">Add part line</button>
+  <label>Visits <input type="number" [(ngModel)]="visits"></label>
+  <button (click)="submit()">Get quote</button>
+  @if (error) {
+    <p class="state error">{{ error }}</p>
+  }
+</div>
+<quote-summary [result]="result"></quote-summary>

@@ -1,0 +1,87 @@
+{
+  "engineVersion": "0.2.1",
+  "rubricVersion": "0.1.0",
+  "scoredAt": "2026-07-20T11:40:45+00:00",
+  "phase": "after",
+  "total": 84,
+  "dimensions": [
+    {
+      "key": "solid",
+      "kind": "mechanical",
+      "score": 15,
+      "max": 15,
+      "findings": []
+    },
+    {
+      "key": "twelve-factor",
+      "kind": "mechanical",
+      "score": 15,
+      "max": 15,
+      "findings": []
+    },
+    {
+      "key": "security-cve",
+      "kind": "mechanical",
+      "score": 20,
+      "max": 20,
+      "findings": []
+    },
+    {
+      "key": "dependency-eol",
+      "kind": "mechanical",
+      "score": 10,
+      "max": 10,
+      "findings": []
+    },
+    {
+      "key": "test-coverage",
+      "kind": "mechanical",
+      "score": 15,
+      "max": 15,
+      "findings": []
+    },
+    {
+      "key": "complexity",
+      "kind": "mechanical",
+      "score": 5,
+      "max": 5,
+      "findings": []
+    },
+    {
+      "key": "ocp-readiness",
+      "kind": "mechanical",
+      "score": 4,
+      "max": 10,
+      "findings": [
+        {
+          "id": "ocp-session",
+          "summary": "In-process session state blocks multi-replica hosting",
+          "severity": "high"
+        },
+        {
+          "id": "ocp-files",
+          "summary": "Local filesystem writes \u2014 pods are ephemeral",
+          "severity": "medium"
+        },
+        {
+          "id": "ocp-windows",
+          "summary": "Windows-only dependencies present",
+          "severity": "high"
+        }
+      ]
+    },
+    {
+      "key": "qualitative",
+      "kind": "llm-judged",
+      "score": 0,
+      "max": 10,
+      "findings": [
+        {
+          "id": "qual-notrun",
+          "summary": "LLM-judged qualitative pass not run (artifacts/qualitative.json missing)",
+          "severity": "info"
+        }
+      ]
+    }
+  ]
+}

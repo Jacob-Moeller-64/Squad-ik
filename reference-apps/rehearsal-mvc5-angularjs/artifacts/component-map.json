@@ -1,0 +1,16 @@
+{
+  "fusionMcpVersion": "stand-in (local fusion-ui design system — RD-5; shared token block byte-identical with rehearsal-netcore31-angular12)",
+  "rows": [
+    { "component": "NavComponent (shell)", "classification": "swap", "fusionCounterpart": "fu-topbar", "status": "done" },
+    { "component": "order-card", "classification": "swap", "fusionCounterpart": "fu-card", "status": "done" },
+    { "component": "status-badge", "classification": "swap", "fusionCounterpart": "fu-badge", "status": "done" },
+    { "component": "quote-summary", "classification": "swap", "fusionCounterpart": "fu-summary-panel", "status": "done" },
+    { "component": "LoginComponent", "classification": "swap", "fusionCounterpart": "fu-auth-panel", "status": "done" },
+    { "component": "OrderListComponent", "classification": "survive", "status": "done", "notes": "page shell; fu tokens" },
+    { "component": "OrderDetailComponent", "classification": "survive", "status": "done", "notes": "page shell" },
+    { "component": "DispatchComponent", "classification": "survive", "status": "done", "notes": "page shell; form.stacked tokens" },
+    { "component": "QuoteComponent", "classification": "survive", "status": "done", "notes": "page shell" },
+    { "component": "InvoicesComponent", "classification": "survive", "status": "done", "notes": "table.listing tokens" },
+    { "component": "moneyCents pipe", "classification": "survive", "status": "done", "notes": "exact port of legacy filter" }
+  ]
+}

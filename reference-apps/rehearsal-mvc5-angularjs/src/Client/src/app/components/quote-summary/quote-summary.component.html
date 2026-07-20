@@ -1,0 +1,12 @@
+@if (result(); as r) {
+  <div class="quote-summary">
+    <div class="panel-title">Quote breakdown</div>
+    <table>
+      <tr><td>Labor</td><td class="amt">{{ r.LaborCents | moneyCents }}</td></tr>
+      <tr><td>Parts</td><td class="amt">{{ r.PartsCents | moneyCents }}</td></tr>
+      <tr><td>Travel</td><td class="amt">{{ r.TravelCents | moneyCents }}</td></tr>
+      <tr><td>Tax (8%, travel exempt)</td><td class="amt">{{ r.TaxCents | moneyCents }}</td></tr>
+      <tr class="total"><td>Total</td><td class="amt">{{ r.TotalCents | moneyCents }}</td></tr>
+    </table>
+  </div>
+}
