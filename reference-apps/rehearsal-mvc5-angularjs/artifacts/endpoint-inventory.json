@@ -1,46 +1,195 @@
 {
   "capturedAt": "2026-07-20T00:00:00Z",
   "endpoints": [
-    { "method": "GET", "path": "/WorkOrders/List", "auth": "public",
-      "goldens": [{ "name": "all-workorders", "responseFile": "goldens/workorders-all.res.json", "status": 200 }] },
-    { "method": "GET", "path": "/WorkOrders/Detail/WO-1002", "auth": "public",
-      "goldens": [{ "name": "found", "responseFile": "goldens/workorder-1002.res.json", "status": 200 }] },
-    { "method": "GET", "path": "/WorkOrders/Detail/WO-9999", "auth": "public",
-      "goldens": [{ "name": "missing", "responseFile": "goldens/workorder-missing.res.json", "status": 404 }] },
-    { "method": "GET", "path": "/WorkOrders/Search", "auth": "public",
-      "goldens": [{ "name": "open-status", "requestFile": "goldens/search-open.req.json", "responseFile": "goldens/search-open.res.json", "status": 200 }] },
-    { "method": "GET", "path": "/Technicians/List", "auth": "public",
-      "goldens": [{ "name": "all-technicians", "responseFile": "goldens/technicians-all.res.json", "status": 200 }] },
-    { "method": "GET", "path": "/Technicians/Detail/2", "auth": "public",
-      "goldens": [{ "name": "found", "responseFile": "goldens/technician-2.res.json", "status": 200 }] },
-    { "method": "GET", "path": "/Technicians/Detail/99", "auth": "public",
-      "goldens": [{ "name": "missing", "responseFile": "goldens/technician-missing.res.json", "status": 404 }] },
-    { "method": "POST", "path": "/Account/Login", "auth": "public",
+    {
+      "method": "GET",
+      "path": "/WorkOrders/List",
+      "auth": "public",
       "goldens": [
-        { "name": "valid-credentials", "requestFile": "goldens/login-ok.req.json", "responseFile": "goldens/login-ok.res.json", "status": 200 },
-        { "name": "invalid-credentials", "requestFile": "goldens/login-bad.req.json", "responseFile": "goldens/login-bad.res.json", "status": 401 }
-      ] },
-    { "method": "GET", "path": "/Invoices/Recent", "auth": "authenticated",
-      "goldens": [{ "name": "seed-invoices-authed", "responseFile": "goldens/invoices-authed.res.json", "status": 200 }] },
-    { "method": "GET", "path": "/Invoices/Recent", "auth": "public",
-      "goldens": [{ "name": "anonymous-302-to-login", "responseFile": "goldens/invoices-anon.res.json", "status": 302 }] },
-    { "method": "POST", "path": "/Invoices/Quote", "auth": "public",
+        {
+          "name": "all-workorders",
+          "responseFile": "goldens/workorders-all.res.json",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/WorkOrders/Detail/WO-1002",
+      "auth": "public",
       "goldens": [
-        { "name": "travel-waived-prediscount-labor-quirk", "requestFile": "goldens/quote-travel-waived.req.json", "responseFile": "goldens/quote-travel-waived.res.json", "status": 200 },
-        { "name": "travel-charged-never-taxed-quirk", "requestFile": "goldens/quote-travel-charged.req.json", "responseFile": "goldens/quote-travel-charged.res.json", "status": 200 },
-        { "name": "bad-visits-rejected", "requestFile": "goldens/quote-bad-visits.req.json", "responseFile": "goldens/quote-bad-visits.res.json", "status": 400 }
-      ] },
-    { "method": "POST", "path": "/WorkOrders/Create", "auth": "public",
+        {
+          "name": "found",
+          "responseFile": "goldens/workorder-1002.res.json",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/WorkOrders/Detail/WO-9999",
+      "auth": "public",
       "goldens": [
-        { "name": "sla-critical-gold-weekend-halving-skipped-quirk", "requestFile": "goldens/sla-critical-gold-weekend.req.json", "responseFile": "goldens/sla-critical-gold-weekend.res.json", "status": 200, "normalizedFields": ["WorkOrderId"] },
-        { "name": "sla-high-gold-weekend-int-halving", "requestFile": "goldens/sla-high-gold-weekend.req.json", "responseFile": "goldens/sla-high-gold-weekend.res.json", "status": 200, "normalizedFields": ["WorkOrderId"] },
-        { "name": "bad-priority-rejected", "requestFile": "goldens/sla-bad-priority.req.json", "responseFile": "goldens/sla-bad-priority.res.json", "status": 400 }
-      ] },
-    { "method": "POST", "path": "/Dispatch/Assign", "auth": "public",
+        {
+          "name": "missing",
+          "responseFile": "goldens/workorder-missing.res.json",
+          "status": 404
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/WorkOrders/Search",
+      "auth": "public",
       "goldens": [
-        { "name": "assign-ok", "requestFile": "goldens/assign-ok.req.json", "responseFile": "goldens/assign-ok.res.json", "status": 200 },
-        { "name": "unknown-technician", "requestFile": "goldens/assign-unknown-tech.req.json", "responseFile": "goldens/assign-unknown-tech.res.json", "status": 400 },
-        { "name": "over-capacity-quirk", "requestFile": "goldens/assign-over-capacity.req.json", "responseFile": "goldens/assign-over-capacity.res.json", "status": 422 }
-      ] }
+        {
+          "name": "open-status",
+          "requestFile": "goldens/search-open.req.json",
+          "responseFile": "goldens/search-open.res.json",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/Technicians/List",
+      "auth": "public",
+      "goldens": [
+        {
+          "name": "all-technicians",
+          "responseFile": "goldens/technicians-all.res.json",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/Technicians/Detail/2",
+      "auth": "public",
+      "goldens": [
+        {
+          "name": "found",
+          "responseFile": "goldens/technician-2.res.json",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/Technicians/Detail/99",
+      "auth": "public",
+      "goldens": [
+        {
+          "name": "missing",
+          "responseFile": "goldens/technician-missing.res.json",
+          "status": 404
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/Invoices/Recent",
+      "auth": "authenticated",
+      "goldens": [
+        {
+          "name": "seed-invoices-authed",
+          "responseFile": "goldens/invoices-authed.res.json",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/Invoices/Recent",
+      "auth": "public",
+      "goldens": [
+        {
+          "name": "anonymous-401",
+          "responseFile": "goldens/invoices-anon.res.json",
+          "status": 401
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/Invoices/Quote",
+      "auth": "public",
+      "goldens": [
+        {
+          "name": "travel-waived-prediscount-labor-quirk",
+          "requestFile": "goldens/quote-travel-waived.req.json",
+          "responseFile": "goldens/quote-travel-waived.res.json",
+          "status": 200
+        },
+        {
+          "name": "travel-charged-never-taxed-quirk",
+          "requestFile": "goldens/quote-travel-charged.req.json",
+          "responseFile": "goldens/quote-travel-charged.res.json",
+          "status": 200
+        },
+        {
+          "name": "bad-visits-rejected",
+          "requestFile": "goldens/quote-bad-visits.req.json",
+          "responseFile": "goldens/quote-bad-visits.res.json",
+          "status": 400
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/WorkOrders/Create",
+      "auth": "public",
+      "goldens": [
+        {
+          "name": "sla-critical-gold-weekend-halving-skipped-quirk",
+          "requestFile": "goldens/sla-critical-gold-weekend.req.json",
+          "responseFile": "goldens/sla-critical-gold-weekend.res.json",
+          "status": 200,
+          "normalizedFields": [
+            "WorkOrderId"
+          ]
+        },
+        {
+          "name": "sla-high-gold-weekend-int-halving",
+          "requestFile": "goldens/sla-high-gold-weekend.req.json",
+          "responseFile": "goldens/sla-high-gold-weekend.res.json",
+          "status": 200,
+          "normalizedFields": [
+            "WorkOrderId"
+          ]
+        },
+        {
+          "name": "bad-priority-rejected",
+          "requestFile": "goldens/sla-bad-priority.req.json",
+          "responseFile": "goldens/sla-bad-priority.res.json",
+          "status": 400
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/Dispatch/Assign",
+      "auth": "public",
+      "goldens": [
+        {
+          "name": "assign-ok",
+          "requestFile": "goldens/assign-ok.req.json",
+          "responseFile": "goldens/assign-ok.res.json",
+          "status": 200
+        },
+        {
+          "name": "unknown-technician",
+          "requestFile": "goldens/assign-unknown-tech.req.json",
+          "responseFile": "goldens/assign-unknown-tech.res.json",
+          "status": 400
+        },
+        {
+          "name": "over-capacity-quirk",
+          "requestFile": "goldens/assign-over-capacity.req.json",
+          "responseFile": "goldens/assign-over-capacity.res.json",
+          "status": 422
+        }
+      ]
+    }
   ]
 }

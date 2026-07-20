@@ -1,0 +1,11 @@
+/home/user/Squad-ik/reference-apps/rehearsal-mvc5-angularjs/src/Library/bin/Debug/net10.0/FieldServe.Library.deps.json
+/home/user/Squad-ik/reference-apps/rehearsal-mvc5-angularjs/src/Library/bin/Debug/net10.0/FieldServe.Library.dll
+/home/user/Squad-ik/reference-apps/rehearsal-mvc5-angularjs/src/Library/bin/Debug/net10.0/FieldServe.Library.pdb
+/home/user/Squad-ik/reference-apps/rehearsal-mvc5-angularjs/src/Library/obj/Debug/net10.0/FieldServe.Library.GeneratedMSBuildEditorConfig.editorconfig
+/home/user/Squad-ik/reference-apps/rehearsal-mvc5-angularjs/src/Library/obj/Debug/net10.0/FieldServe.Library.AssemblyInfoInputs.cache
+/home/user/Squad-ik/reference-apps/rehearsal-mvc5-angularjs/src/Library/obj/Debug/net10.0/FieldServe.Library.AssemblyInfo.cs
+/home/user/Squad-ik/reference-apps/rehearsal-mvc5-angularjs/src/Library/obj/Debug/net10.0/FieldServe.Library.csproj.CoreCompileInputs.cache
+/home/user/Squad-ik/reference-apps/rehearsal-mvc5-angularjs/src/Library/obj/Debug/net10.0/FieldServe.Library.dll
+/home/user/Squad-ik/reference-apps/rehearsal-mvc5-angularjs/src/Library/obj/Debug/net10.0/refint/FieldServe.Library.dll
+/home/user/Squad-ik/reference-apps/rehearsal-mvc5-angularjs/src/Library/obj/Debug/net10.0/FieldServe.Library.pdb
+/home/user/Squad-ik/reference-apps/rehearsal-mvc5-angularjs/src/Library/obj/Debug/net10.0/ref/FieldServe.Library.dll
