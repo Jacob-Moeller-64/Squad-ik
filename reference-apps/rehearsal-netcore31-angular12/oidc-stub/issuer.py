@@ -23,7 +23,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 
 KEY_FILE = Path(__file__).parent / "issuer-key.pem"
 KID = "rehearsal-key-1"
-AUDIENCE = "legacyshop"
+AUDIENCE = "legacyshop"  # overridden by --audience
 
 
 def load_key():
@@ -137,7 +137,9 @@ def main():
     global ISSUER
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=8321)
+    ap.add_argument("--audience", default="legacyshop")
     args = ap.parse_args()
+    globals()["AUDIENCE"] = args.audience
     ISSUER = f"http://127.0.0.1:{args.port}"
     print(f"OIDC stand-in issuer on {ISSUER}")
     ThreadingHTTPServer(("127.0.0.1", args.port), Handler).serve_forever()
