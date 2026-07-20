@@ -1,0 +1,26 @@
+{
+  "appName": "rehearsal-mvc5-angularjs (FieldServe)",
+  "backend": {
+    "flavor": "mvc5",
+    "version": "ASP.NET MVC 5.2.3 on .NET Framework 4.8 (Global.asax/App_Start era); Windows-only — executed via the behavior-identical Python harness on Linux (mini-app precedent)",
+    "adapter": "adapters/backend/mvc5"
+  },
+  "frontend": {
+    "flavor": "angularjs",
+    "version": "AngularJS 1.8.2 (vendored script tags, no build system)",
+    "adapter": "adapters/frontend/angularjs"
+  },
+  "auth": {
+    "mechanism": "forms-cookie",
+    "notes": "Forms auth (.FSAUTH stand-in cookie, demo/demo123); anonymous protected calls get MVC5's 302 redirect to /Account/Login. Protected surface: GET /Invoices/Recent. Okta strangler target (D-004). JSON contract is PascalCase (MVC5 JsonResult) — the modern port must preserve casing."
+  },
+  "build": {
+    "backend": "msbuild (Windows); harness stand-in on Linux",
+    "frontend": "none (script tags, vendored angular 1.8.2)"
+  },
+  "hazards": {
+    "inProcSessionState": true,
+    "localFileWrites": ["Controllers/WorkOrdersController.cs: File.AppendAllText(Server.MapPath(~/App_Data/dispatch.log))"],
+    "windowsDependencies": ["System.Web / IIS hosting (MVC5 platform itself)"]
+  }
+}

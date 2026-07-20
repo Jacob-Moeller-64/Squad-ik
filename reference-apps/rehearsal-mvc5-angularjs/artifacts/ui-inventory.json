@@ -1,0 +1,18 @@
+{
+  "capturedAt": "2026-07-20T00:00:00Z",
+  "routes": [
+    { "path": "/#!/orders", "auth": "public", "states": ["loaded"] },
+    { "path": "/#!/orders/WO-1002", "auth": "public", "states": ["loaded"] },
+    { "path": "/#!/dispatch", "auth": "public", "states": ["empty"] },
+    { "path": "/#!/quote", "auth": "public", "states": ["empty"] },
+    { "path": "/#!/invoices", "auth": "protected", "states": ["unauthenticated-redirect"] },
+    { "path": "/#!/login", "auth": "public", "states": ["empty"] }
+  ],
+  "components": [
+    { "name": "orderCard", "sourcePath": "Scripts/app/components.js", "usageSites": ["templates/order-list.html"], "propsOrBindings": ["@ Id/Title/Status/Priority/Site"], "variants": ["open", "in-progress", "closed", "link-fn DOM manipulation"] },
+    { "name": "statusBadge", "sourcePath": "Scripts/app/components.js", "usageSites": ["order-list", "order-detail"], "propsOrBindings": ["@ status"], "variants": ["Open", "InProgress", "Closed"] },
+    { "name": "quoteSummary", "sourcePath": "Scripts/app/components.js", "usageSites": ["templates/quote.html"], "propsOrBindings": ["result (one-way)"], "variants": ["hidden", "shown"] },
+    { "name": "appNav (shell)", "sourcePath": "Views/Home/Index.cshtml", "usageSites": ["shell"], "propsOrBindings": ["auth state"], "variants": ["logged-out", "logged-in"] },
+    { "name": "moneyCents filter", "sourcePath": "Scripts/app/filters.js", "usageSites": ["quote", "invoices", "order pages"], "propsOrBindings": ["cents -> $"], "variants": [] }
+  ]
+}
