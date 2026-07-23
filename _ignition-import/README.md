@@ -11,6 +11,7 @@ references, not values).
 | File | Phase/Step | Status |
 |---|---|---|
 | `prompts/01-P1-workstation-readiness.prompt.md` | P1 Discovery, Step 1 | transcribed from 2 photos |
+| `prompts/02-P1-rename-starter-to-appname.prompt.md` | P1 Discovery, Step 2 | transcribed from 3 photos |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -31,6 +32,34 @@ references, not values).
   (npm, https://localhost:5001). Docs under `/.modernization/.readme/`
   (Prerequisites.md, HowToRun.md). Package source: Sonatype (env creds + .npmrc/NuGet
   source checks). "Fusion G1" identifies a legacy Fusion generation.
+
+## Structural facts added by prompt 02
+
+- **The real Fusion Starter Kit layout** (corrects the reference kit's assumed
+  `src/{Library,API,Client}`): `src/<App>.Library`, `src/<App>.Web.Api`,
+  `src/<App>.Web.Client` — PascalCase backend naming, client as an `.esproj`
+  (JS project system), scaffolded from `Starter.*` templates that Step 2 relabels.
+- **Client baseline policy**: Angular even-major baseline, currently **Angular 20**.
+- **Fusion specifics**: `AppInfo.xml` per project; `appsettings.json` Fusion keys
+  (`Fusion.DataDirectory.PathBase`, `Fusion.Web.Api.OpenApi.Title`,
+  `Fusion.Web.Client.Config.ApplicationName`); `<fusion-header label>` component;
+  per-environment `fusion.config.*.ts` (e.g. `.dvl`) carrying Fusion OAuth hostnames
+  that MUST NOT change during identity rename (later auth step owns them).
+- **Run params**: `/.modernization/.readme/kit-params.md` holds `appName`;
+  `.StepSummary.md` is a per-run human-readable step log; toolkit self-edits governed
+  by `/.github/instructions/kit-update.instructions.md`.
+- **Dual-surface completion model** (step 2): `physicalRenameStatus` +
+  `referenceRewriteStatus` must both pass or the step reports `Blocked` — a
+  two-column done-definition, not a single flag.
+- Step ids observed: `step:1fc2ba`, `step:261769`.
+
+## Transcription uncertainties (prompt 02)
+
+- Frontmatter `name:` line hidden behind the wrapped description in the photo;
+  reconstructed from the visible filename.
+- Line 6 in the tools list shows a "Configure Tools…" UI affordance, not file content.
+- `npm run install` (Required Edits #6) transcribed as shown — possibly `npm install`
+  in source; flagged rather than corrected.
 
 ## Transcription uncertainties (prompt 01)
 
