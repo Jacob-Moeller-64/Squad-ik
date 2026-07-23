@@ -13,6 +13,7 @@ references, not values).
 | `prompts/01-P1-workstation-readiness.prompt.md` | P1 Discovery, Step 1 | transcribed from 2 photos |
 | `prompts/02-P1-rename-starter-to-appname.prompt.md` | P1 Discovery, Step 2 | transcribed from 3 photos |
 | `prompts/03-P1-legacy-system-analysis.prompt.md` | P1 Discovery, Step 3 | transcribed from 6 photos |
+| `prompts/04-P1-baseline-acceptance-criteria-review.prompt.md` | P1 Discovery, Step 4 | transcribed from 4 photos |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -119,6 +120,73 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by prompt 04
+
+- **This is the Ignition scorecard step** (maps to Squad-ik's steps 03/19 scorecard
+  machinery): a hybrid review with a deterministic layer and an AI-judgment layer, scored
+  by closure formula `100 - (CRITICAL x 10) - (HIGH x 5) - (MEDIUM x 2)`.
+- **"Dominion"** is the compliance/acceptance-criteria framework name ("Dominion
+  compliance evidence", "Dominion criteria", "Dominion requirements").
+- **Deterministic pattern catalog with stable IDs**: A1.x CRITICAL (-10 each, 5 patterns:
+  hardcoded creds, SQL injection, tokens in localStorage, unsanitized innerHTML, sensitive
+  data in logs), A2.x HIGH (-5 each, 18 patterns incl. FormsAuthentication, .Result/.Wait
+  blocking, new HttpClient(), Session state, jQuery-in-Angular), A3.x MEDIUM (-2 each,
+  13 patterns incl. missing OnPush, subscribe-without-unsubscribe, UseSwagger without dev
+  check, verb-based URLs). Each row is Pattern + "What It Looks Like" example.
+- **AI-judgment criteria with IDs**: B1 SOLID (5), B2 Security (4), B3 12-Factor (5),
+  B4 API design (2, controllers only), B5 Angular (3, .ts/.html only) — plus file-level
+  thresholds (class >500 lines HIGH, ctor >7 params HIGH, interface >15 methods HIGH)
+  and an explicit "NOT violations" skip-list (DTO `new`, `static readonly`, IMemoryCache,
+  `new` in tests).
+- **Per-criterion scoring is data-driven**: criteria load from a versioned
+  `acceptance-criteria-catalog.json`, each criterion gets `criterionId`/`baselineScore`
+  (0..100)/`observedEvidencePaths[]`/`findingIdsContributing[]`/`confidence` in
+  `baseline-review.json`; Step 5 plans remediation order from it and **Step 17 computes
+  per-criterion `improvementDelta`** (baseline vs modern) — same before/after delta idea
+  as Squad-ik's delta-report. Explicitly framework-generic (MVC, Razor Pages, Web Forms,
+  Blazor, AngularJS, Angular, React, Vue, server-rendered HTML).
+- **AI-judgment artifact with guardrails**: design-level criteria the scanner can't decide
+  (SOLID SRP/OCP/LSP/ISP, stateless posture) surface as `UNKNOWN` unless an evidence-backed
+  `judgments[]` artifact (`baseline-criterion-judgments.json`; Final phase uses
+  `final-criterion-judgments.json`) resolves them. Guardrails: status must be
+  PASS/FAIL/PARTIAL with >=1 cited `path:line - reason`; inferred-without-evidence is
+  disallowed; deterministic rows are never overridden ("hard findings always outrank AI
+  reasoning"); undecidable -> `PARTIAL` with reason, never a guessed clean result.
+- **Step 4 three-axis status model**: `criterionCoverageStatus`
+  (DecisionGrade|BroadButIncomplete|Blocked), `blockingGapStatus`
+  (None|Present|BlockedByMissingEvidence), `planningInputStatus`
+  (ReadyForStep5|NeedsFollowUp|Blocked). Step 4 is "incomplete" until findings are ranked
+  into exact Step 5 planning inputs — evidence alone isn't done.
+- **Cross-step courtesy rule**: `rename-verification.json` (Step 2-owned) unresolved items
+  do NOT hard-block Step 4 when Step 2 is recorded complete in step-workflow-state.json —
+  treated as informational. Steps don't re-litigate other steps' gates.
+- **Model tier**: Balanced (medium thinking), 10-20 min; **no `model:` pin in this
+  prompt's frontmatter** (unlike prompt 03's Opus pin) — pins appear only on the heavy
+  reasoning steps.
+- **Chunked review protocol**: process manifest files in chunks of 10-15, save progress
+  after each chunk, require 100% file coverage verified by
+  `P2-Modernize/verify-coverage.ps1` before `04-P1-generate-report.ps1 -Phase Baseline`
+  refreshes `BASELINE-COMPLIANCE-REPORT.json` (portal). Fixed completion phrase:
+  "BASELINE REVIEW COMPLETE".
+
+## Transcription uncertainties (prompt 04)
+
+- Two artifact roots appear for the same file: header block says **Output:**
+  `.modernization/ignition-artifacts/discovery/baseline-review.json`, while the closure
+  contract saves chunks to `.modernization/artifacts/reviews/baseline-review.json` (and
+  the judgment artifact lives under `.modernization/artifacts/reviews/`). Transcribed
+  exactly as photographed — possibly a source inconsistency or an intentional
+  staging-vs-final split.
+- The Per-Criterion Baseline Score section visibly uses **double backticks** around
+  identifiers (e.g. ``criterionId``) unlike single backticks elsewhere; preserved as
+  shown.
+- `A2.6 async void` example shows a trailing space inside the backticks (`async void `);
+  preserved.
+- Long wrapped lines (status model, artifact contract, AI-judgment guardrails, closing
+  bullet) reconstructed from wrap positions; wording verified across photo overlaps at
+  lines 55-62, 112-118, and 157-175.
+- File ends ~line 207 with trailing blank lines to 211 in the editor.
 
 ## Transcription uncertainties (prompt 03)
 
