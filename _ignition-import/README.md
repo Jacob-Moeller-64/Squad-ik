@@ -14,6 +14,7 @@ references, not values).
 | `prompts/02-P1-rename-starter-to-appname.prompt.md` | P1 Discovery, Step 2 | transcribed from 3 photos |
 | `prompts/03-P1-legacy-system-analysis.prompt.md` | P1 Discovery, Step 3 | transcribed from 6 photos |
 | `prompts/04-P1-baseline-acceptance-criteria-review.prompt.md` | P1 Discovery, Step 4 | transcribed from 4 photos |
+| `prompts/05-P1-modernization-solution-design.prompt.md` | P1 Discovery, Step 5 | transcribed from 7 photos; 2 values redacted (see below) |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -120,6 +121,95 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by prompt 05
+
+- **Step 5 is the plan-closure gate** ("last major planning gate before implementation"):
+  thirteen mandatory plan families — API Integration, Auth Integration, Test-Hook/Playwright,
+  Data Fixture & Seeding, Performance Budget, Accessibility Audit, State Management,
+  Realtime & Push, Logging & Telemetry, Environment Config, Cutover & Rollback,
+  Test Isolation & Flake Budget, Localization — each recorded as a named plan array in
+  `fusion-restructure/decisions.json`, each with the same drift-control rule: *"a Phase 2
+  step that discovers a gap is a Step 5 planning gap and must route back here."*
+- **Dominion confirmed as the acceptance-standard**: authoritative file is
+  `/.github/skills/dominion-requirements/AppMod-Acceptance-Criteria.md` (fail-fast if
+  missing). Fusion is the default target outcome; MVC/Razor/AngularJS/Angular are "source
+  patterns or temporary bridges, not the target-state goal by default."
+- **Three-axis Step 5 readiness**: `ownershipDecisionStatus`
+  (DecisionGrade|NeedsFollowUp|Blocked), `userInputGateStatus`
+  (Cleared|Outstanding|Blocked), `executionReadinessStatus`
+  (ReadyForQualityDesign|NotReadyForQualityDesign|UserInputRequired|BlockedMissingArtifact) —
+  with `UserInputRequired` (artifacts fine, human gates open) explicitly distinguished from
+  `BlockedMissingArtifact` (upstream artifacts missing/stale).
+- **Named markdown reports are canonical, JSON is companion**: Step 5 must produce
+  `Modernization-Solution-Design.md`, `Modernization-Execution-Contract.md`, and
+  `Modernization-Phase-Assessment.md` (read downstream by exact path; the Phase-Assessment
+  must state a Step 8 disposition of `Skip`|`ValidateOnly`|`Execute`) plus three DEV-owned
+  control-plane JSONs under portal data. Anti-hallucination contract: every control-plane
+  JSON needs non-empty `reportId` + `title` so the shared verifier can reject "a truncated
+  or hallucinated fragment"; field contracts live under **`.github/contracts/schemas/`**
+  (new kit directory).
+- **Immutable-baseline contract**: after Step 3, AI may write under `LegacyCode/` ONLY in
+  `LegacyCode/<LegacyTestProject>/Characterization/Baseline`; all other legacy-tree writes
+  (and any generated JSON/reports/portal pages) are forbidden — same principle as
+  Squad-ik's read-only LegacyApplication/ rule. Step 7 upgrade workspace root:
+  `.modernization/OpXUtil/Backup/LegacyCode_NET<major>_Upgrade`.
+- **Code Quality Standards section** Steps 7-18 enforce (and Step 24 Technical Review
+  verifies — confirming the 24-step count): .NET (nullable everywhere, no
+  .Result/.Wait/GetAwaiter, ctor DI, methods <50 lines / classes <500,
+  IFusionLogger/IFusionHttpClientFactory/IFusionCache, [Authorize] on all controllers),
+  Angular (standalone components only, signals, @if/@for/@switch, inject()), a11y
+  (aria-label, data-testid on all testables, landmarks, full keyboard), tests (backend
+  >80% on Library, POM class per route + Gherkin per journey,
+  MethodName_Scenario_ExpectedResult).
+- **Wrapper capability vocabulary**: each `requiresWrapperCapability` gets
+  `ShipFromDayOne`|`ExtendAtStep15`|`ExtendAtStep17Preflight`|`IntentionallyDeferred`;
+  wrappers fronting generic Fusion primitives need permissive `options:
+  Record<string, unknown>`; form-field wrappers need `readOnly`+`disabled` with derived
+  `controlDisabled`; every wrapper passes through `elementId`+`testId` so `<label for>`
+  and Playwright selectors survive the swap.
+- **Carry-forward disposition vocabulary**: every material Step 3/4 item must end as
+  `ResolvedByPlanningDecision`|`UserInputGate`|`OwnedByModernizationQualityDesign`|
+  `OwnedByLaterStep`|`Blocked` — "do not report ready by feel."
+- **Auth plan machinery**: legacy `Web.config` is authoritative for auth detection
+  (`authentication mode="Windows"`, `AppletSecurity.SarRoleMapping` auto-populate
+  kit-params); Okta issuer + default client id are pinned kit-wide (values redacted here);
+  connection-string runtime intake uses shorthand `OCPEnv` (default OpenShift/K8s split
+  env vars) | `LocalIntegrated`/`OpEx` (local Windows integrated) | `OpX` (operator
+  deferral, tracked-not-blocking) | concrete config-file ref/connection string.
+- **`No QA` run mode**: the exact phrase `No QA` in a request skips the mapped QA workflow
+  for the run (noted as operator-requested) — the control-plane JSONs exist specifically
+  so `No QA` runs still work.
+- **Fixed response spine**: 12 ordered sections, a closing `User Input Required` block
+  (`Required now` / `Optional` / `Auto-detected from legacy config` / `Operator
+  deferrals`), and one explicit final line `Ready for Modernization Quality Design: Yes
+  or No`.
+- Frontmatter gains an `edit` tool entry (first Discovery prompt that writes artifacts);
+  **no `model:` pin despite Premium reasoning tier** — so pins are not simply
+  tier-correlated.
+
+## Redactions (prompt 05 — deliberate, not uncertainties)
+
+- Line ~138: the real Okta tenant URL pinned as `oktaIssuerOverride` is replaced with
+  `https://<company-tenant>.okta.com` and an inline `REDACTED` comment.
+- Line ~139: the concrete default Okta client ID (`0oa1…`) is replaced with
+  `<default-okta-client-id>` and an inline `REDACTED` comment.
+- Rationale: standing repo policy — no real Okta tenant hostnames or IDs in this repo.
+  The work-side original pins the real values; restore them there, never here.
+
+## Transcription uncertainties (prompt 05)
+
+- Frontmatter tools list ends with a bare `- edit` (prompt 02 used `edit/editFiles`);
+  transcribed as photographed.
+- Double-backtick identifier styling appears from the Data Fixture section onward (mixed
+  with single backticks earlier); preserved as shown.
+- The `wrapperCapabilityPlan[]` bullet shows the decisions.json path without backticks,
+  unlike sibling bullets; preserved as shown.
+- "Step 5 closes from its own planning artifacts…" joined to the Dev-work bullet based on
+  indentation in the photo.
+- Long wrapped lines reconstructed from wrap positions; wording verified across photo
+  overlaps at lines 14-59, 57-62, 98-108, 143-150, 189-199, and 236-246.
+- File ends ~line 288 in the editor.
 
 ## Structural facts added by prompt 04
 
