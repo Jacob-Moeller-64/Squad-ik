@@ -16,6 +16,7 @@ references, not values).
 | `prompts/04-P1-baseline-acceptance-criteria-review.prompt.md` | P1 Discovery, Step 4 | transcribed from 4 photos |
 | `prompts/05-P1-modernization-solution-design.prompt.md` | P1 Discovery, Step 5 | transcribed from 7 photos; 2 values redacted (see below) |
 | `prompts/06-P1-modernization-quality-design.prompt.md` | P1 Discovery, Step 6 | transcribed from 13 photos |
+| `prompts/07-P2-backend-upgrade-dotnet.prompt.md` | P2 Modernize, Step 7 DEV | transcribed from 7 photos |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -122,6 +123,78 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by prompt 07
+
+- **First Phase 2 prompt; new per-lane agent**: `agent: OpX-dotnet-upgrade` (not the
+  Discovery agent) — confirming agents are per-workstream. Frontmatter uses a third
+  style: inline `tools: [...]` array. Balanced tier, 15-30 min; no model pin.
+- **DEV/QA prompt pairing**: every Phase 2 step has a QA twin (`07-QA-backend-upgrade-dotnet`,
+  invocable as `/07-QA-backend-upgrade-dotnet`). DEV ends with a numbered-choice menu
+  (`QA` recommended / `next` / `stop`) plus per-lane QA preview (HTTP verify, Screenshot,
+  Legacy characterization, Modern characterization, Coverage gap assessment, Legacy
+  frontend compatibility, Evidence refresh) and an ETA. Closeout must list every
+  created/modified file as workspace-relative markdown links.
+- **Dual execution modes** declared from host topology: `RunnableRuntime` (full runtime
+  proof required) vs `ConstrainedLegacyHost` (classic System.Web/MVC/WebForms that cannot
+  truthfully run as net10 in-place → build + invariant + handoff evidence instead, with
+  runtime marked `N/A`, not `Blocked`) — a "truthful constraint" pattern that avoids
+  false-red gates without softening them.
+- **"Build-green is NOT done" doctrine** with layered runtime proof: infrastructure probe
+  (OpenAPI → Swagger JSON → Swagger UI → root, with curl retry flags) → **deep API probe**
+  (authenticated real controller route; anonymous 401/403 is explicitly *inconclusive*;
+  capture the body, never `-o NUL`; a 500's `InnerMessage` naming DB/TLS/login is a REAL
+  upgrade regression, not environmental) → **loaded-vs-compiled invariant re-check** on
+  the run/publish folder → **loader-exception log scan** (MissingMethodException etc. is
+  a hard failure even with healthy HTTP status — "the app's own error handling can remap
+  a fatal loader fault to an ordinary status") → **readiness gate 8a** (cross-origin CORS
+  test from the planned Angular port, middleware source-reading, fix/rebuild/retest loop,
+  `readinessVerification` block recorded in the step ledger).
+- **`verify-upgrade-invariants.ps1`** — new shared gate: single-version package invariant
+  across the whole closure (catches split-version/diamond breaks a green build hides),
+  with `-PublishDir` mode for shipped-vs-compiled cross-check; test projects classified
+  separately (report, don't block).
+- **Mutable workspace discipline**: work ONLY in `step7UpgradeWorkspaceRoot`
+  (`.modernization/OpXUtil/Backup/LegacyCode_NET<major>_Upgrade`), never repo `src/`
+  (gate-only input, reminder-only baseline check) and never `LegacyCode/`; workspace
+  self-heals by copying the whole legacy solution from `authoritativeLegacyRoot`;
+  contract values are advisory and path-verified ("never treat a value read from the
+  contract as ground truth"). Port defaults 5100/5200; 4200/5001 reserved for the
+  modernized src app. Port clearing requires PID ownership validation before
+  force-stopping.
+- **Project taxonomy**: `Direct` (can move fully to target runtime now) vs `BlockedHost`
+  (legacy ASP.NET host started via IIS Express `/clr:v4.0` instead); copied test
+  projects are carry-forward context only (Step 8 owns test upgrades).
+- **Battle-scar package rules** (mirrors our rehearsal findings): SqlClient 4.0+
+  `Encrypt` default flip → `TrustServerCertificate=True` (full failure narrative,
+  "a build never reveals this"); EF Core version-matching (3.x on .NET 10 "will compile
+  but crash at runtime"); `SqlFunctionExpression.Create` removal →
+  `HasDbFunction().HasTranslation()`; EF internals reflection → `ToQueryString()`;
+  SPA middleware removal (SpaServices deprecated .NET 7/removed 8+); NETSDK1152
+  duplicate-appsettings publish break; NU1102/NU1107/NU1202 zero-tolerance after
+  package moves; "move package majors atomically across the entire closure".
+- **State save/readback contract**: `step-workflow-state.json` requires populated
+  TOP-LEVEL `status`/`updatedAt`/`latestFullResponse` plus `lastExecutedStep`,
+  `recommendedNextStep`, and a `stepResponses.steps[]` entry ("a nested step status
+  alone is NOT enough"); `step-response-ledger.json` mirrors it; closeout blocked until
+  `verify-step-artifacts.ps1 -Step 7 -Mode Output` returns OK.
+- **Completion bar** lists explicit truths incl. "`LegacyCode/` was not modified" and a
+  scripted blocked-message ("The Step 7 mutable workspace was created but the .NET
+  upgrade did not complete successfully. Re-run Step 7 before Step 8.").
+
+## Transcription uncertainties (prompt 07)
+
+- The Required final report list shows a duplicated ordinal in the photo (test
+  carry-forward note and build result both read as item "4."), consistent with markdown
+  auto-numbering hiding a source-side duplication; preserved as photographed.
+- Two references to the single-version invariant say "Execution order step 6" while the
+  invariant actually lives under Execution order item 7 (clean build); preserved as-is —
+  likely stale numbering after the step-0 reminder was inserted.
+- Self-Check block wording reconstructed to the standard two-bullet form seen in prompts
+  01-06 (photo wraps obscure some mid-line text).
+- Long wrapped lines reconstructed; overlaps verified at 47-54, 100-107, 134-147,
+  192-199, 241-249, and 267-299.
+- File ends at line 305.
 
 ## Structural facts added by prompt 06
 
