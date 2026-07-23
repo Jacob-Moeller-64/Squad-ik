@@ -15,6 +15,7 @@ references, not values).
 | `prompts/03-P1-legacy-system-analysis.prompt.md` | P1 Discovery, Step 3 | transcribed from 6 photos |
 | `prompts/04-P1-baseline-acceptance-criteria-review.prompt.md` | P1 Discovery, Step 4 | transcribed from 4 photos |
 | `prompts/05-P1-modernization-solution-design.prompt.md` | P1 Discovery, Step 5 | transcribed from 7 photos; 2 values redacted (see below) |
+| `prompts/06-P1-modernization-quality-design.prompt.md` | P1 Discovery, Step 6 | transcribed from 13 photos |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -121,6 +122,112 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by prompt 06
+
+- **Step 6 = QA planning pack owner** (extracted from a previously overloaded Step 5):
+  owns requirements doc, test plan, testing ownership matrix, characterization ladder,
+  testcase catalog direction, testing strategy, regression plan, risk matrix, tool
+  rationale, ADO CI/CD planning. Preceded by a **Legacy Unit Test Baseline pre-gate**
+  (`legacy-unit-test-baseline.prompt.md`, a sub-prompt invoked from inside Step 6) that
+  must report `step7ReadinessStatus: Ready` before quality design runs.
+- **A QA prompt stack exists** under `.github/prompts/qaTestPrompts/` read in exact order:
+  qa-core-master, qa-core-contract, qa-core-workflows, qa-plan-strategy,
+  qa-legacy-characterization. Named reusable workflows: `[WORKFLOW] Modernization
+  Solution Design`, `[WORKFLOW] Modern Build Planned QA Tests`.
+- **owningStep routing table**: characterization → Step 7 (tests live in
+  `LegacyCode/Characterization/Baseline/` — "the frozen baseline ships with the code it
+  protects"); unit → Step 8 (`tests/backend/unit/`); integration/contract → Step 9
+  (`tests/backend/contractApi|integrationBackend/`); browser-contract/e2e → Steps 10-16
+  (`tests/frontend/`).
+- **"Phase 2 has no derivation authority"**: the testcase catalog is the work order;
+  Steps 7-17 implement entries verbatim, never analyze legacy code or add unplanned
+  tests. Gap discovered mid-phase → stop → route back to Step 3/6 → refresh catalog →
+  resume. Same drift-control philosophy as Squad-ik gates, applied to test planning.
+- **Characterization = behavioral parity, not source-shape lock**: 7 backend behavior
+  families (business rules, calculations, validation, API responses incl. every
+  documented error path, DB side effects, legacy quirks "weird but load-bearing",
+  permission behavior), each needing **three coordinated catalog entries**
+  (characterization/unit/integration) unless a thin seam collapses to
+  `coverageLevel: "single-layer"`. Frontend behavior is delegated to the UI Screenshot
+  Parity lane (visual gates at Steps 11/12/15/18) — legacy screenshots are the contract.
+- **C1-C9 source-shape lock rules** (structural floor): controller class presence, API
+  action+verb, mutating-endpoint contract shape, EF entity shape, config seams,
+  bootstrap/startup sequence, view/template markers (ng-* directives, @Scripts.Render),
+  calculation-helper contracts, JS controller file presence (owningStep 10+, browser
+  lane). Thin coverage marked `coverageLevel: "class-presence-only"` for QA Lane 5 audit.
+- **8-rule per-service scenario derivation** reading Step 3 service-behavior-inventory
+  fields (branchingParameters, throwGuards, nullCoalescingDefaults, ...): every public
+  method ≥1 scenario; nullable returns get found+not-found; every throwing guard its own
+  scenario; mode/flag branches one per mode; `??=` defaults two scenarios; collection
+  methods empty-case; display decorators idempotency; delegation orchestrators one per
+  path. Deterministic inventory→catalog mapping with rule-number traceability.
+- **Five-tier API smoke safety model** (T1 unauthenticated reachability expecting
+  401/403 → T2 CORS preflight → T3 authenticated invalid-body rejection with
+  validation-gate file+line evidence that must precede the first mutation call → T4
+  dry-run/pure-compute POST with grep-evidenced `mutatesState: false` → T5 ephemeral
+  round-trip, **default OFF**, requires `dataSafety: ephemeral` in kit-params + explicit
+  named user opt-in, forbidden against any data source whose loss would be noticed).
+  T1 floor for every endpoint; real mutations belong to Step 12 integration with
+  `page.route(...)` interception. 100% `apiSmokeCoverage` before Step 12.
+- **Progress denominators contract**: qa-test-plan.json publishes `progressDenominators`
+  (totalBackendFilesPlanned, totalApiEndpoints, totalRoutes, ..., plus extensions:
+  totalErrorStates, totalExportSurfaces, totalRealtimeSurfaces, performanceBudgetRoutes,
+  flakeBudgetPercent, dataFixtureCoverage, localesPlanned, routeStateParityFloor 90%);
+  every Phase 2 percentage must be `done / total` citing real artifacts — "estimated
+  percentages are forbidden" (appmod-phase-agent-contract rule 20).
+- **Per-route behavior plan** (`per-route-behavior-plan.json`): per route
+  `primaryDataCalls`, `interactiveElements` (with ownerStep 11/12/15+),
+  `modalsAndBanners`, `placeholderDataPolicy: forbidden|allowedUntilStep<N>` — exists
+  because "Steps 11 and 12 ship dead routes when they only have to prove 'the page
+  renders' and not 'the page works'."
+- **Testing accumulation plan Steps 7-17** with per-step targets (Step 8 >60% Library
+  coverage growing to 80% by Step 9; Step 10 creates Playwright+Cucumber foundation;
+  Step 17 = "S-TIER VERIFICATION GATE" 100% POM/Gherkin/aria/testid + >80% backend →
+  Quality Score 95+ ready for Step 22), tracked in `test-accumulation-tracker.json`
+  (updated by Steps 9-20, verified by Step 17; fields step17ReadinessScore,
+  step22ProjectedScore).
+- **Canonical planning script**: `qa-refresh-test-plan.ps1` is the authoritative
+  generator for qa-test-plan/ownership-matrix/testcase-catalog + Step 8 layering-gate
+  baselines (forbidden-references.json, slice-status.json) — "do not hand-author".
+- **Frontend smoke lane doctrine**: one `ui-navigation-smoke.spec.ts` (~30-45s, read-only,
+  no business transactions), shared helper `playwright-navigation-smoke-helper.js` under
+  `.github/scripts/QA/`, exactly **one deterministic self-heal attempt** before reporting
+  `Blocked`; smoke-evidence publisher is tracked infrastructure, not generated content.
+- **Data-safety patterns**: Pattern A (live round-trip) for read-only GET/HEAD, Pattern B
+  (interception) for mutating verbs; `ui-api-wiring-map.json` + spec template
+  `_template/ui-api-wiring.spec.template.ts` drive mechanical derivation (Rule-Route-1).
+- **Test root layout**: `tests/backend/{unit,contractApi,integrationBackend,smoke}`,
+  `tests/frontend/{smoke,integrationFrontend,visualParity,e2e/{pages,journeys,
+  accessibility,support}}`, `tests/modernization/characterization/{testcase,testResult}`;
+  no step-named subfolders; one Markdown execution report per modernization step.
+  Anti-Pact/perf-suite default: add only when compliance explicitly requires.
+- Fixed closing line: `Ready for Step 7 Backend - Upgrade .NET: Yes or No` — and step
+  names now confirmed: Step 7 "Backend - Upgrade .NET", Step 22 quality-score gate,
+  Steps 9-20 update the tracker.
+
+## Transcription uncertainties (prompt 06)
+
+- Several headings/dashes render as garbled glyphs in the photos (e.g. "MANDATORY <?>
+  Step 6 MUST assign a tier per endpoint"); transcribed as em dashes (`—`) — almost
+  certainly UTF-8 em dashes displaying oddly at an angle.
+- The owningStep routing table says characterization "Step 7 DEV authors and runs
+  these", while the planning rule below it says "Step 7 QA uses these rows ... Step 7
+  DEV does not run characterization tests" — tension preserved exactly as photographed.
+- `test-accumulation-tracker.json` backendCoverage keys read `step6Target: 60`,
+  `step7Target: 80`, `step15Target: 80` in the photo; the accumulation plan says Step 8
+  >60% and Step 9 >80%, so these could plausibly be `step8Target`/`step9Target`/
+  `step17Target` — transcribed as photographed and flagged.
+- Line 525 says "Each step from 9-20 must UPDATE this tracker" while the exit criteria
+  say scenarios are assigned to steps 7-17; preserved as-is.
+- Execution order item 3 renders as "- 3." (stray list dash) in the photo; preserved.
+- The "NO raw CSS or XPath selectors" bullet and Gherkin/data-testid/aria conventions
+  appear detached after the bold Steps-7-17 paragraph (lines 378-391), likely displaced
+  from the Playwright architecture section; transcribed in photographed order.
+- Double-backtick identifier styling in the denominator sections preserved as shown.
+- Long wrapped lines reconstructed; overlaps verified at 54-62, 92-114, 139-151,
+  181-189, 222-245, 276-279, 315-321, 359-371, 411-422, 461-472, 516-522, 538-544.
+- File ends at line 576.
 
 ## Structural facts added by prompt 05
 
