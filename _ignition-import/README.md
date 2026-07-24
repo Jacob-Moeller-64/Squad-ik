@@ -18,6 +18,7 @@ references, not values).
 | `prompts/06-P1-modernization-quality-design.prompt.md` | P1 Discovery, Step 6 | transcribed from 13 photos |
 | `prompts/07-P2-backend-upgrade-dotnet.prompt.md` | P2 Modernize, Step 7 DEV | transcribed from 7 photos |
 | `prompts/08-P2-backend-modernization-formation.prompt.md` | P2 Modernize, Step 8 DEV | transcribed from 11 photos |
+| `prompts/09-P2-backend-dotnet-integration-hardening.prompt.md` | P2 Modernize, Step 9 DEV | transcribed from 4 photos |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -124,6 +125,94 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by prompt 09
+
+- **Step 9 = production-style backend hardening lane** after Step 8 formation (same
+  `OpX-AppMod-P2-Modernize` agent, GPT-5.3-Codex model requirement, Premium tier,
+  20-40 min). Frontmatter uses the full `description`/`name`/`argument-hint`/`agent`
+  form (like prompts 01-03), not the inline-array style of 07.
+- **New MANDATORY self-check: backend functionality-parity scan** — a fourth self-check
+  bullet beyond input/restore-point/output. `scan-backend-parity.ps1 -Quiet` proves
+  every LEGACY backend endpoint — especially every mutation
+  (POST/PUT/DELETE/PATCH: Add/Edit/Delete/Link/Export) — has a modern counterpart.
+  Exit 2 = modern API dropped write endpoints; port them or record `acceptedDrops[]`
+  (with reason) in `.modernization/ignition-artifacts/discovery/backend-parity-registry.json`.
+  Rationale captured verbatim: "Catching a dropped mutation HERE (backend formation) is
+  far cheaper than discovering at Step 12 that the UI has Add/Edit/Delete buttons with
+  no endpoint behind them." New shared script dir: `.github/scripts/parity/`.
+- **Fusion Console logging provider is the mandated logging path**: install
+  `Fusion.Fx.Logging.Providers.Console` (latest Sonatype production version), add
+  `"FusionConsole": {}` to the `appsettings.json` Logging section (presence triggers
+  auto-registration via the Fusion app builder), consult
+  `fusion-readme:///src/dotnet/Fusion.Fx.Logging.Providers.Console/README.md` via
+  **Fusion MCP** (`fusion-readme://` is a real MCP resource URI scheme). Logs emit as
+  JSON to stdout/stderr — no extra ILogger registration needed. Application Insights is
+  explicitly a future lane, not required for Step 9.
+- **Store-level logging + error-handling contract**: repositories inject `ILogger<T>`,
+  log at every DB failure boundary; connection-open failures caught and logged with
+  `SqlException.Number` + message + `Data Source` (never passwords) then rethrown → HTTP
+  500; each mutation (`Insert`/`Update`/`Delete`/`Upsert`) catches `SqlException`
+  separately and returns the legacy error-signaling value instead of throwing (preserves
+  service contract); `LogDebug` before each stored-proc call. Same Dapper typed-mapping
+  and constructor-parity rules as Step 8, now with the exact materialization exception
+  string quoted as a hard-fail signature.
+- **Connection-string startup proof**: validate `ConnectionStrings:<name>` resolves
+  non-empty at construction time (log `LogError` at startup if empty — "a green
+  `dotnet build` does NOT prove the connection string is populated"); DNS-lookup/ping
+  the server name before committing; correct env-specific name comes from legacy
+  `Configuration/<env>/` files, NOT commented-out `Repository.cs` shortcuts. Split
+  env-var pattern reconfirmed:
+  `SqlServer__Server|Database|Username|Password|Encrypt|TrustServerCertificate`;
+  `startupProofStatus = Blocked` when a first-request 500 comes from a missing config key.
+- **SqlClient TLS scar restated** (3rd appearance): `Microsoft.Data.SqlClient` on
+  .NET 6+ enforces TLS validation → `Win32Exception 0x80090325 "certificate chain was
+  issued by an authority that is not trusted"` even when PowerShell `SqlConnection`
+  (older `System.Data.SqlClient`) works; fix `TrustServerCertificate=True` in
+  `appsettings.Development.json` only, never prod/staging.
+- **Authorization policy registration verification**: grep `[Authorize(Policy =` and
+  cross-check every named policy against `AddAuthorization(...AddPolicy(...))` — a missing
+  policy throws `InvalidOperationException` at first request (generic 500), invisible at
+  build time. Verify during startup proof, not by reading code.
+- **Three-axis Step 9 status**: `controlPointAlignmentStatus`
+  (Aligned|DriftDetected|Blocked), `integrationProtectionStatus` (Current|Partial|Blocked),
+  `startupProofStatus` (CurrentBuildBacked|SkippedBuildCoverageExplicit|Blocked). The
+  "SkippedBuildCoverageExplicit" value + the `test-workspace-gates.json`
+  `refreshSafePreflight`/`skipFlags.skipApiBuild` check = the kit refuses to let a skipped
+  API build masquerade as real hardening proof (false-green guard).
+- **DEV/QA lane separation restated**: Step 9 DEV *creates* the IntegrationBackend,
+  ContractApi, and Db test projects + initial tests but does NOT execute them —
+  execution proofs owned by `09-QA-backend-dotnet-integration-hardening`. DEV proof is
+  `dotnet build` against `src/<AppName>.Web.Api` (build-backed startup proof) plus ≥1
+  real runtime request per newly hardened DB-backed endpoint.
+- **Backend Load Smoke Gate (MANDATORY)** — new perf gate: 60s load smoke (configurable
+  from Step 7 `performanceBudgetPlan`) against top-N `apiEndpointCatalog` endpoints
+  (default N=5) using Bombardier/k6/NBomber/hey, data-driven from `load-smoke.config.json`
+  (default Bombardier on Windows, k6 on Linux/macOS). Captures rps/p50/p95/p99/errorRate
+  to `backend-load-smoke.json`; fails when below `requestsPerSecondFloor` or above
+  `p95LatencyCeiling`; when Step 7 declared no budget, this run *becomes* the baseline
+  floor/ceiling for Step 17. Auth scheme from `authIntegrationCatalog` — "never invent a
+  token shape."
+- **Comment/annotation cleanup**: strip stale future-step wording ("another step *will*
+  harden this"), remove unused `using` directives, declare `ProducesResponseType` with
+  concrete CLR types, no anonymous-object success payloads for documented API surfaces.
+- **Closing menu**: QA twin `09-QA-backend-dotnet-integration-hardening` (Lanes:
+  Integration, Contract, Db; ETA 5-10 min) / `next` → Step 10 DEV (Frontend Foundation &
+  Scaffold) / `stop`. No fixed "Ready for Step 10..." closing line in this prompt (unlike
+  07/08) — closeout is the three status fields + the menu.
+
+## Transcription uncertainties (prompt 09)
+
+- The `About To Do` header is rendered as a bullet (`- About To Do`) in the photo,
+  unlike prompts 07/08 where it's a plain heading; preserved as photographed.
+- Several long connection-string / SqlClient / policy-verification paragraphs wrap
+  heavily and were reconstructed from wrap positions; wording verified across photo
+  overlaps at lines 38-51, 106-134.
+- Double-backtick identifier styling appears in the DEV/QA-separation and Load-Smoke
+  sections (as in prompts 04-08); preserved as shown.
+- `Win32Exception 0x80090325` and `TrustServerCertificate=True` transcribed exactly as
+  shown.
+- File ends ~line 172 in the editor (trailing blanks after line 167 of content).
 
 ## Structural facts added by prompt 08
 
