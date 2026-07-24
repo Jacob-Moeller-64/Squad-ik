@@ -17,6 +17,7 @@ references, not values).
 | `prompts/05-P1-modernization-solution-design.prompt.md` | P1 Discovery, Step 5 | transcribed from 7 photos; 2 values redacted (see below) |
 | `prompts/06-P1-modernization-quality-design.prompt.md` | P1 Discovery, Step 6 | transcribed from 13 photos |
 | `prompts/07-P2-backend-upgrade-dotnet.prompt.md` | P2 Modernize, Step 7 DEV | transcribed from 7 photos |
+| `prompts/08-P2-backend-modernization-formation.prompt.md` | P2 Modernize, Step 8 DEV | transcribed from 11 photos |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -123,6 +124,89 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by prompt 08
+
+- **Cross-vendor per-step model pin**: `Model requirement: Step 8 execution must run on
+  GPT-5.3-Codex` (in prose, not frontmatter). With prompt 03's `model: Claude Opus 4.6
+  (copilot)` frontmatter pin, the kit picks specific models per step across vendors —
+  Opus for heavy analysis, Codex for heavy code movement. New agent:
+  `OpX-AppMod-P2-Modernize` (Premium tier, 20-40 min).
+- **Two new self-check gates**: restore-point precheck
+  (`.github/scripts/Workspace/Invoke-StepRestorePoint.ps1 -Step 8 -Mode Verify|Ensure` —
+  no `src/` or `LegacyCode/` mutations until a restore point exists) and a **Fusion MCP
+  preflight** (must successfully call `mcp_fusion_fusion_api_docs_entrypoints` or the
+  step is `Blocked` with "Fusion MCP unavailable" — never make unverified
+  Fusion-structure decisions).
+- **Two new skills**: `/.github/skills/architecture-structure/Architecture-Structure.md`
+  (applied "literally": entities under `Library/Models/Entities/`, API transport DTOs
+  stay in Web.Api, ambiguity resolved explicitly as `Entity` | `API transport model` |
+  `Temporary bridge`) and `/.github/skills/fusion-feature-standards/SKILL.md`. Per-app
+  addendum: `.modernization/ignition-artifacts/addendums/Architecture-Structure.md`
+  (additive clarification only — never rewrite authored guidance).
+- **Formation ordering law**: `Library` formed and validated FIRST, then `Web.Api`;
+  client scaffold explicitly belongs to Steps 10-11. Statuses:
+  `libraryFormationStatus`/`apiFormationStatus` (Validated|Incomplete|Blocked),
+  `step9HandoffStatus` (ReadyForHardening|NotReadyForHardening|Blocked).
+- **Move-not-copy doctrine**: form destination slice → validate there → remove prior
+  source; fallback only create-validate-delete with leftovers reported as "visible
+  drift"; closeout gate blocks if movement accounting is `none` when blockers are
+  absent; Step 7 clone workspace deleted after consumption (disposition recorded as
+  `Deleted`|`Retained by user request`|`Blocked`).
+- **Anti-fake-data guardrail**: production seams must not replace DB-backed behavior
+  with hardcoded in-memory stores (in-memory only under `tests/**`); unavoidable
+  bridges classified `Temporary bridge`, thin, replacement routed to Step 9.
+- **Battle scars**: Authorization Policy DI checklist (unported named policies throw
+  `InvalidOperationException` → generic 500 before controller body, invisible at build;
+  grep legacy Startup for AddPolicy/AddAuthorization/IAuthorizationHandler); Dapper
+  typed-mapping parity rule (constructor CLR types must match SQL column CLR types;
+  two-step mapping when contracts differ; ≥1 real runtime call per DB-backed endpoint
+  before closeout); domain-capability naming (no `Home*`/`Pj*` service names);
+  starter placeholder cleanup (MyEntitiesController/PublicTextController).
+- **Step 8 = heaviest unit-test growth step**: full scaffolding specified inline
+  (csproj net10.0 + xunit/Moq/FluentAssertions/coverlet, GlobalUsings, 4-line file
+  purpose block, CaseId/Scenario/Description/Input/Expected comments per catalog);
+  exit criteria "EXECUTION ONLY — DO NOT DERIVE"; tracker update shows
+  `step8Target: 60`, `step9Target: 80` (confirming prompt 06's tracker keys were
+  step-numbered oddly there; flagged in prompt 06 uncertainties).
+- **Layering Enforcement Gate**: NetArchTest-style rules in
+  `tests/backend/<App>.Architecture.Tests` run via `dotnet test` in CI — Library must
+  not reference Web.Api/hosting types; Web.Api must not reference legacy assemblies
+  after a slice closes (closed-slice list from `slice-status.json`); no
+  System.Web/System.Web.Mvc/System.Web.Http/WebActivatorEx per
+  `forbidden-references.json` — forbidden-namespace list is **data-driven from JSON,
+  not hard-coded in the test class**. Layering violations fail the build.
+- **Protected starter shell**: `Program.cs`, DI composition seams, logging/bootstrap,
+  auth wiring, OpenAPI/Scalar setup are never replaced/regenerated unless Step 5
+  decisions explicitly allow a narrow rebind; platform concerns re-home into
+  starter/Fusion-native sections or `ConnectionStrings` (one centralized startup-bound
+  composition seam for split DB env vars — no raw env reads in feature code);
+  policy-based authorization only (no Windows auth/Negotiate/direct role checks as
+  target state).
+- **Code comment quality contract**: file-header comments (what/why/fit), `<summary>`
+  on every public type/method, inline comments wherever non-obvious legacy behavior is
+  preserved, "explain *why*, not just *what*", no TODO-without-owner, no
+  `// generated` markers.
+- **Closing menu**: QA twin `08-QA-backend-modernization-formation` (Lanes: Unit,
+  ETA 3-5 min) / `next` → Step 9 DEV / `stop`. Step 9's name confirmed: "Backend
+  .NET Integration Hardening". Step 10's name confirmed: "Frontend Foundation &
+  Scaffold". Fixed closing line: `Ready for Step 9 BackEnd - .NET Integration
+  Hardening: Yes or No`.
+
+## Transcription uncertainties (prompt 08)
+
+- The unit-test directory tree (lines ~124-134) renders its box-drawing characters as
+  garbled glyphs in the photo; transcribed with ASCII `+--`/`|` tree characters.
+- Double-backtick identifier styling appears in the Layering Enforcement Gate and a few
+  earlier sections (as in prompts 04-06); preserved as shown.
+- Two adjacent near-duplicate bullets under Required work ("Move or prepare only the
+  backend shell..." with and without the trailing clause) preserved as photographed —
+  apparent source duplication.
+- Duplicate Quality-bar bullets ("stable enough for Step 10...") with and without the
+  trailing clause likewise preserved as photographed.
+- Long wrapped lines reconstructed; overlaps verified at 57-61, 97-113, 135-158,
+  193-200, 248-256, 301-306, 355-360, 395-400, 437-444, and 475-498.
+- File ends at line 523.
 
 ## Structural facts added by prompt 07
 
