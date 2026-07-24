@@ -19,6 +19,7 @@ references, not values).
 | `prompts/07-P2-backend-upgrade-dotnet.prompt.md` | P2 Modernize, Step 7 DEV | transcribed from 7 photos |
 | `prompts/08-P2-backend-modernization-formation.prompt.md` | P2 Modernize, Step 8 DEV | transcribed from 11 photos |
 | `prompts/09-P2-backend-dotnet-integration-hardening.prompt.md` | P2 Modernize, Step 9 DEV | transcribed from 4 photos |
+| `prompts/10-P2-frontend-foundation-and-scaffold.prompt.md` | P2 Modernize, Step 10 DEV | transcribed from 8 photos |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -125,6 +126,125 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by prompt 10
+
+- **First frontend prompt; expanded tools list**: same `OpX-AppMod-P2-Modernize` agent,
+  Balanced tier (15-30 min, no model pin), but the frontmatter `tools` now adds `agent`,
+  `browser`, `todo`, `vscode/vscodeAPI`, and `fusion/copilot-docs/*` — the first prompt
+  that drives a live browser and the Fusion copilot-docs MCP.
+- **Plain-language framing**: opens with a "What This Step Does (plain language)" block
+  (what/why-it-matters/what-you'll-have) per `step-confidence-contract.instructions.md`
+  ("open in plain language, end on binary gates, prove `src/` changes against the running
+  app"). This is a different rhetorical register from the backend prompts.
+- **Anti-drift ownership contract made explicit**: "Each numbered step owns exactly one
+  concern so a defect always has one home and no two steps re-litigate the same
+  territory." Step 10 **OWNS the styling foundation outright**; Steps 11-16 consume it,
+  never re-author it. Steps 11/12/13 must re-run `scan-styling-foundation.ps1` as an
+  entry check — a regressed foundation is a "Step 10 regression" fixed at the foundation,
+  never patched in one page.
+- **Shared decomposition-skill router**: `/.github/skills/browser-source-decomposition/SKILL.md`
+  classifies the legacy source (server-rendered / browser-led SPA / Fusion G1 / mixed /
+  static-document / already-modern / validate-only). Each branch routes to a dedicated
+  sub-prompt that must run in full before shell formation closes:
+  `.github/prompts/P2-Modernize/mvc-to-browser-client.prompt.md` (→
+  `MVC-To-Browser-Client-Decomposition-Contract.generated.json`) and
+  `angular-to-browser-client.prompt.md` (→
+  `Angular-To-Browser-Client-Decomposition-Contract.generated.json`). Mixed/hybrid runs
+  both. A whole family of decomposition contracts we hadn't seen.
+- **`browserSurfaceApplicability` from Step 7** gates the lane: `Required` = full
+  foundation+scaffold loop; `NotApplicable` = lightweight proof pass. Portal republish is
+  never automatic — staleness is reported in chat for manual refresh.
+- **Two deterministic parity scanners** (both under `.github/scripts/parity/`):
+  - `scan-styling-foundation.ps1 -ModernClientRoot <root>` — statically fails on OS
+    `prefers-color-scheme` following instead of pinned legacy scheme, no style
+    `includePaths`, no shared partials, header not bound to legacy brand color, or a data
+    grid with all auto-sized columns.
+  - `scan-ui-parity-gaps.ps1 -Quiet` — multi-dimensional control-parity scanner. Pairs
+    every legacy `<a>`/`<button>`/`<li>` with every modern `<app-*>`/`<fusion-*>` wrapper
+    (incl. inline `template:` blocks and tab-data arrays) across a **registry of named
+    parity dimensions**, each a self-contained rule pack (legacy extractor / modern
+    extractor / normalizer / comparator / allowlist). Built-in dimensions: `label`
+    (MissingLabel Major), `icon` (FA4 alias + semantic-vocab normalization → MissingIcon
+    Critical / IconMismatch Minor), `color` (Bootstrap `btn-*` ↔ Fusion `color=` via
+    `$BootstrapColorMap` → ColorMismatch Minor), `column` (MissingColumn Major — the
+    "column-collapse" defect), `handler-wiring` (empty/TODO `(click)` or
+    `[disabled]="true"` → InertControl Major), `deferral-drain` (per-app deferral registry
+    `ui-deferral-registry.json` with `{handler, ownerStep, reason}`; `-CurrentStep <n>`
+    re-flags any deferral whose `ownerStep <= n` — "a deferral cannot survive past the
+    step that promised to wire it"). Gate fails on `criticalGaps>0 || majorGaps>0`.
+- **"Discovery probe" for unknown-unknowns**: the same scan emits a `discoveryProbe` block
+  ranking every legacy attribute/class-token family that NO active dimension consumed, by
+  frequency — the kit's mechanism for surfacing parity dimensions it has never seen
+  (`confirm`, `tooltip`, `ng-disabled`, `accesskey`...). Plus a documented "Adding a new
+  dimension (recipe)" (alias map → `$rec.X` in both Scan-File branches → copy the color
+  DIMENSION PASS block → append to `summary.dimensions`). This is a self-extending gate.
+- **Render-verified over field-recorded**: the Runtime Parity Checkpoint insists gates be
+  proved by *observed browser render*, not by trusting `colorSchemeForced` /
+  `brandBindingVerified` JSON claims. "A clean build, a scanner `majorGaps=0`, or an HTTP
+  200 are necessary but never sufficient" — a gate recorded `pass` from those proxies is
+  invalid; unrenderable → `blocked`/`unverified`, keep the step open. Strongest
+  false-green guard in the kit so far.
+- **Interaction Wiring + Workflow Trace enforcement at scaffold time**: every rendered
+  control must map to a Step 5 `interaction-wiring-inventory.json` entry (reproduce
+  `target`/`sideEffects`/`authGate`); high-risk `wiringKind` controls must reproduce the
+  `workflow-trace-inventory.json` `requestShape` EXACTLY (verb/URL/payload nesting+casing
+  — "flat-vs-nested mismatches ... are the most common parity 400") and every
+  `visibleStateLabels` entry. "A button that looks right but has no handler" is a parity
+  defect, not cosmetic.
+- **Design Tokens Extraction (MANDATORY)**: first pass extracts
+  `styling-foundation.tokens.json` (families: color/spacing/typography/borderRadius/
+  shadow/zIndex/motion; each row `tokenId`/`valueLight`/`valueDark?`/`sourceEvidencePath`/
+  `usageCount`/`mapsToFusionToken?` verified via Fusion MCP), emitted as CSS custom
+  properties in `src/<App>.Web.Client/src/styles/_tokens.css`. Raw hex/pixels/font-stacks
+  in component CSS are a violation caught by Step 13 + Step 17.
+- **"Legacy Visual Language By Construction"**: the goal is the modern shell resembles the
+  legacy app "from the first page paste rather than being restyled to parity later." Bind
+  the legacy palette through the theme system's **actual consumed API** (`@fusion/theme`
+  override map + `root/main` header-branding, or Bootstrap `$bootstrap-config`), NOT as
+  orphan CSS custom properties ("a generated `--color-brand-*` that no generator reads
+  changes nothing"). Force the legacy color scheme — never inherit OS
+  `prefers-color-scheme` (the starter `index.html` ships a `dark-theme`-from-OS script
+  that must be neutralized). Five named failure conditions (empty nav / raw default theme
+  / wrong scheme / wrong header color or field sizing / missing chrome) = exactly what the
+  Step 13 visual-parity gate measures.
+- **Per-Slice Shell Parity + Repeat-Run Recommendation (both MANDATORY)**: Phase 2
+  frontend advances incrementally from Step 10, one shell slice per pass targeting +5-10pp
+  of screenshot/visual/inventory parity, ROI-scored
+  `(visibilityScore + interactionScore) - riskScore`; first 3 passes must produce a
+  user-visible change. Each pass emits per-slice pixel+structural diffs under
+  `parity-diffs/step10-pass-{passId}/` and a `step10-pass-log.json`. Closeout `Suggestions`
+  must recommend rerunning with the next slice + expected gain (same wording as Steps
+  15/16). New instructions files: `frontend-modernization-learning.instructions.md`
+  (Slice Parity And ROI Rules) and `testing-design-contract.instructions.md` (Slice
+  Parity Floor And Flake Budget).
+- **Fixed response spine**: `About To Do` (Context/Dev work/QA after) → `Modernization
+  Added` → `UI Parity Snapshot` (screenshot coverage / visual parity / inventory parity /
+  selector coverage / overall rating/10) → `Suggestions` → `Returned Data` (~35 named
+  fields incl. the 3 status axes, parity percentages, and `controlParity*` gap counts).
+- **Portal surface rename**: canonical Step 10 page is now `frontend-foundation-and-scaffold`
+  (`.html`+`.json` under `portal/data/pages/`); the old `frontend-modernization-parity.*`
+  is retired and any lingering reference is "dead-surface drift."
+- **Three-axis status**: `decompositionContractStatus`
+  (Current|NotApplicable|Blocked), `shellFoundationStatus` (Validated|Partial|Blocked),
+  `step11HandoffStatus` (ReadyForMigration|NotReadyForMigration|Blocked). Fixed closing
+  gate line: `Ready for Step 11 Frontend Migration: Yes`.
+- **Closing menu**: QA twin `10-QA-frontend-foundation-and-scaffold` (Lanes:
+  Browser-contract shell smoke; ETA 3-5 min) / `next` → Step 11 DEV (Frontend Migration) /
+  `stop`. Step 11's name confirmed: "Frontend Migration".
+
+## Transcription uncertainties (prompt 10)
+
+- Double-backtick identifier styling appears in the Design Tokens and Legacy-Visual
+  sections (as in prompts 04-09); preserved as shown.
+- The `deferral-drain` and `column`/`handler-wiring` dimension bullets wrap heavily and
+  were reconstructed from wrap positions; wording verified across the 216-221 overlap
+  between the two photo batches.
+- `≈` (approximately-equal) used in the icon FA4 alias examples renders faintly in the
+  photo; transcribed as `≈`.
+- A couple of long completion-gate / visual-language paragraphs were reconstructed from
+  wrap positions; overlaps verified at 249-255 and 274-294.
+- File ends at line 313 (content through line 311 + trailing blanks).
 
 ## Structural facts added by prompt 09
 
