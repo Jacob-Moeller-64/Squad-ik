@@ -20,6 +20,7 @@ references, not values).
 | `prompts/08-P2-backend-modernization-formation.prompt.md` | P2 Modernize, Step 8 DEV | transcribed from 11 photos |
 | `prompts/09-P2-backend-dotnet-integration-hardening.prompt.md` | P2 Modernize, Step 9 DEV | transcribed from 4 photos |
 | `prompts/10-P2-frontend-foundation-and-scaffold.prompt.md` | P2 Modernize, Step 10 DEV | transcribed from 8 photos |
+| `prompts/11-P2-frontend-migration.prompt.md` | P2 Modernize, Step 11 DEV | transcribed from 4 photos |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -126,6 +127,88 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by prompt 11
+
+- **The route-family move lane** (same `OpX-AppMod-P2-Modernize` agent + browser/agent/todo/
+  vscodeAPI/fusion-copilot-docs tools as Step 10; Premium tier this time, 20-45 min).
+  Moves the *real* legacy pages and shared client code into the target root "one route
+  family at a time," explicitly NOT re-creating thinner versions from memory: "Parity is
+  the starting state you preserve, not a percentage you climb toward."
+- **A new self-check: content reconciliation** (`Invoke-StepReconciliation.ps1 -Step 11`)
+  — proves every `LegacyRoute` in `per-route-behavior-plan.json` actually existed in the
+  Step 3 legacy analysis ("a shape check cannot catch a behavior plan that invents a
+  route that never existed"). Each failure prints a `Fix:` line routing back to Step 3
+  (real route) or Step 6 (wrong plan). First appearance of semantic (not just structural)
+  input validation.
+- **A new self-check: scaffold-debt scan** (`scan-scaffold-debt.ps1 -CurrentStep 11`) —
+  flags surviving "Step N wires this" markers / placeholder bodies whose owning step has
+  been reached; exit 2 = overdue markers survive; a scaffold-debt registry holds
+  genuinely-intentional notes. Same `-CurrentStep <n>` drain pattern as Step 10's
+  `deferral-drain` dimension.
+- **The single-authoritative-data-gate boundary is spelled out**: Step 11 OWNS control/
+  column/field presence + wiring each data call site to its real service; it does NOT own
+  the authoritative live-data verdict — that's **Step 12's single authoritative data
+  gate**. A wired-but-empty grid is acceptable *provisionally*; a shipped placeholder as
+  *final* state is a defect. `dataBindingParity = pass (provisional)` is a distinct gate
+  value. This is the cleanest example yet of two adjacent steps deliberately NOT
+  re-litigating each other's territory.
+- **Move-and-preserve, NOT Fusion-conversion**: deliberate primitive-family swaps belong
+  to Step 14 planning + Step 15/16 execution; an opportunistic single-control swap is
+  allowed only if incidental AND reaches legacy visual parity in the same pass. "Never
+  leave a half-configured Fusion control behind" — a `fusion-*` primitive with wrong
+  variant/color/width is a parity defect, not progress.
+- **Forbidden per-route hand-offs** (must be fixed or named as blockers): surviving
+  `javascript:void(0)`/`href="#"`/`onclick="return false"` inline handlers; unwired
+  legacy modal/banner/toast/confirmation triggers (incl. "authorized users only"
+  banners); data-bound controls rendering placeholder/seed/fixture instead of the real
+  call site; **column collapse** (real data but fewer/more-generic columns than legacy —
+  "every legacy column is part of the parity contract"); export/print/upload controls
+  that call no service; keyboard shortcuts/focus traps that no longer fire. Each
+  unresolved one → `perRouteBehaviorList` row `{route, interactiveElement,
+  dispositionInStep11, ownerStepIfDeferred}`.
+- **Framework-class-hook verification**: Bootstrap `nav-tabs`/`panel`/`dropdown`/`btn-*`/
+  `col-*` etc. copied from legacy templates must be backed by a stylesheet actually
+  loaded in the modern shell — otherwise "bare DOM that renders as unstyled lists or
+  stacked blocks." (Exactly the FieldServe-style gotcha from our rehearsals.)
+- **Guard redirect-target audit**: every `canActivate` denial-redirect (e.g.
+  `FusionRoleGuard(GROUPS, 'access-denied')`) must point at a *declared* route — an
+  undeclared target silently falls through to the wildcard/home route and "hides the
+  access-denied condition entirely." A routing-integrity defect owned here, not Step 12.
+- **Parameterized/detail-route wiring**: wire every path-param route (e.g.
+  `filekeys/log/:keyNo/:changeNo`) and reach it from its parent grid; Step 12 is the gate
+  of record for the `404` case (client calls a path-param endpoint the backend only
+  registered as a query-string GET) — a concrete route-contract failure class.
+- **`deferredInertControlCount` vs `majorGaps`**: `majorGaps=0` with a nonzero deferred
+  count means behavior is "PARKED, not done"; every parked handler needs a truthful
+  `ownerStep` whose gate actually verifies it ("a dead export/add/delete button belongs
+  to Step 12 'no button is dead', not a vague 'later'"). The `ui-deferral-registry.json`
+  is the same registry Step 10's scanner reads.
+- **Dead-Code Trace Gate (MANDATORY)**: static reachability sweep from the modern router
+  roots (Angular `Routes` / React `createBrowserRouter` / Vue `createRouter` / Blazor
+  `Router` / MVC route table / Razor Pages folders — data-driven from `componentCensus`)
+  → `dead-code-trace.json` with `filePath`/`reachableFromRoot`/`rootChain[]`/`keepReason?`.
+  `reachableFromRoot:false` + no `keepReason` blocks closeout (wire it, document a
+  reviewer-approved keepReason, or delete). A modernization-specific dead-code gate we
+  didn't have.
+- **Four-axis status**: `sharedCodeMigrationStatus` (Validated|Partial|Blocked),
+  `routeFamilyStatus` (Validated|Partial|Blocked), `behaviorPreservationStatus`
+  (Preserved|PartialPerRouteList|Blocked), `step12HandoffStatus`
+  (ReadyForPlatformIntegration|NotReadyForPlatformIntegration|Blocked). Fixed closing
+  gate line: `Ready for Step 12 Frontend Platform Integration: Yes`.
+- **Closing menu**: QA twin `11-QA-frontend-migration` (Lanes: Browser-contract, Visual
+  parity; ETA 5-10 min) / `next` → Step 12 DEV (Frontend Platform Integration) / `stop`.
+  Step 12's name confirmed: "Frontend Platform Integration".
+
+## Transcription uncertainties (prompt 11)
+
+- This prompt is unusually dense with very long wrapped lines (the forbidden-handoffs and
+  runtime-checkpoint bullets each wrap 4-6 visual lines); reconstructed from wrap
+  positions with overlaps verified at 46-53, 84-94, and 118-120.
+- Double-backtick identifier styling appears in the Dead-Code Trace Gate section (as in
+  prompts 04-10); preserved as shown.
+- `4xx`/`5xx` and `≈`-free inline code transcribed exactly as shown.
+- File ends at line 158 (content through line 157 + trailing blank).
 
 ## Structural facts added by prompt 10
 
