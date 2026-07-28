@@ -27,6 +27,7 @@ references, not values).
 | `prompts/15-P2-fusion-ui-integration.prompt.md` | P2 Modernize, Step 15 DEV | transcribed from 4 photos |
 | `prompts/16-P2-next-fusion-ui-upgrade-slice.prompt.md` | P2 Modernize, Step 16 DEV | transcribed from 3 photos |
 | `prompts/17-P2-rewire-all-tests-and-verify.prompt.md` | P2 Modernize, Step 17 DEV | transcribed from 9 photos |
+| `prompts/18-P2-deployment-and-clean-up.prompt.md` | P2 Modernize, Step 18 DEV | transcribed from 3 photos |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -133,6 +134,72 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by prompt 18
+
+- **The pre-review cleanup lane and the last Phase 2 step** (Balanced tier, 10-20 min,
+  129 lines — one of the shortest). Exists so "review" does not have to discover cleanup
+  drift. Three statuses: `deploymentReferenceStatus` (Aligned|Partial|Blocked),
+  `cleanupDispositionStatus` (**Explicit**|Partial|Blocked), `step19HandoffStatus`
+  (ReadyForReview|NotReadyForReview|Blocked).
+- **`cleanupDispositionStatus: Explicit` is the interesting value** — the gate is not "all
+  leftovers removed" but "every retained leftover is *explicit with rationale*." Retention
+  is allowed; silent retention is not.
+- **Five MANDATORY pre-review verification blocks**, each closing with the same formula
+  ("Cleanup without X verification is incomplete Step 18 coverage"):
+  - **Production-Ready Cleanup**: no TODO/FIXME/HACK in production code (move to backlog),
+    no `console.log`/`debugger`/test-only code, no dead imports/variables/functions/
+    components, formatters run (Prettier, `dotnet format`), README updated with current
+    architecture and run instructions.
+  - **Test Coverage**: backend >80% on Library business logic, Playwright coverage for all
+    routes, POMs current with latest selectors, Gherkin scenarios runnable, "no skipped or
+    ignored tests without documented reason."
+  - **Accessibility**: `aria-label`/`aria-labelledby` on all interactive elements,
+    `data-testid` on all testable elements, full keyboard navigation, no a11y warnings in
+    build output.
+  - **Deployment Readiness**: health check endpoints respond, env-specific config
+    externalized, **no secrets in source code**, Dockerfile builds and runs, OpenShift
+    manifests reference correct image/paths.
+  - **Cutover And Rollback Verification**: verify the Step 5 `cutoverAndRollbackPlan` is
+    "real and executable — **Phase 2 cannot ship without it**"; feature flag named/owned/
+    switchable; rollback documented with steps, owner, and max time-to-rollback; and
+    **execute a dry-run of the rollback against a non-prod environment**, recording
+    `{env, executedAt, durationSec, success, evidencePath}` in
+    `step18-rollback-dryrun.json`. Explicitly generic across OpenShift, Kubernetes, App
+    Service, IIS, ECS, and on-prem.
+- **Performance And Bundle Verification (MANDATORY when browser-surface is in scope)** —
+  re-runs the perf measurement **against the deployed artifact, "not just the dev build"**,
+  re-measures gzipped initial bundle and lazy chunks per route, and fails the step if any
+  Step 5 budget regresses without a recorded deferral (`step18-perf-verification.json`).
+- **Cleanup ordering rule worth stealing**: "Remove UI bridge wrappers **only when** the
+  corresponding Fusion component family has already been verified and recorded as final
+  state" — bridges outlive their slice until that slice is provably done.
+- **Stale-alias sweep**: retired portal aliases, dead selected-page tokens, retired
+  step-surface names, and outdated workflow references must be removed or explicitly
+  retained "when they still point at obsolete modernization outputs" — the kit cleaning up
+  after its own renamed surfaces (e.g. the `frontend-modernization-parity` → 
+  `frontend-foundation-and-scaffold` rename from prompt 10).
+- **Secrets rule stated twice**: "No secrets in source code" and "raw secret values must
+  not appear in any committed file"; `environmentConfigPlan.environments[]` values get
+  promoted into deployment config with secrets resolving from the planned secret store.
+- **Numbering is CLEAN** (`step19HandoffStatus`, "Ready for Step 19 Final Fusion
+  Restructure Review", "continue to Step 19 (Phase 3 Review)"), reconfirming the +2 drift
+  was confined to prompts 12-16.
+- **Step 19's name confirmed**: "Final Fusion Restructure Review", and it is **Phase 3** —
+  so Phase 2 Modernize spans Steps 7-18 and Phase 3 Review begins at Step 19.
+
+## Transcription uncertainties (prompt 18)
+
+- The Completion gate's "Otherwise keep the exact next step on `18-P2-deployment-and-clean-up`"
+  uses the **filename** where every other prompt uses the human step name ("Step NN Title");
+  transcribed as shown.
+- Double-backtick identifier styling in the Cutover/Rollback and Performance/Bundle
+  sections preserved as shown.
+- No mojibake observed in this prompt (no emoji or `>=` symbols present), consistent with
+  corruption affecting only non-ASCII characters.
+- Long wrapped lines reconstructed from wrap positions; overlaps verified at 49-58 and
+  104-110.
+- File ends at line 129.
 
 ## Structural facts added by prompt 17
 
