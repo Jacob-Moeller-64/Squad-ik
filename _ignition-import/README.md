@@ -28,6 +28,7 @@ references, not values).
 | `prompts/16-P2-next-fusion-ui-upgrade-slice.prompt.md` | P2 Modernize, Step 16 DEV | transcribed from 3 photos |
 | `prompts/17-P2-rewire-all-tests-and-verify.prompt.md` | P2 Modernize, Step 17 DEV | transcribed from 9 photos |
 | `prompts/18-P2-deployment-and-clean-up.prompt.md` | P2 Modernize, Step 18 DEV | transcribed from 3 photos |
+| `prompts/19-P3-final-fusion-restructure-review.prompt.md` | **P3 Review**, Step 19 | transcribed from 1 photo |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -134,6 +135,86 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by prompt 19
+
+- **First Phase 3 prompt, and a new specialist agent**: `agent: OpX-Fusion-Reviewer` —
+  the fourth agent seen (after `OpX-AppMod-P1-Discovery`, `OpX-dotnet-upgrade`,
+  `OpX-AppMod-P2-Modernize`). Filename prefix changes from `P2` to **`P3`**. Premium
+  reasoning (high thinking), 15-30 min.
+- **Tools gain `fusion/*`** in addition to `fusion/copilot-docs/*` — the broadest Fusion
+  MCP surface granted to any prompt, fitting a reviewer that must discover packages.
+- **New skill**: `/.github/skills/fusion-final-restructure-review/SKILL.md` (the review
+  rubric).
+- **Shortest prompt in Phase 2/3 at 59 lines**, and notably **it has no closing DEV/QA
+  choice menu** — no "## Step 19 DEV complete - next action", no numbered QA/next/stop
+  options, no "list every file created or modified" line. Every prompt from 7-18 had one.
+  Phase 3 review steps appear to use a different closeout shape.
+- **Three statuses**: `fusionAlignmentStatus` (Aligned|**DriftDetected**|Blocked),
+  `bridgeDispositionStatus` (Explicit|Partial|Blocked — same "explicit or it doesn't
+  count" model as Step 18's cleanup disposition), `step20HandoffStatus`
+  (ReadyForFinalVerification|NotReadyForFinalVerification|Blocked).
+- **Anti-stale-review rule**: "Before running the review, confirm current [Step 17]
+  verification proof and [Step 18] cleanup disposition exist **for the same source state
+  under review**. If either prerequisite is stale or missing, return `Blocked` with the
+  exact prerequisite **instead of reviewing against drift**." A review of stale evidence is
+  treated as worse than no review.
+- **Selective evidence invalidation**: "Refresh the Step 19 review artifact and **only the
+  prerequisite evidence families that the current review actually invalidates**" — avoids
+  the cascade where one review finding forces a full re-verification sweep.
+- **MCP-first discovery ordering**: "Use Fusion MCP package or docs discovery **first**,
+  then compare against the current starter shell under `src/`" — look up what Fusion
+  offers before judging custom code, not after.
+- **Review artifact**: `.modernization/ignition-artifacts/reviews/final-fusion-restructure-review.json`
+  (new `reviews/` directory), carrying prioritized findings with explicit severity plus
+  identified "safe remediation candidates."
+- **Closing gate**: `Ready for Step 20 Final Verification: Yes` only when critical findings
+  are "resolved, explicitly accepted, or recorded as real blockers **instead of being left
+  implicit**." Step 20's name confirmed: **"Final Verification"**.
+
+## ⚠ CORRECTION: the +2 drift is NOT confined to prompts 12-16 — prompt 19 has it too
+
+Recorded under prompts 17 and 18 was the conclusion that the +2 numbering drift was
+"confined to the frontend block (prompts 12-16)", because 17 and 18 are clean. **Prompt 19
+breaks that conclusion.** The drift recurs after two clean prompts, so it is not a
+contiguous block and cannot be fixed by scoping repairs to 12-16.
+
+Prompt 19's instances, all +2:
+- The Objective declares **`step20HandoffStatus`** (correct: 19 hands off to 20), but the
+  Completion gate requires the response to include **`step22HandoffStatus`** — a field the
+  prompt never defines. This is the **fourth** prompt with the declared-vs-required
+  handoff-field mismatch (after 13, 15, 16).
+- The prerequisite rule reads "confirm current **Step 19** verification proof and **Step
+  20** cleanup disposition exist" — those are Steps 17 and 18 under current numbering
+  (and semantically must be, since Step 19 *is* the reviewing step).
+- **Internal inconsistency in the same prompt**: Execution mode says "Reuse current **Step
+  17 and Step 18** prerequisite proof" (new numbering, correct) while Required behavior
+  says "**Step 19** verification proof and **Step 20** cleanup disposition" (old numbering)
+  — two lines describing the same two prerequisites with different numbers. A clean
+  demonstration that the update was applied per-section, not per-file.
+- The Completion gate's "keep the exact next step on `…`" string is mojibake again (emoji
+  + keycap digits), consistent with the corrupted step-reference strings in prompts 15-16.
+
+**Revised scope for the linter**: run it across **all 24 prompts**, not a range. The
+observed pattern (12,13,14,15,16 drifted / 17,18 clean / 19 drifted) means clean prompts
+prove nothing about their neighbours.
+
+## Transcription uncertainties (prompt 19)
+
+- The file ends at line 59 with no closing menu. Since only one photo covers this prompt
+  and the editor showed no further content, this is recorded as complete — but worth a
+  quick scroll-check at the source to confirm nothing follows.
+- The mojibake step-reference on the Completion gate line is recorded as a
+  `<MOJIBAKE: emoji + keycap digits>` placeholder; the decoded value is presumably the
+  old-numbering `2️⃣1️⃣` given the consistent +2 offset, but that is inferred, not read.
+- Artifact paths in Required behavior use `.modernization/fusion-restructure/…` while the
+  review artifact uses `.modernization/ignition-artifacts/reviews/…`; both as shown (same
+  split noted in prompts 13-16).
+- The window title reads `OpX-Ignition-Kit [Administrator]` here rather than
+  `IgnitionKit1.2` as in prompts 12-18, and other tabs are open
+  (`ORIGINAL-BASELINE-COMPLIANCE-REPORT.md`, an "Execute Discovery Steps Review" Copilot
+  tab) — possibly a different workspace or a later session.
+- Long wrapped lines reconstructed from wrap positions.
 
 ## Structural facts added by prompt 18
 
