@@ -29,6 +29,7 @@ references, not values).
 | `prompts/17-P2-rewire-all-tests-and-verify.prompt.md` | P2 Modernize, Step 17 DEV | transcribed from 9 photos |
 | `prompts/18-P2-deployment-and-clean-up.prompt.md` | P2 Modernize, Step 18 DEV | transcribed from 3 photos |
 | `prompts/19-P3-final-fusion-restructure-review.prompt.md` | **P3 Review**, Step 19 | transcribed from 1 photo |
+| `prompts/20-P3-final-verification.prompt.md` | P3 Review, Step 20 | transcribed from 2 photos |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -135,6 +136,94 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by prompt 20
+
+- **A fifth agent**: `agent: OpX-AppMod-P3-Review` — distinct from Step 19's
+  `OpX-Fusion-Reviewer`. So Phase 3 uses at least two agents: a Fusion specialist for the
+  restructure review and a general P3 reviewer for verification. Full agent roster so far:
+  `OpX-AppMod-P1-Discovery`, `OpX-dotnet-upgrade`, `OpX-AppMod-P2-Modernize`,
+  `OpX-Fusion-Reviewer`, `OpX-AppMod-P3-Review`.
+- **Same broad tool grant as Step 19** (`fusion/*` + `fusion/copilot-docs/*`). Balanced
+  tier, 15-30 min, 73 lines. **No closing DEV/QA menu** — confirming that as the Phase 3
+  shape rather than a one-off in prompt 19.
+- **Three statuses**: `verificationEvidenceStatus` (Current|Partial|Blocked),
+  `controlPointConformanceStatus` (Aligned|DriftDetected|Blocked), `step21HandoffStatus`
+  (ReadyForVisualReview|NotReadyForVisualReview|Blocked).
+- **Target-shape flexibility with proof obligation** — a good generalization rule: "When
+  the selected target is the standard simple browser-led shape, final verification should
+  prove `src/<AppName>.Library`, `src/<AppName>.Web.Api`, and `src/<AppName>.Web.Client`.
+  When [Step 5] approved another valid target shape, **prove that approved shape instead of
+  forcing the simple layout**." The gate verifies against the *approved* architecture, not
+  a hard-coded one.
+- **Backend runtime proof is a 5-item list**, notable for going beyond happy-path: API
+  startup + health endpoint; **at least one unauthenticated protected endpoint returns the
+  expected auth challenge**; **at least one mapped-role success case AND one
+  insufficient-role rejection case**; current-user/policy-handler membership resolution
+  "from the same evaluator and membership source used by protected endpoints"; and
+  platform-owned config resolving from approved final-state sections plus "exercise one
+  database-backed path when the app depends on database runtime proof." Negative-path auth
+  testing as a first-class gate item.
+- **Frontend runtime proof** covers canonical routes/landing/callback/logout, protected
+  client API paths using the approved protected-request mechanism, client provider and
+  service ownership "rather than an untracked bridge path", and — the sharp one — "confirm
+  the preserved visual contract is still usable **before and after** any deliberate
+  primitive-family replacement, including styling foundation, layout framing, widths,
+  gutters, control heights, grid or table density, dialog sizing, and breakpoint behavior."
+- **Anti-prose-summary rule, stated twice**: any failing verification family and any
+  remaining `Temporary bridge` behavior must be "explicit in the returned data and
+  refreshed evidence **instead of hiding it behind a prose-only summary**." A direct
+  countermeasure to a model narrating success.
+- **Step 21's name confirmed: "Figma Review"** — a design-comparison gate, the first
+  reference to Figma anywhere in the kit.
+
+## ⚠ +2 drift continues in prompt 20 (fifth handoff-field mismatch)
+
+Prompt 20 has the same declared-vs-required mismatch, making it **five prompts** with this
+defect (13, 15, 16, 19, 20):
+
+- Objective declares **`step21HandoffStatus`** (correct: 20 → 21); Completion gate requires
+  the response to include **`step23HandoffStatus`** — never defined in the prompt.
+- QA plan says "handoff to **Step 23**" where the declared handoff is Step 21.
+- Required behavior: "confirm the current **Step 21** Fusion review artifact exists … and
+  that **Step 19** verification proof plus **Step 20** cleanup disposition are still the
+  active prerequisites" — under current numbering those are Steps **19, 17, 18**
+  respectively (and must be, since Step 20 *is* the verification step).
+- "Use the **Step 7** and restructure decisions to confirm the approved target roots …
+  When **Step 7** approved another valid target shape" — target-shape decisions are Step 5's
+  (`decisions.json`), and the same prompt correctly cites "the **Step 5** control-point
+  contract" twice in the frontend-proof section.
+- **Same per-section split as prompt 19**: Execution mode uses correct new numbering
+  ("Reuse current Step 19 review findings and Step 17 plus Step 18 prerequisites") while
+  Required behavior ten lines later uses old numbering for the same prerequisites.
+- Completion-gate "keep the exact next step on `…`" is mojibake again.
+
+Running tally of the declared-vs-required handoff-field mismatch — the most directly
+executable defect, since the agent is ordered to emit a field the prompt never defines:
+
+| Prompt | Declares | Completion gate requires |
+|---|---|---|
+| 13 | `step14HandoffStatus` | `step16HandoffStatus` |
+| 15 | `step16HandoffStatus` | `step18HandoffStatus` |
+| 16 | `step17HandoffStatus` | `step19HandoffStatus` |
+| 19 | `step20HandoffStatus` | `step22HandoffStatus` |
+| 20 | `step21HandoffStatus` | `step23HandoffStatus` |
+
+Clean: 7, 8, 10, 11, 14, 17, 18 (and 1-6, 9, 12 declare no handoff field). The defect is
+**non-contiguous and spans both Phase 2 and Phase 3**, so the linter must sweep all 24.
+
+## Transcription uncertainties (prompt 20)
+
+- The mojibake step-reference on the Completion gate line is recorded as a placeholder;
+  the decoded value is presumably old-numbering `2️⃣2️⃣`, inferred from the consistent +2
+  offset rather than read.
+- Artifact paths use `.modernization/fusion-restructure/…` throughout (no
+  `ignition-artifacts/` prefix), matching prompt 19's Required-behavior paths.
+- Window title reads `OpX-Ignition-Kit [Administrator]` as in prompt 19, with the same
+  extra tabs open.
+- Long wrapped lines reconstructed from wrap positions; overlap verified at lines 36-59
+  across the two photos.
+- File ends at line 73.
 
 ## Structural facts added by prompt 19
 
