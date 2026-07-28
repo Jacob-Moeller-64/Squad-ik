@@ -26,6 +26,7 @@ references, not values).
 | `prompts/14-P2-frontend-ui-inventory-and-fusion-map.prompt.md` | P2 Modernize, Step 14 DEV | transcribed from 4 photos |
 | `prompts/15-P2-fusion-ui-integration.prompt.md` | P2 Modernize, Step 15 DEV | transcribed from 4 photos |
 | `prompts/16-P2-next-fusion-ui-upgrade-slice.prompt.md` | P2 Modernize, Step 16 DEV | transcribed from 3 photos |
+| `prompts/17-P2-rewire-all-tests-and-verify.prompt.md` | P2 Modernize, Step 17 DEV | transcribed from 9 photos |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -132,6 +133,117 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by prompt 17
+
+- **The S-TIER verification gate Step 6 has been planning toward since the start** — and the
+  largest prompt in the kit at 446 lines. Balanced tier, 15-30 min. Validates ALL
+  accumulated test work from Steps 6-16.
+- **Three self-checks including a second content reconciliation**:
+  `Invoke-StepReconciliation.ps1 -Step 17` proves "every non-deferred testcase in
+  `executable-testcase-catalog.json` points to a test file that **actually exists**" —
+  explicitly because "a shape check cannot catch a catalog entry that names a test file
+  which was never created." Fix path: implement the test, or mark `Deferred` with a
+  `deferralId` and re-run Step 6.
+- **THE 12 QUALITY GATES**, each with Criteria checklist / Validation command /
+  Remediation steps: (1) Characterization 100%, (2) Unit ≥95% line, (3) Contract 100% API,
+  (4) Integration ≥95% critical path, (5) Database 100% table, (6) Angular 100% component
+  (Karma/Jasmine ≥90%), (7) Visual Parity ≥85% (90% stretch), (8) Smoke 100% pass,
+  (9) E2E 100% journey, (10) Test Quality Standards 100% compliance, (11) Page Object
+  Models 100%, (12) Test Documentation 100%.
+- **Plus 11 MORE "Discovery-Backed Verification Gates" (MANDATORY)** tied to Step 6
+  `progressDenominators` and Step 5 `decisions.json`: Visual Parity Floor
+  (`routeStateParity >= 90`), Performance Baseline (FCP/LCP/TTI/apiCallCount/payloadBytes
+  within budget), Bundle Size (gzipped, per route), Accessibility Audit (Lighthouse ≥90,
+  zero critical/serious axe violations), Error State Coverage, Export Surface Coverage,
+  Realtime And Push Coverage, Localization, Flake Budget, **Progress Denominator
+  Verification** ("Estimated percentages are forbidden"), and Cutover Readiness Pre-Check.
+  Results land in `step17-gate-results.json` as `{gateId, status, evidencePath, deferralId?}`.
+- **Mutation Testing Gate (MANDATORY)** — the strongest test-quality idea in the kit:
+  `Stryker.NET` (backend Library + Web.Api) and `StrykerJS` (client) run "to prove the
+  tests actually catch behavior breaks instead of just executing covered lines." Emits
+  `mutation-score.json` with `mutationScorePercent`/`mutantsKilled`/`mutantsSurvived`/
+  `mutantsTimedOut`/`survivedMutants[]` (location, mutator, snippet). Thresholds:
+  **full-scope ≥60%, critical-path ≥80%**; surviving mutants on critical-path classes are
+  blockers — "either add the test that kills the mutant or amend the `criticalPathInventory`
+  with reviewer-approved justification." Scoped first to the Step 8 critical-path
+  inventory, then expanded.
+- **4-phase execution flow**: Validation (run all gates) → Remediation (fix all failures,
+  repeat until pass) → Final Verification (rerun ALL gates from start, 100% pass) →
+  Documentation Sweep (spot-check 5 random test files for comment-style deviations).
+- **A worked completion-gate JSON** with all 12 gates PASS, per-lane test counts
+  (characterization 45 / unit 212 / contract 28 / integration 56 / database 24 /
+  angular 87 / e2e 32 / smoke 12 / **total 496**) and coverage metrics — a concrete shape
+  the agent fills rather than invents.
+- **Four returned values**: `step17Status` (Complete|InProgress|Blocked),
+  `qualityGateStatus` (per-gate pass/fail), `testDocumentationCompliance`
+  (100%|Partial|Incomplete), `step18HandoffStatus`
+  (ReadyForCleanup|NotReadyForCleanup|Blocked).
+- **Numbering is CLEAN in this prompt** — `step17Status`, `step18HandoffStatus`, "Step 18
+  Deployment & Clean Up" all correct. This confirms the +2 drift was confined to the
+  frontend block (prompts 12-16). Only two minor suspects: "+10% of **Step 5**
+  `performanceBaseline`" (prompt 06 attributes `performanceBaseline` to Step 3) and
+  "amend **Step 7's** `criticalPathInventory`" (surrounding text says Step 8 twice).
+- **Step 18's name confirmed**: "Deployment & Clean Up". QA twin
+  `17-QA-rewire-all-tests-and-verify` runs every lane (Unit, Integration, Contract,
+  Browser-contract, E2E, Legacy characterization; 15-30 min) — "the full Phase 2 quality
+  gate before **Phase 3** review", first explicit reference to a Phase 3.
+
+## ⚠ Internal contradiction in prompt 17: does Step 17 author tests or not? (HIGH fork-risk)
+
+The prompt states both positions in load-bearing places:
+
+**"Step 17 does the work":**
+- frontmatter description: *"ALL TESTING IS DONE HERE. Steps are NEVER validation-only.
+  Dev work is ALWAYS done."*
+- CORE PRINCIPLE banner: *"Step 17 makes testing PERFECT… ALL TEST WORK WILL BE DONE HERE.
+  WE WILL COMPLETE EVERYTHING."*
+- Dev work bullet: *"Complete any missing tests…"*
+- Gates 1, 3, 4, 5, 6, 9, 11, 12 remediation: *"Create missing … tests with full
+  documentation"*
+- Phase 2 of the execution flow: *"Add missing tests with full documentation"*
+
+**"Step 17 must NOT author tests":**
+- Gate 2 remediation: *"Step 17 does not derive new scenarios… Route back to that step
+  (Step 8/9/12/etc.)… then to Step 6 to extend the catalog… **Do not author tests directly
+  inside Step 17. Step 17 verifies; it does not plan and does not derive.**"*
+
+Gate 2 is the position consistent with the rest of the kit (Step 6's "Phase 2 has no
+derivation authority", Step 14's "any field it has to invent is an upstream gap"), and its
+routing loop is precisely correct. But it is one bullet against the title, the description,
+the all-caps banner, and eight other gates. Under time pressure a developer follows the
+banner, authors tests locally, and silently breaks the catalog-is-the-work-order contract
+the whole kit depends on — the catalog then no longer describes the test suite, and the
+Step 17 reconciliation that is supposed to catch exactly that will pass because the files
+now exist.
+
+## ⚠ App-specific leakage into a generic kit (prompt 17)
+
+Gate 10 and Phase 4 both hard-code a specific app's test file as the style oracle:
+*"Comment style matches **`LegacyConnectionStringProviderTests.cs`** exactly"* and
+*"Spot-check 5 random test files against `LegacyConnectionStringProviderTests.cs`"*. That
+file will not exist in any other application, so both instructions are unsatisfiable at a
+hackathon. The kit's own pattern elsewhere (data-driven from `componentCensus`,
+`progressDenominators`, registries) shows the intended fix: name the style contract, not a
+file from one app.
+
+## Transcription uncertainties (prompt 17)
+
+- **Encoding corruption is confirmed widespread, not just in step-reference strings.** `≥`
+  renders as `â‰¥` throughout the gate headings ("Unit Tests (â‰¥95% Line Coverage)"), `✅`
+  renders as `âœ…` in the "Do NOT close Step 17 until" checklist, and all four section
+  emoji are mojibake. Transcribed with ASCII equivalents (`>=`, `[x]`) and
+  `<MOJIBAKE: emoji>` placeholders rather than reproducing corrupted bytes.
+- Gate 1 remediation says "Find all CaseIds with `owningStep < 10`" — likely intended as a
+  characterization-owning-step bound (Step 6 assigns characterization to owningStep 7);
+  transcribed as shown.
+- The completion-gate JSON's `completedAt` is a literal example timestamp
+  (`2026-05-28T10:00:00Z`), not a placeholder token; preserved as shown.
+- Double-backtick identifier styling throughout the Discovery-Backed and Mutation Testing
+  sections preserved as shown.
+- Long wrapped lines reconstructed from wrap positions; overlaps verified at 51-61,
+  101-115, 149-165, 195-215, 265-272, and 405-410.
+- File ends at line 446.
 
 ## Structural facts added by prompt 16
 
