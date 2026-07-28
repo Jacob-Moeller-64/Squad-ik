@@ -21,6 +21,7 @@ references, not values).
 | `prompts/09-P2-backend-dotnet-integration-hardening.prompt.md` | P2 Modernize, Step 9 DEV | transcribed from 4 photos |
 | `prompts/10-P2-frontend-foundation-and-scaffold.prompt.md` | P2 Modernize, Step 10 DEV | transcribed from 8 photos |
 | `prompts/11-P2-frontend-migration.prompt.md` | P2 Modernize, Step 11 DEV | transcribed from 4 photos |
+| `prompts/12-P2-frontend-platform-integration.prompt.md` | P2 Modernize, Step 12 DEV | transcribed from 9 photos |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -127,6 +128,140 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by prompt 12
+
+- **The authoritative live-data + auth gate of record** for the whole app (same
+  `OpX-AppMod-P2-Modernize` agent + browser tools; Premium reasoning *medium-high*
+  thinking, 15-30 min). Steps 11 and 13 explicitly defer to it.
+- **The two-verdict model** — the kit's strongest anti-false-green design:
+  - `routeContractStatus` = the deterministic, **auth-free GATE OF RECORD** from
+    `generate-ui-api-map.ps1 -FailOnBrokenCalls`. Proves every client call resolves to a
+    real controller action+verb with no credentials. `brokenCallCount = 0` → `Clean`
+    (required to close); `> 0` → `BrokenCalls` (closure-blocking, "a guaranteed runtime
+    failure"); method-built/dynamic URLs → `UnresolvedOnly` (advisory).
+  - `liveDataRenderStatus` = the authenticated render confirmation, **"never faked"**.
+    `Verified` only when a route is *observed* rendering real rows under a real session.
+    Explicitly NOT `Verified`: a `401`, a scanner result, a `200`, or a carried-forward
+    prior observation. No usable auth session → `UnverifiedPendingAuth` (honest Partial),
+    "never infer `live` from a protected `401`."
+  - **Closure requires `Clean` AND `Verified`.** `Clean` + `UnverifiedPendingAuth` keeps
+    the step Partial. Canonical render path: operator completes the real sign-in in the
+    shared integrated-browser page, then each route's live render is observed.
+- **Five status axes total**: the two above plus `protectedApiOwnershipStatus`
+  (Aligned|DriftDetected|Blocked), `authRuntimeStatus` (Verified|403GapOpen|Blocked),
+  `perRouteApiWiringStatus` (LiveAllInScope|PartialPerRouteList|Blocked — `LiveAllInScope`
+  only when `liveDataRenderStatus: Verified`).
+- **Two more MANDATORY self-check scanners** (now 6 total on this step):
+  `scan-backend-parity.ps1` (dropped-mutation detection — "the UI still shows
+  Add/Edit/Delete buttons over placeholder modals while no backend endpoint exists";
+  waivers in `backend-parity-registry.json` `acceptedDrops[]`) and
+  **`scan-functional-parity-ledger.ps1`** — new: answers "are ALL legacy behaviors
+  implemented?" across Step 3 `effectClass` (mutate/filter/navigate/export/dialog), not
+  just endpoints and fields. Catches "missing buttons, dead filters, or filter controls
+  that show identical rows before and after applying"; waivers in
+  `functional-parity-registry.json`.
+- **Runtime-checkpoint assertion families** (new, behavioral not structural):
+  `filterAssertions[]` must show `rowsChanged: true` per filter control (identical rows
+  before/after = `filterEffect: fail`); `siblingListDistinctness[]` must confirm sibling
+  list sections backed by separate calls return distinct first-row content;
+  `mutateWiringAssertions[]` must show `networkCallObserved: true` ("a modal that opens
+  but never fires a write call is a `mutateWiring: fail`").
+- **Full Playwright auth infrastructure shipped inline**: `LoginPage` / `CallbackPage` /
+  `UnauthorizedPage` POMs plus a 4-case `auth.journey.spec.ts` (sign-in, sign-out,
+  unauthorized redirect, 403-insufficient-permissions) with `STEP12-E2E-AUTH-00N` CaseIds
+  in JSDoc and Given/When/Then comments. Explicit rule: **"NO .feature files"** — all
+  scenarios live inline as comments, no step definitions. (Note this contradicts Step 6's
+  Gherkin `.feature`-per-journey planning; see uncertainties.)
+- **Angular 20+ code-quality mandate**: standalone components with `imports: []` (no
+  NgModules), signals (`signal()`/`computed()`/`effect()`), `@let`, `inject()` over
+  `@Inject()`, `@if`/`@for`/`@switch`, `DestroyRef` + `takeUntilDestroyed()`. "Platform
+  code with NgModules or legacy patterns is incomplete Step 12 coverage."
+- **A11y & testability mandate**: `aria-label`/`aria-labelledby`, `data-testid`, `role`
+  when semantic HTML is insufficient, focus management for auth flows/callbacks, error
+  messages linked via `aria-describedby`.
+- **API Smoke re-run before any integration work**: re-run the Step-8-planned
+  `tests/backend/smoke/` probes at 100% pass against `progressDenominators.totalApiEndpoints`
+  — "the cheapest signal that the backend process actually loaded the current build
+  (a stale-DLL / stale-process regression …)". Honors the T1-T5 safety tiers; sub-100%
+  must be a tracked `deferralId`, "not a silent skip."
+- **Deferral-drain gate — "Step 12 owns 'no button is dead'"**: `scan-ui-parity-gaps.ps1
+  -CurrentStep 12` re-flags any deferral whose `ownerStep <= 12` as a Major InertControl;
+  `deferredInertControlCount` for Step-12-or-earlier owners must reach 0. "A
+  `majorGaps = 0` with parked stubs still owed here is not a pass."
+- **Per-Route HAR Diff Gate (MANDATORY)** — new proof technique: record a HAR for the same
+  scripted journey against BOTH legacy and modern runtimes, diff into
+  `route-har-diff/<routeId>.json` (`apiCallSequenceLegacy/Modern[]`, `extraCallsInModern`,
+  `missingCallsInModern`, `reorderedCalls`, `payloadShapeDeltas`, `authHeaderDeltas`,
+  byte/count totals). Any extra/missing/reordered call or auth-header drift blocks the
+  route unless approved as an intentional plan delta. Journey script comes from
+  `screenshotCoverageMatrix` + a new `userJourneyCatalog`, "not from hand-written per-app
+  scripts."
+- **Workflow Trace coverage gate (state-machine parity, not just edge parity)**: for every
+  `fully-traced` row, a spec must assert (a) verb+URL, (b) payload structure matches
+  `requestShape` **exactly** incl. nested-vs-flat and casing ("the most common parity
+  400"), (c) response bound to documented UI surfaces, and (d) every `visibleStateLabels`
+  entry appeared *and disappeared* at the correct state-machine point. "Asserting only
+  that the API was called is insufficient and has shipped parity defects to users."
+- **Parameterized/detail routes: "never defer"** — a detail route marked "route-verified,
+  deferred to UAT because it needs a real record" hides a `404` (client calls a
+  path-parameter endpoint the backend only registered as a query-string GET).
+- **Runtime Error Watch**: integrated browser DevTools console + backend log stream open
+  side by side; a route that "looks loaded" while the console shows a swallowed `400` or
+  the backend logged a `500` is not `live`.
+- **Closing menu**: QA twin `12-QA-frontend-platform-integration` (Lanes: Contract, Auth
+  interceptor checks; ETA 5-8 min) / `next` → Step 13 DEV / `stop`. Step 13's name
+  confirmed: "Frontend Shell Stabilization".
+
+## ⚠ Cross-step numbering drift found in prompt 12 (HIGH fork-risk)
+
+This is the most consequential drift found so far and is transcribed **as photographed**,
+not corrected:
+
+- **"Step 14" appears 9 times inside the Step 12 prompt** — "resolve every broken call
+  before Step 14 closes", "the Step 14 hard gate is machine-enforced", "Step 14 cannot
+  close while `summary.brokenCallCount > 0`", "Step 14 owns the gate that every migrated
+  route's primary data calls actually reach the real protected backend", "Step 14 must
+  also load `workflow-trace-inventory.json`", "Step 14 cannot close while any
+  `fully-traced` row lacks a passing spec", "keep Step 14 open" (403 gap), "When Step 14
+  cites current startup-proof evidence…", "For every route exercised by Step 14 platform
+  integration". Meanwhile the header, ownership boundary, verdict model, completion gate,
+  and closing menu all say **Step 12**.
+- Companion drift in the same region: "the **Step 8** per-route behavior plan" (that
+  artifact is Step 6's `per-route-behavior-plan.json`), "the **Step 13**
+  `perRouteBehaviorList`" (that list is Step 11's), "`workflow-trace-inventory.json`
+  (produced in **Step 5**)" (Step 3 produces it per prompt 03), "an intentional plan delta
+  in **Step 7's** `apiIntegrationPlan`" (Step 5 owns `apiIntegrationPlan` per prompt 05),
+  "record an explicit **Step 8** retirement decision" (retirement decisions are Step 8 in
+  prompt 11's wording, so this one may be correct), and a `workflow-trace-inventory.json`
+  path under `.modernization/legacy-analysis/` where prompt 03 puts it under
+  `.modernization/ignition-artifacts/discovery/`.
+- **Why it matters:** this reads like content authored when platform integration was
+  numbered Step 14 (and analysis/planning sat at different numbers), then renumbered
+  without updating the body. Every one of these is a fork point — two developers' models
+  will resolve "Step 14 cannot close" differently inside a step labelled 12, and the
+  `-CurrentStep` drain gates depend on step numbers being literal.
+
+## Transcription uncertainties (prompt 12)
+
+- The step-number references above are transcribed exactly as photographed; several are
+  in heavily-wrapped lines, so the *specific* numbers in the "Step 8 per-route behavior
+  plan / Step 13 perRouteBehaviorList" clause are the least legible of the set and should
+  be re-read against the source before acting on them.
+- The window title changes from `OpX-Ignition-Kit [Administrator]` (photos 1-5) to
+  `IgnitionKit1.2` (photos 6-9) while the breadcrumb still reads `OpX-Ignition-Kit`;
+  possibly a second workspace or version folder. Both photo sets agree on the overlapping
+  lines 237-256, so the content is consistent.
+- The Step-12 "NO .feature files" rule directly contradicts prompt 06's Gherkin planning
+  (`{feature-name}.feature` per user journey, `@smoke`/`@regression` tags); preserved
+  as-is in both files.
+- `generate-integration-tests.ps1` writes to `tests/frontend/e2e/integration/generated/`
+  in one clause and `tests/frontend/integrationFrontend/` in the next; both transcribed
+  as shown.
+- Double-backtick identifier styling in the HAR Diff Gate section preserved as shown.
+- Long wrapped lines throughout reconstructed from wrap positions; overlaps verified at
+  237-256, 287-301, 323-327, and 347-363.
+- File ends at line 381.
 
 ## Structural facts added by prompt 11
 
