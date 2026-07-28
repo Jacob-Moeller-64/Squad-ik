@@ -30,6 +30,7 @@ references, not values).
 | `prompts/18-P2-deployment-and-clean-up.prompt.md` | P2 Modernize, Step 18 DEV | transcribed from 3 photos |
 | `prompts/19-P3-final-fusion-restructure-review.prompt.md` | **P3 Review**, Step 19 | transcribed from 1 photo |
 | `prompts/20-P3-final-verification.prompt.md` | P3 Review, Step 20 | transcribed from 2 photos |
+| `prompts/21-P3-figma-review.prompt.md` | P3 Review, Step 21 | transcribed from 2 photos |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -136,6 +137,87 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by prompt 21
+
+- **First Figma MCP integration**: tools gain **`figma/*`** alongside `fusion/*` and
+  `fusion/copilot-docs/*`. Same `OpX-AppMod-P3-Review` agent as Step 20. Balanced tier,
+  10-20 min, 70 lines.
+- **The H1 is just `# FIGMA REVIEW`** — no "Step 21" prefix, unlike every other prompt
+  (`# Step NN Title`). Minor, but it means a header-based step-number extractor would fail
+  on this file.
+- **"Not a cosmetic-only pass" is the whole point**: "Step 21 is the visual review gate,
+  but **it only counts when the reviewed UI scope is both visually aligned AND functionally
+  complete enough for review**" and "It is blocked when critical feature completeness is
+  still missing **even if the screenshots look good**." A design-comparison gate that
+  refuses to be fooled by a pretty screenshot.
+- **"Critical visible-but-unwired controls" is the named failure class** and blocks by
+  default. Defined explicitly as: primary workflows, data-changing controls, exports, print
+  actions, and secondary admin controls — "unless the evidence pack records an explicit
+  approved defer reason." When blocked, the response must name "the exact route or screen,
+  the exact blocked control, why it is critical, and the clearest remediation path."
+- **Three statuses, all with a `NotApplicable` arm**: `visualReviewStatus`
+  (Aligned|DriftOpen|NotApplicable), `criticalControlStatus` (Clear|Blocked|NotApplicable),
+  `step22HandoffStatus` (ReadyForAcceptance|NotReadyForAcceptance|Blocked).
+- **`browserSurfaceApplicability: NotApplicable` is a first-class path**, resolved from
+  `decisions.json` *before* any review decision: "do not force a browser screenshot or
+  Figma comparison pass. Record the explicit not-applicable reason … confirm no managed
+  browser-surface visual-contract obligation remains hidden in the final review state, and
+  return a truthful lightweight proof decision." API-only apps get an honest lightweight
+  pass rather than a fabricated visual review.
+- **Operator focus / chat-vs-artifact split** — a token-discipline pattern worth stealing:
+  "Keep the numbered-step response **tight**: reviewed scope, review decision, top blockers
+  …, refreshed artifact status, and the three status fields. Keep route-by-route screenshot
+  comparisons, drift-by-severity detail, and reviewed-screen evidence in
+  `figma-review.json` **instead of replaying them in chat**." Explicitly separates the
+  durable artifact from the conversational summary.
+- **New artifact path variant**: `.modernization/**artifacts**/reviews/figma-review.json`
+  — a third root alongside `.modernization/ignition-artifacts/reviews/` (Step 19) and
+  `.modernization/fusion-restructure/` (Steps 19-20).
+- **Step 22's name implied**: "Ready**ForAcceptance**" / "final acceptance review" — Step
+  22 is the acceptance review gate.
+
+## ⚠ +2 drift in prompt 21 (sixth handoff-field mismatch, now with adjacent-line proof)
+
+Prompt 21 makes six prompts with the declared-vs-required handoff mismatch (13, 15, 16, 19,
+20, 21):
+
+- Objective declares **`step22HandoffStatus`** (correct: 21 → 22); Closure contract requires
+  the response to include **`step24HandoffStatus`** — never defined in the prompt.
+- "Classify **Step 23** completion explicitly with these statuses" — this step is 21.
+- "the three **Step 23** status fields" (Operator focus); "before making a **Step 23**
+  decision" and "as **Step 23** blockers by default" (Review core); "the exhaustive
+  **Step 23** proof artifact" (Artifact contract).
+- "return a truthful lightweight proof decision for **Step 24**" — under the +2 offset that
+  is Step 22, the acceptance gate.
+
+**The tightest evidence yet that the update was applied per-line, not per-file:** two
+adjacent bullets in Review core disagree —
+
+```
+- Treat unresolved critical visible-but-unwired controls as Step 23 blockers by default.   <- old (+2)
+...
+- When Step 21 is blocked by an unresolved control, return the exact route or screen ...   <- new (correct)
+```
+
+Prerequisite citations are correct throughout ("Reuse current **Step 20** verification
+proof", "confirm current **Step 20** final verification evidence"), so the drift is
+concentrated in self-referential statements about *this* step's own number.
+
+Running tally of the declared-vs-required mismatch: **13, 15, 16, 19, 20, 21** affected;
+**7, 8, 10, 11, 14, 17, 18** clean; 1-6, 9, 12 declare no handoff field.
+
+## Transcription uncertainties (prompt 21)
+
+- No mojibake step-reference string appears in this prompt (its Closure contract uses
+  `Pass`/`Blocked` rather than a "keep the exact next step on `…`" line), consistent with
+  Phase 3 prompts having a different closeout shape.
+- Artifact path recorded as `.modernization/artifacts/reviews/figma-review.json` exactly as
+  shown — note this differs from Step 19's `.modernization/ignition-artifacts/reviews/`.
+  Whether these are genuinely different directories or a typo is worth checking at source.
+- Long wrapped lines reconstructed from wrap positions; overlap verified at lines 29-59
+  across the two photos.
+- File ends at line 70.
 
 ## Structural facts added by prompt 20
 
