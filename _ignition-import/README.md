@@ -23,6 +23,7 @@ references, not values).
 | `prompts/11-P2-frontend-migration.prompt.md` | P2 Modernize, Step 11 DEV | transcribed from 4 photos |
 | `prompts/12-P2-frontend-platform-integration.prompt.md` | P2 Modernize, Step 12 DEV | transcribed from 9 photos |
 | `prompts/13-P2-frontend-shell-stabilization.prompt.md` | P2 Modernize, Step 13 DEV | transcribed from 5 photos |
+| `prompts/14-P2-frontend-ui-inventory-and-fusion-map.prompt.md` | P2 Modernize, Step 14 DEV | transcribed from 4 photos |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -129,6 +130,102 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by prompt 14
+
+- **Planning-only lane — the first Phase 2 step that changes no code.** "It is planning
+  only: no `src/` behavior changes here." Balanced tier, 15-30 min. Produces the four
+  artifacts Steps 15-16 execute against: `ui-inventory.json` (per-control classification),
+  `ui-visual-contract.json` (the measurable visual answer key),
+  `ui-fusion-map.json` (Fusion-owned / wrapper / bridge / keep), and
+  `ui-migration-order.json` (dependency-safe order).
+- **Entry discipline is a hard gate on the previous step's artifact**: Step 14 "begins the
+  Fusion map-and-swap block, so do not start it until the Step 13 visual-parity gate
+  passed" — requires a current `visual-parity-report.json` with `overall: pass`; missing,
+  stale, or `fail` routes back to Step 13 "instead of mapping and swapping over a shell
+  that does not yet resemble the legacy app."
+- **"Upstream Source Of Truth (MANDATORY)" — the cleanest anti-absorption rule in the
+  kit**: "Step 14 is a refresh, not a discovery." Per-control classification originates in
+  Step 3 `uiControlClassification`; wrapper-capability requirements in Step 5
+  `decisions.json.wrapperCapabilityPlan`; sub-pattern order in Step 5
+  `ui-migration-order.json`. **"Any field Step 14 has to invent from raw source is an
+  upstream gap and must route back to Step 3 or Step 5 instead of being absorbed here."**
+- **Seven mandatory per-control classification fields**, each tied to a concrete downstream
+  swap hazard: `bindingShape` (twoWayNgModel | oneWayNgModel | uncontrolledValueEvent |
+  reactiveFormControl | uncontrolledNoModel), `optionsAreLiteralModelValues` (`<option>`
+  with no `value` attribute → replacement arrays must satisfy `label === value` and bind
+  `valuePrimitive=true`), `migrationEligible` (`false` for parity-scaffold /
+  reverse-engineering capture controls — "must never surface as Step 15 or Step 16
+  candidates"), `compositeGroupId` (visually paired controls forming one semantic unit —
+  swapped as a unit or explicitly deferred), `dynamicId` (template-interpolated ids like
+  `id="lrSum-{{i}}"` require a documented `testIdFn` before swap),
+  `requiresWrapperCapability` (Step 16 must skip slices whose capability is absent), and
+  `dialogContext` (dialog controls belong to a dialog family, not the main-shell family).
+- **Sub-Pattern Cataloging (MANDATORY)**: group by binding shape, value type
+  (boolean/numeric/string-literal/lookup-object), and wrapper-capability requirement;
+  record `{subPatternId, description, controls[], requiresWrapperCapability[],
+  suggestedPassOrder}`; a family with 3+ sub-patterns must declare a dependency-safe
+  `suggestedPassOrder` "so Step 16 selection is deterministic."
+- **Component Reuse Analysis (MANDATORY)** — new technique: cluster components *across
+  routes* by shape signature (input props, emitted events, content slots, control
+  composition, layout role), via normalized template-AST hashing, `@Input`/`@Output`
+  similarity, or visual signature comparison of captured screenshots. Emits
+  `component-reuse-clusters.json` with `clusterId`/`signatureSummary`/`members[]`/
+  `similarityScore` (0..1)/`recommendation` (unify-now | unify-at-step-15 | keep-distinct |
+  needs-review)/`recommendationReason`. **≥ 0.85 similarity defaults to
+  `unify-at-step-15`** "so Step 15 wrapper work consolidates the duplicate surfaces into a
+  single Fusion-backed wrapper instead of shipping N near-identical wrappers." Signature
+  extraction is data-driven from `componentCensus` + `uiControlClassification`, "not from
+  hard-coded component names."
+- **Accessibility Inventory + Playwright Test Inventory** per primitive family (current
+  ARIA/`data-testid`/keyboard/screen-reader status and required remediation; existing POM
+  and Gherkin coverage or gaps). Grids, charts, heavily customized tables, and composite
+  forms are flagged high-risk families requiring explicit test plans.
+- **Three status axes**: `inventoryCoverageStatus` (DecisionGrade|Partial|Blocked),
+  `visualContractStatus` (Measured|Partial|Blocked), `step15HandoffStatus`
+  (ReadyForUIReplacement|NotReadyForUIReplacement|Blocked). Fixed closing gate:
+  `Ready for Step 15 Fusion UI Integration: Yes`.
+- **The lightest QA twin in the kit**: `14-QA-frontend-ui-inventory-and-fusion-map` —
+  "Artifact schema validation only (no test execution)", "Under 1 min ET. Chainable /
+  auto-runnable." Because Step 14 changes no code, its QA is pure schema validation and is
+  explicitly safe to auto-chain. Step 15's name confirmed: "Fusion UI Integration".
+
+## ⚠ Cross-step numbering drift found in prompt 14 (MEDIUM — milder than 12/13)
+
+Prompt 14 is largely self-consistent (`step15HandoffStatus` and "Ready for Step 15 Fusion
+UI Integration" are correct for a Step 14 prompt handing off to Step 15), but three
+coverage statements describe **this** step's own completeness using the wrong number:
+
+- "Inventory without accessibility gaps documented is incomplete **Step 15** coverage."
+- "Inventory without test gap analysis is incomplete **Step 15** coverage."
+- "Inventory without these per-control fields populated is incomplete **Step 15** coverage
+  and **Step 16** must not advance."
+
+All three describe the inventory — Step 14's own deliverable — so they should read
+Step 14 (and, in the third, likely Step 15 rather than Step 16). Notably the parallel line
+in the Sub-Pattern section gets it right: "families without sub-pattern cataloging are
+incomplete **Step 14** coverage."
+
+**Note on the pattern across 12/13/14:** a single clean "everything shifted by N"
+hypothesis does **not** fit all three prompts (12 describes itself as 14; 13 describes
+itself as 15 with a `step16HandoffStatus`; 14 describes itself as 15 in three places while
+being correct elsewhere). The more likely mechanism is a **mix of partial renumbering and
+copy-paste between sibling prompts** — which is harder to reason about by hand and is
+exactly why a mechanical linter (declared step number vs every `Step N` /
+`step<N>HandoffStatus` / `-CurrentStep N` reference) is the right fix rather than
+case-by-case editing.
+
+## Transcription uncertainties (prompt 14)
+
+- Long wrapped lines throughout reconstructed from wrap positions; overlaps verified at
+  53-61, 104-116, and 123-133.
+- Double-backtick identifier styling in the Component Reuse Analysis section preserved as
+  shown.
+- The Required-behavior artifact paths use
+  `.modernization/ignition-artifacts/modernize/fusion-restructure/…` while the
+  visual-parity and visual-contract references use `.modernization/fusion-restructure/…`;
+  both transcribed as shown (same divergence noted in prompt 13).
+- File ends at line 164.
 
 ## Structural facts added by prompt 13
 
