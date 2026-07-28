@@ -25,6 +25,7 @@ references, not values).
 | `prompts/13-P2-frontend-shell-stabilization.prompt.md` | P2 Modernize, Step 13 DEV | transcribed from 5 photos |
 | `prompts/14-P2-frontend-ui-inventory-and-fusion-map.prompt.md` | P2 Modernize, Step 14 DEV | transcribed from 4 photos |
 | `prompts/15-P2-fusion-ui-integration.prompt.md` | P2 Modernize, Step 15 DEV | transcribed from 4 photos |
+| `prompts/16-P2-next-fusion-ui-upgrade-slice.prompt.md` | P2 Modernize, Step 16 DEV | transcribed from 3 photos |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -131,6 +132,113 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by prompt 16
+
+- **The continuation lane**: picks the next eligible family/sub-pattern from the Step 14
+  order and runs **Step 15's prompt in full** for that one slice
+  (`.github/prompts/15-P2-fusion-ui-integration.prompt.md`) — the first prompt in the kit
+  that invokes another numbered prompt as its executor. "It runs Step 15's replacement
+  contract for that one slice - it does not invent a different process."
+- **Or proves the lane exhausted.** `nextEligibleFamilyStatus`:
+  `Advanced` | `Exhausted` | `Blocked`; plus `artifactReconciliationStatus`
+  (Current|Partial|Blocked) and `step17HandoffStatus`
+  (ReadyForVerification | **ContinueUiLane** | Blocked) — the `ContinueUiLane` value makes
+  "loop back to me" a first-class status rather than an implicit outcome.
+- **Eligibility Predicate (MANDATORY)** — the anti-guessing core, four conjunctive
+  conditions: `migrationEligible` is not `false`; `bindingShape` is supported by the
+  wrapper/target "without a binding-shape refactor in the same pass"; every
+  `requiresWrapperCapability` entry is present in the current wrapper; and the slice was
+  not already advanced in a prior pass (checked against `ui-fusion-map.json` map keys).
+  "If no remaining slice is eligible under this predicate, classify
+  `nextEligibleFamilyStatus: Exhausted` and proceed to Step 17. **Do not improvise
+  eligibility outside this predicate.**" Exhaustion claims must cite the predicate rows.
+- **Sub-Pattern Progress (MANDATORY)**: exactly one sub-pattern per pass — "do not chain
+  two sub-patterns even when they belong to the same family"; read `subPatternProgress`
+  before selecting; follow `suggestedPassOrder`; skip-with-reason when a wrapper capability
+  is unsatisfied (choice is "close the wrapper-capability gap first or move to the
+  next-eligible sub-pattern"); close as `familyRetirementStatus: Partial` with a named
+  `followUpSlice` while sub-patterns remain, `Complete` only when all are migrated or
+  deferred.
+- **Sibling Slice Regression Gate (MANDATORY)** — genuinely new and the sharpest idea in
+  this prompt: after the primary slice lands, **rerun the verification suite (visual
+  parity, E2E click-through, accessibility scan, console-error watch) for the 2-3 nearest
+  sibling slices**. Siblings are data-driven from `slice-graph.json` — slices sharing a
+  route ancestor, a parent module/feature folder, or a common wrapper from
+  `wrapper-versions.json`. Emits `sibling-regression/<sliceId>.json` with
+  `primarySliceId`/`siblingSlicesChecked[]`/`regressionFindings[]`
+  (`siblingSliceId`, `check` ∈ visual-parity|e2e|a11y|console-errors, `status` ∈
+  pass|warn|fail, `evidencePath`). **Any sibling `fail` blocks the primary slice from
+  closing.** This is blast-radius verification — catching the case where swapping one
+  family silently breaks its neighbours through a shared wrapper.
+- **Inherits Step 15's economics**: same ROI-First scoring
+  (`(visibilityScore + interactionScore) - riskScore`, first three passes must be visible
+  on the running app), same 5-10pp parity gain floor, same repeat-run recommendation — but
+  with its own diff path `parity-diffs/step16-pass-{passId}/`.
+- **Step 17's name confirmed**: "Rewire All Tests & Verify".
+
+## ✅ Numbering drift SOLVED: a clean +2 offset, confirmed by decoding the mojibake
+
+Prompt 16 resolves the drift question definitively, and **corrects the "messy mixed drift"
+characterization recorded under prompt 14.**
+
+Two lines in prompt 16's Completion gate render as mojibake in the editor:
+
+```
+- Keep the exact next step on `ðY"ß 1ï.ßâfE8ï.ßâf£ Next Fusion UI Upgrade Slice`
+- Hand off to `ðY§ª 1ï.ßâf£9ï.ßâf£ Rewire All Tests & Verify`
+```
+
+`ðŸ` is the classic signature of UTF-8 bytes decoded as Windows-1252, and `1ï¸â£` is
+exactly how the emoji keycap `1️⃣` mis-decodes. So those strings are really:
+
+- `🔷 1️⃣8️⃣ Next Fusion UI Upgrade Slice`  → **Step 18**
+- `🧪 1️⃣9️⃣ Rewire All Tests & Verify` → **Step 19**
+
+…inside the prompt whose filename, header, and Objective all say **Step 16**. Every
+mis-numbered reference across the frontend block is exactly **+2**:
+
+| Prompt (declared) | Objective declares | Completion gate requires | Old-number self-refs |
+|---|---|---|---|
+| 12 | — | — | "Step 14" ×9 |
+| 13 | `step14HandoffStatus` ✓ | `step16HandoffStatus` | "Step 15 Self-Audit" |
+| 14 | `step15HandoffStatus` ✓ | — | "Step 15 coverage" ×3 (+1, the one partial fit) |
+| 15 | `step16HandoffStatus` ✓ | `step18HandoffStatus` | "Step 17 pass", `step17-pass-{passId}/` |
+| 16 | `step17HandoffStatus` ✓ | `step19HandoffStatus` | "Step 18 pass", "Step 17 `wrapper-versions.json`" |
+
+**Mechanism:** the pipeline was renumbered **down by two** (old 14→12, 15→13, 16→14,
+17→15, 18→16, 19→17). Frontmatter, headers, and **Objective** blocks were updated;
+**Completion gates, Self-Audit blocks, and several MANDATORY sections were not.** Prompt 16
+is internally split down the middle — its "If You Hit A Blocker" section uses correct new
+numbering ("Only advance to Step 17…", "keep the exact next step on `Step 16 Next Fusion UI
+Upgrade Slice`") while its Completion gate ten lines earlier uses old numbering with
+corrupted emoji.
+
+**Two independent defects, both mechanically fixable:**
+1. **Numbering:** a linter comparing each prompt's declared step against every `Step N` /
+   `step<N>HandoffStatus` / `-CurrentStep N` / `stepNN-pass-` reference catches all of it.
+   Every prompt 13/15/16 orders the agent to emit a `step<N>HandoffStatus` it never
+   defines.
+2. **Encoding:** the emoji in step-reference strings are corrupted UTF-8-as-Windows-1252.
+   These appear inside "keep the exact next step on `…`" instructions, so an agent
+   following them literally emits garbage. Detect with a grep for `ðŸ` / `ï¸â£` across the
+   kit and re-save the affected files as UTF-8. (Prompt 15 showed the same corruption; its
+   status bar reads "UTF-8 **with BOM**" where earlier prompts read plain UTF-8.)
+
+## Transcription uncertainties (prompt 16)
+
+- The two mojibake strings in the Completion gate are recorded in the transcription as
+  `<MOJIBAKE: emoji + keycap digits …>` placeholders rather than reproducing the corrupted
+  bytes, since the corruption is the finding and reproducing it would risk propagating it.
+  The decoded intent (`🔷 1️⃣8️⃣` / `🧪 1️⃣9️⃣`) is inferred from the standard
+  UTF-8→Windows-1252 mapping, not read directly — verify against the source file.
+- Double-backtick identifier styling in the ROI-First, Per-Slice, and Sibling Regression
+  sections preserved as shown.
+- Artifact paths again split between `…/ignition-artifacts/modernize/fusion-restructure/…`
+  (Required behavior) and `.modernization/fusion-restructure/…` (gates); both as shown.
+- Long wrapped lines reconstructed from wrap positions; overlaps verified at 51-59 and
+  95-101.
+- File ends at line 138.
 
 ## Structural facts added by prompt 15
 
@@ -314,14 +422,13 @@ Step 14 (and, in the third, likely Step 15 rather than Step 16). Notably the par
 in the Sub-Pattern section gets it right: "families without sub-pattern cataloging are
 incomplete **Step 14** coverage."
 
-**Note on the pattern across 12/13/14:** a single clean "everything shifted by N"
-hypothesis does **not** fit all three prompts (12 describes itself as 14; 13 describes
-itself as 15 with a `step16HandoffStatus`; 14 describes itself as 15 in three places while
-being correct elsewhere). The more likely mechanism is a **mix of partial renumbering and
-copy-paste between sibling prompts** — which is harder to reason about by hand and is
-exactly why a mechanical linter (declared step number vs every `Step N` /
-`step<N>HandoffStatus` / `-CurrentStep N` reference) is the right fix rather than
-case-by-case editing.
+**SUPERSEDED — see "Numbering drift SOLVED" under prompt 16.** This section originally
+concluded that no single renumbering hypothesis fit prompts 12-14. Prompt 16's decoded
+mojibake (`1️⃣8️⃣`/`1️⃣9️⃣` inside the Step 16 prompt) established a clean **+2 offset**
+across the whole frontend block: the pipeline was renumbered down by two, and Objective
+blocks were updated while Completion gates and Self-Audit blocks were not. Prompt 14's
+three "incomplete Step 15 coverage" lines remain the one +1 outlier, most likely
+copy-pasted boilerplate from the neighbouring prompt.
 
 ## Transcription uncertainties (prompt 14)
 
