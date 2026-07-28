@@ -31,6 +31,7 @@ references, not values).
 | `prompts/19-P3-final-fusion-restructure-review.prompt.md` | **P3 Review**, Step 19 | transcribed from 1 photo |
 | `prompts/20-P3-final-verification.prompt.md` | P3 Review, Step 20 | transcribed from 2 photos |
 | `prompts/21-P3-figma-review.prompt.md` | P3 Review, Step 21 | transcribed from 2 photos |
+| `prompts/22-P3-final-acceptance-criteria-review.prompt.md` | P3 Review, Step 22 | transcribed from 2 photos |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -137,6 +138,88 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by prompt 22
+
+- **A sixth agent**: `agent: OpX-Code-Reviewer`. Full roster: `OpX-AppMod-P1-Discovery`,
+  `OpX-dotnet-upgrade`, `OpX-AppMod-P2-Modernize`, `OpX-Fusion-Reviewer`,
+  `OpX-AppMod-P3-Review`, `OpX-Code-Reviewer`. Balanced tier, 10-20 min, 74 lines.
+  H1 is `# FINAL ACCEPTANCE-CRITERIA REVIEW` with no step-number prefix (same as prompt 21).
+- **This closes the Step 4 → Step 22 scorecard loop** — the before/after acceptance
+  comparison the kit has been building toward since Discovery. The header block names all
+  four artifacts explicitly:
+  - **Review Type:** Final acceptance (after modernization)
+  - **Manifest:** `discovery/review-manifest.json` (same manifest Step 4 used)
+  - **Output:** `reviews/final-review.json`
+  - **Final Gate Artifact:** `portal/data/json/FINAL-COMPLIANCE-REPORT.json`
+  - **Compare Against:** `discovery/baseline-review.json` ← **Step 4's output**
+  So `BASELINE-COMPLIANCE-REPORT.json` (Step 4) and `FINAL-COMPLIANCE-REPORT.json`
+  (Step 22) are the bookends, with per-criterion `improvementDelta` computed between them
+  exactly as prompt 04 promised.
+- **"Validate the final app against the acceptance criteria AND the [Step 5] target-state
+  contract together, not as separate unrelated checks"** — acceptance is not just "does it
+  score well" but "does it score well *and* match the architecture we approved."
+- **Three statuses**: `acceptanceMatrixStatus` (**DecisionGrade**|Partial|Blocked),
+  `controlPointAcceptanceStatus` (Aligned|DriftDetected|Blocked), `step23HandoffStatus`
+  (ReadyForReadinessReview|NotReadyForReadinessReview|Blocked). The completion bar is
+  explicitly about *usefulness to the next step*: "Do not treat Step 22 as complete when
+  acceptance findings exist but the artifact **still cannot tell Step 23 whether the final
+  acceptance state is decision-grade**."
+- **Four named final-acceptance blockers** (not "post-review polish"): unresolved
+  control-point drift, unapproved `Temporary bridge` carry-forward, a regressed
+  protected-browser-API ownership contract, and a browser surface no longer aligned to the
+  Step 14 UI contract artifacts without a recorded defer reason.
+- **Protected starter shell preservation is an acceptance criterion**: confirm platform-owned
+  backend and browser concerns still live in the starter shell "instead of reintroducing a
+  parallel custom platform surface" — the anti-fork rule enforced one last time at the gate.
+- **Same chat-vs-artifact discipline as Step 21**: criterion-by-criterion deltas, bridge
+  detail, and browser-surface contract detail stay in the artifacts "instead of replaying
+  them in chat."
+- **Step 23's name implied**: `ReadyForReadinessReview` → Step 23 is the **Readiness
+  Review**.
+
+## ⚠ Prompt 22 contains an explicit acknowledgement of the renumbering
+
+This is the most important drift finding so far, because it shows the problem was **known
+and worked around in prose rather than fixed**:
+
+> "Use the same review contract and outputs as the prior final acceptance review lane,
+> **but treat this as Step 22 in the current numbered process.**"
+
+That line only makes sense if the author knew the surrounding content carried old step
+numbers and chose to patch it with an instruction to the model instead of correcting the
+references. It also explains why the drift is per-line rather than per-file: nobody swept
+the bodies, they added a disclaimer.
+
+Prompt 22's own instances (seventh handoff mismatch):
+- Declares **`step23HandoffStatus`** (correct: 22 → 23); Closure contract requires
+  **`step25HandoffStatus`** — never defined.
+- "as the exhaustive **Step 24** proof artifacts" (should be 22); "If **Step 24** is blocked
+  by stale prerequisites…" (should be 22).
+- "the **Step 7** target-state contract" — target-state decisions are Step 5's.
+- **Correct** in Operator focus ("the three **Step 22** status fields", "in the **Step 22**
+  artifacts"), in the completion bar ("Do not treat **Step 22** as complete… tell **Step
+  23**…"), and in all prerequisite citations ("**Step 20** final verification evidence and
+  **Step 21** visual-review", "Reuse current **Step 20** and **Step 21** prerequisite
+  proof"). The Objective/Operator/Review sections were updated; the Artifact and Closure
+  contracts were not.
+
+Running tally of the declared-vs-required handoff-field mismatch: **13, 15, 16, 19, 20, 21,
+22** affected; **7, 8, 10, 11, 14, 17, 18** clean; 1-6, 9, 12 declare no handoff field.
+Every Phase 3 prompt so far (19-22) is affected.
+
+## Transcription uncertainties (prompt 22)
+
+- **Path inconsistency within the same prompt**: the header block gives
+  **Output:** `.modernization/ignition-artifacts/reviews/final-review.json` while the
+  Artifact contract says "Keep those details in
+  `.modernization/artifacts/reviews/final-review.json`" — same filename, different root.
+  Both transcribed as shown; worth resolving at source since a script reading one and
+  writing the other would silently diverge.
+- No mojibake in this prompt (no emoji or non-ASCII symbols present).
+- Long wrapped lines reconstructed from wrap positions; overlap verified at lines 47-60
+  across the two photos.
+- File ends at line 74.
 
 ## Structural facts added by prompt 21
 
