@@ -22,6 +22,7 @@ references, not values).
 | `prompts/10-P2-frontend-foundation-and-scaffold.prompt.md` | P2 Modernize, Step 10 DEV | transcribed from 8 photos |
 | `prompts/11-P2-frontend-migration.prompt.md` | P2 Modernize, Step 11 DEV | transcribed from 4 photos |
 | `prompts/12-P2-frontend-platform-integration.prompt.md` | P2 Modernize, Step 12 DEV | transcribed from 9 photos |
+| `prompts/13-P2-frontend-shell-stabilization.prompt.md` | P2 Modernize, Step 13 DEV | transcribed from 5 photos |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -128,6 +129,109 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by prompt 13
+
+- **The last shell-level gate before UI planning** (same agent + browser tools; Balanced
+  tier, 10-25 min). Owns visual, layout, navigation, and responsive parity of the
+  stabilized shell. Four status axes: `shellParityStatus` (Stable|Drifting|Blocked),
+  `shellGuardStatus` (Aligned|Stale|Blocked), `fieldParityStatus`
+  (Reconciled|Drifting|Blocked), `step14HandoffStatus`
+  (ReadyForUIPlanning|NotReadyForUIPlanning|Blocked).
+- **"Regression guard, not re-derivation"** — the cleanest ownership statement in the kit:
+  Step 13 CONSUMES Step 11's control/column verdict and Step 12's live-data verdict. If a
+  dropped column or unfilled grid shows up here, it is "a **Step 11/12 regression** to
+  route back to its owner and fix at the source, **not new Step 13 work**." Same for the
+  styling foundation (Step 10). Three adjacent steps, three non-overlapping jobs, with the
+  routing rule stated explicitly.
+- **Visual Parity Gate** (`/.github/skills/visual-parity-gate/SKILL.md`) — composes the
+  runtime-parity-checkpoint and screenshot-capture skills, **boots the modern app AND the
+  legacy app on a second port when runnable**, captures matching routes, and diffs
+  computed styles + screenshots against `ui-visual-contract.json` +
+  `styling-foundation.json`. Per-route `pass`/`partial`/`fail` across palette, typography,
+  header/nav/footer presence, nav route model, layout density. `overall: pass` only when
+  every route passes or every non-pass route is in `acceptedResidualGaps[]` with a real
+  reason and owner — "do not silently downgrade a `fail` route to an accepted gap."
+- **Field & Control Parity Reconciliation Gate** — side-by-side comparison in the
+  integrated browser, booting the modern app and the runnable legacy app
+  (`LegacyCode_NETXX_Upgrade` when the original `LegacyCode/` host is not runnable) on
+  separate ports, comparing "column-for-column and control-for-control". Records
+  `fieldParity` roll-up plus `columnsMissing[]` / `inertControls[]` per route.
+- **Two behavioral gates carried from Step 12's assertion families** now as binary
+  completion gates: `filterEffectParity = pass` ("a filter that does nothing is a
+  `filterEffect: fail` regardless of whether the API call returns 200") and
+  `siblingListDistinctnessOverall = pass` (two tab/accordion sections showing identical
+  rows "indicate a wrong discriminator or shared endpoint bug").
+- **Responsive Breakpoint Parity Gate (MANDATORY)** — new dimension: capture every route
+  at 375/768/1440 (overridable via `responsive-breakpoints.json`), emit
+  `responsive-parity/<routeId>.json` with `breakpointPx`, legacy/modern screenshot paths,
+  `pixelDiffPercent`, `layoutShifts[]`, `overflowEvents[]`, `horizontalScrollDetected`,
+  `parityState` (pass|warn|fail). Legacy breakpoints reverse-engineered from
+  `componentCensus` media-query evidence and "may add to (not replace) the default trio."
+- **Self-Audit Checklist (MANDATORY)** — a genuinely new pattern: before closeout the
+  agent must emit a self-attestation block answering every checklist row with `YES` + a
+  one-line evidence pointer (file path, test id, command output line, artifact field),
+  `NO` + deferral rationale + a carry-forward entry, or `N/A` + rationale. Nine rows
+  covering artifact reads, style entry points, framework class-hook resolution, shell
+  a11y, shell POM extraction, Gherkin scenarios, visual-regression baseline commit,
+  layout/breakpoint/z-index audit, and temporary-UI-bridge classification with
+  `retirementStep`. Backed by an **Agent Contract Rule (HARD GATE)** that invalidates the
+  ready status when any row is `NO` without both artifacts.
+- **Shell accessibility mandate** with a sharp anti-false-green clause: the `<nav>`
+  landmark must render every link in the route menu metadata and each must navigate — "a
+  present-but-empty `<nav>` landmark (the element and its test id exist but no links
+  render) passes the landmark check yet is a navigation parity defect."
+- **Unbacked framework class hooks** restated as a shell-level check (Bootstrap
+  `nav-tabs`/`panel`/`dropdown`/`btn-*`/`col-*`): they "render as bare DOM (bullet lists
+  where tabs are expected, always-open dropdowns, stacked blocks where grid columns are
+  expected) and silently defeat visual parity."
+- **Closing menu**: QA twin `13-QA-frontend-shell-stabilization` (Lanes: Browser-contract
+  regression, Navigation smoke; ETA 3-5 min) / `next` → Step 14 DEV / `stop`. Step 14's
+  name confirmed: "Frontend UI Inventory & Fusion Map".
+
+## ⚠ Cross-step numbering drift found in prompt 13 (HIGH fork-risk — same class as prompt 12)
+
+Transcribed **as photographed**, not corrected. This is the second prompt in a row with
+renumbering drift, which makes it a systemic pattern rather than a one-off:
+
+- **The Self-Audit `Agent Contract Rule (HARD GATE)` references a status field the prompt
+  never defines.** The prompt declares `step14HandoffStatus`, but the hard gate says
+  "`step16HandoffStatus: ReadyForUIPlanning` is INVALID when…", "an explicit **Step 16**
+  carry-forward entry", and "the agent MUST downgrade **`step16HandoffStatus`** to
+  `NotReadyForUIPlanning`". An agent following this literally must either error or invent
+  a field.
+- **The Self-Audit section contradicts itself on its own block name.** Its opening line
+  requires "a `Step 13 Self-Audit` block in the chat reply"; its closing line requires
+  "the literal **`Step 15 Self-Audit`** heading… A closeout without this block is treated
+  as a skipped **Step 15** and must be re-run." Both cannot be satisfied.
+- **The Responsive Breakpoint Parity Gate is written against Step 15**: "every **Step 15**
+  stabilized route", "`fail` at any breakpoint blocks **Step 15** closeout", "a documented
+  variance row in the **Step 15** stabilization report" — inside the Step 13 prompt.
+- **Mixed carry-forward targets**: the Self-Audit `NO` branch says "a **Step 14**
+  carry-forward entry" while checklist row 8 says "**Step 17** carry-forward" and the hard
+  gate says "**Step 16** carry-forward".
+- Path divergence for the same artifacts: the Required-behavior section reads them from
+  `.modernization/ignition-artifacts/modernize/fusion-restructure/…` while the checklist
+  and the runtime/visual gates write to `.modernization/fusion-restructure/…`.
+
+Combined with prompt 12's 9 × "Step 14" references, this strongly suggests the frontend
+block was renumbered (platform integration 14→12, stabilization 15→13, and the UI
+inventory/upgrade lanes shifted with it) without the prompt bodies being updated. Every
+one of these is a fork point where different developers' models will resolve the
+contradiction differently, and the `-CurrentStep <n>` drain gates depend on step numbers
+being literal.
+
+## Transcription uncertainties (prompt 13)
+
+- The drift references above are transcribed exactly as photographed and are the highest
+  priority items to re-read against the source before acting.
+- Window title reads `IgnitionKit1.2` (as in prompt 12's later photos) while the
+  breadcrumb still reads `OpX-Ignition-Kit`.
+- Double-backtick identifier styling in the Responsive Breakpoint Parity Gate preserved as
+  shown.
+- Long wrapped lines throughout reconstructed from wrap positions; overlaps verified at
+  53-59, 105-110, 154-161, and 177-192.
+- File ends at line 220.
 
 ## Structural facts added by prompt 12
 
