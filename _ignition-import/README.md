@@ -24,6 +24,7 @@ references, not values).
 | `prompts/12-P2-frontend-platform-integration.prompt.md` | P2 Modernize, Step 12 DEV | transcribed from 9 photos |
 | `prompts/13-P2-frontend-shell-stabilization.prompt.md` | P2 Modernize, Step 13 DEV | transcribed from 5 photos |
 | `prompts/14-P2-frontend-ui-inventory-and-fusion-map.prompt.md` | P2 Modernize, Step 14 DEV | transcribed from 4 photos |
+| `prompts/15-P2-fusion-ui-integration.prompt.md` | P2 Modernize, Step 15 DEV | transcribed from 4 photos |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -130,6 +131,113 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by prompt 15
+
+- **The one-family-per-pass swap lane** (Premium reasoning / high thinking, **15-30 min
+  _per primitive family_** — the first per-unit estimate in the kit). Advances exactly ONE
+  primitive family to its mapped Fusion target. "One family per pass keeps each change
+  small, reviewable, and reversible."
+- **New skill**: `/.github/skills/fusion-ui-component-upgrade/SKILL.md`, loaded and
+  followed "before selecting or editing the family surface."
+- **The Steps 10-13 baseline is named the "reference oracle"** every swap is proven
+  against — and if a swap reveals the baseline was wrong, "that is an upstream regression
+  to fix at its owner step," not Step 15 work. Batching families is explicitly out of
+  scope: "one family only - the next family is Step 16."
+- **Wrapper-Extension Preflight (MANDATORY)** — do the wrapper work *once*, up front: read
+  both the wrapper's current input surface AND the underlying Fusion primitive's surface
+  **via Fusion MCP** ("do not infer the primitive's input surface from prior
+  conversations"), then add every input the family will need in one pass (`placeholder`,
+  `min`, `max`, `step`, `decimals`, `rows`, `valuePrimitive`, `readOnly`, `disabled`,
+  `elementId`, `testId`, generic `options`) "so later sub-pattern passes do not need to
+  extend the wrapper mid-stream." Generic-primitive wrappers (e.g. `fusion-dropdown`) must
+  keep `options` permissive (`Record<string, unknown>`); form-field wrappers need both
+  `readOnly` and `disabled` with a derived `controlDisabled = readOnly || disabled`; and
+  `elementId`/`testId` must forward so `<label for=…>` and `data-testid` keep resolving.
+  **"A first swap that requires a wrapper extension after the swap is incomplete Step 15
+  coverage and must be retried with the preflight applied."**
+- **Wrapper API Stability Gate (MANDATORY)** — genuinely new, and the most
+  library-engineering idea in the kit: once a wrapper has shipped a pass, its public
+  surface is **frozen** — every `@Input`, `@Output`, `ContentChild`, exposed template
+  variable, exposed CSS custom property, and exposed slot becomes "the wrapper's published
+  contract." Later passes may add **additive** inputs only when the wrapper-capability plan
+  is amended, the change is backwards compatible (defaults preserve behavior), and the
+  version is bumped in `wrapper-versions.json`. Breaking changes (rename, remove,
+  type-narrow, default-shift) require **a new wrapper name plus a planned
+  consumer-migration row** — "legacy callers cannot be silently rewritten."
+  `wrapper-api-snapshots/<wrapperName>.<version>.json` is emitted every pass and the
+  snapshot diff becomes review evidence.
+- **Parity Gain Floor (MANDATORY)**: each pass must raise touched-family parity by ≥5
+  percentage points (target 5-10) unless already above 95%. A pass with `parityGain < 5`
+  and pre-pass parity `< 95` must rework the slice, split it into a smaller higher-impact
+  slice, or be classified `Partial` with the exact blocker recorded.
+- **ROI-First Slice Selection (MANDATORY)**: score candidates
+  `{visibilityScore 1-5, interactionScore 1-5, riskScore 1-5, parityGainEstimate}` and take
+  the highest `(visibility + interaction) - risk`; record the score in the pass entry "so
+  the choice is reviewable." The first three passes on a new surface must produce "a
+  noticeable change on the live application" — interactive controls and primary action
+  buttons before "low-visibility passive containers or background scaffolding."
+- **Repeat-Run Recommendation (MANDATORY)**: every non-exhausting pass must explicitly
+  recommend rerunning with the expected `+5 to +10` point gain and name the next-eligible
+  slice with its visibility/interaction score.
+- **Per-Slice Visual Parity Diff (MANDATORY)**: before/after for the touched
+  `{routeId, stateId}` rows only — "not the whole app" — with pixel and structural diff
+  artifacts, recorded into `ui-fusion-map.json` as
+  `{passId, sliceId, parityBefore, parityAfter, parityGain, diffArtifacts[]}`.
+- **Fusion accessibility + POM mandates**: preserve-or-improve ARIA, `data-testid` pattern
+  `fusion-{family}-{purpose}` (e.g. `fusion-button-submit`), keyboard navigation identical
+  to legacy; POM selectors and Gherkin steps updated with the swap.
+  `npm run verify:fusion-ui` refreshes the component-level verification report.
+- **Blocker framing worth stealing**: "A half-swapped family — a `fusion-*` primitive
+  rendering with the wrong variant, width, or a broken binding — is **worse than the legacy
+  control it replaced**, so finish or cleanly revert the one family here rather than moving
+  on." Named likely causes: missing wrapper input, or `valuePrimitive` not set so the bound
+  value broke.
+- **Closing menu**: QA twin `15-QA-fusion-ui-integration` (Lanes: Browser-contract, Visual
+  parity, Accessibility smoke; ETA 3-5 min) / `next` → Step 16 DEV / `stop`. Step 16's name
+  confirmed: "Next Fusion UI Upgrade Slice".
+
+## ⚠ Cross-step numbering drift found in prompt 15 (HIGH — includes a self-contradiction)
+
+Same class as prompts 12-14, and this one contradicts itself on a status field name:
+
+- **Declared vs. required status field disagree.** The Objective declares
+  **`step16HandoffStatus`** (`ReadyForNextSlice` | `NotReadyForNextSlice` | `Blocked`) —
+  correct for Step 15 handing off to Step 16. But the Completion gate requires the response
+  to "include explicit `primitiveFamilyExecutionStatus`, `componentVerificationStatus`, and
+  **`step18HandoffStatus`** values." `step18HandoffStatus` is never defined anywhere in the
+  prompt.
+- **Step 17 used for this step's own coverage and artifacts**: "A pass that did not produce
+  a per-slice diff is incomplete **Step 17** coverage and cannot close"; diff artifacts are
+  written to `parity-diffs/**step17**-pass-{passId}/`; "Once a Fusion wrapper has shipped
+  one **Step 17** pass, its public surface is frozen." (By contrast "part of the **Step 17**
+  review evidence" is plausibly correct — Step 17 is the S-TIER verification gate per
+  prompt 06.)
+- **Wrong producer step for the wrapper plan**: "only when **Step 7's**
+  `wrapperCapabilityPlan` is amended" — `wrapperCapabilityPlan` is a Step 5 deliverable per
+  prompt 05 (and prompt 14 correctly cites Step 5 for the same artifact).
+
+Running tally of the drift pattern (prompts 12-15): every frontend Phase 2 prompt carries
+step-number references that disagree with its own declared number, in mutually
+inconsistent directions (12→14, 13→15/16, 14→15, 15→17/18). Prompts 13 and 15 both
+reference a `step<N>HandoffStatus` they never define, which is the most directly executable
+failure — an agent asked to emit an undefined field must either error or invent it.
+
+## Transcription uncertainties (prompt 15)
+
+- Completion-gate line 137 shows apparent mojibake where the step name belongs — rendered
+  as emoji/box glyphs before "Fusion UI Integration" rather than the expected "Step 15".
+  Transcribed as `Step 15 Fusion UI Integration`; flag for re-read against the source since
+  it may be a real encoding corruption in the file (the file is saved as UTF-8 **with BOM**
+  per the status bar, unlike earlier prompts).
+- Double-backtick identifier styling in the Per-Slice Diff, Parity Gain Floor, ROI-First,
+  and Wrapper API Stability sections preserved as shown.
+- Artifact paths again split between
+  `.modernization/ignition-artifacts/modernize/fusion-restructure/…` (Required behavior)
+  and `.modernization/fusion-restructure/…` (gates); both transcribed as shown.
+- Long wrapped lines throughout reconstructed from wrap positions; overlaps verified at
+  51-61, 104-112, and 125-133.
+- File ends at line 170.
 
 ## Structural facts added by prompt 14
 
