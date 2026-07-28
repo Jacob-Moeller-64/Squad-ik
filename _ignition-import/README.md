@@ -32,6 +32,7 @@ references, not values).
 | `prompts/20-P3-final-verification.prompt.md` | P3 Review, Step 20 | transcribed from 2 photos |
 | `prompts/21-P3-figma-review.prompt.md` | P3 Review, Step 21 | transcribed from 2 photos |
 | `prompts/22-P3-final-acceptance-criteria-review.prompt.md` | P3 Review, Step 22 | transcribed from 2 photos |
+| `prompts/23-P3-final-readiness-review.prompt.md` | P3 Review, Step 23 | transcribed from 2 photos |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -138,6 +139,83 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by prompt 23
+
+- **The release-decision gate.** Back to `OpX-AppMod-P3-Review`. Balanced tier, 10-20 min,
+  72 lines. H1 is `# Final Readiness Review` (no step-number prefix, as in 21-22).
+- **No handoff status — it terminates the chain.** Every prior step declared a
+  `step<N+1>HandoffStatus`; Step 23 instead declares **`releaseDecisionStatus`:
+  `Pass` | `Blocked` | `Fail`**. Plus `readinessEvidenceStatus` (Current|Partial|Blocked)
+  and `bridgeAndCleanupStatus` (Explicit|Partial|Blocked). This is the terminal decision of
+  the numbered pipeline — notable given Step 5 referenced a "Step 24 Technical Review",
+  which must therefore sit outside this handoff chain.
+- **It re-grounds on four prerequisites at once**: Step 17 verification proof, Step 18
+  cleanup disposition, Step 20 final verification evidence, and the Step 22 final
+  acceptance artifact — "If any prerequisite is stale or missing, return `Blocked` with the
+  exact prerequisite **instead of rebuilding readiness from drift**." The readiness pack
+  must be "grounded in the current [Step 17/18/20/22] prerequisite proofs **rather than
+  silently reusing stale readiness inputs**."
+- **Anti-false-completion rule on the swap claim** — the sharpest line in the prompt:
+  confirm `ui-component-map.json` and `ui-verification-report.json` "agree with the real
+  current source **instead of claiming families were swapped when legacy selectors or
+  bridges still remain**." A direct check against a modernization that *reports* done.
+- **High-risk widget carve-out**: grids, charts, heavily customized tables, and composite
+  forms need "explicit parity evidence **before any legacy version is treated as
+  retired**."
+- **Release artifact**: `.modernization/ignition-artifacts/reviews/deployment-readiness-review.json`,
+  recording packaging/build proof, deployment-readiness proof, final compliance posture,
+  remaining blockers, starter-shell preservation, control-point conformance, remaining
+  bridge status, cleanup disposition for leftovers outside the final target roots, and the
+  single explicit release decision.
+- **"Dominion" reappears** at the end of the pipeline: the readiness pass must align "to
+  the acceptance criteria and to the latest **Dominion compliance review output**" —
+  bookending its first appearance in Step 4.
+- **Numbering is CLEAN in this prompt.** Every step reference is correct: "Reuse current
+  Step 17, Step 18, Step 20, and Step 22 prerequisite proof", "the **Step 5** ownership
+  contract", "the accepted **Step 22** final-acceptance posture", and the Closure contract
+  lists exactly the three statuses the Objective declared. First clean Phase 3 prompt.
+
+## ⚠ Missing file-reading tools in prompt 23's frontmatter
+
+The `tools:` list omits **`read/readFile`** and **`search/codebase`** — every other prompt
+in the kit (1-22) includes both, and this prompt's list starts straight at
+`execute/runInTerminal`. Yet its Readiness core instructs: "**Read**
+`.../decisions.json`, `.../control-point-inventory.json`, and `.../migration-plan.json`
+before closing readiness", and it must inspect `ui-fusion-map.json`,
+`ui-component-map.json`, and `ui-verification-report.json`.
+
+An agent bound to this tool list cannot perform its own required reads. This is a
+different defect class from the numbering drift — a **capability gap** — and it would
+surface at the hackathon as a Step 23 that either fails immediately or silently substitutes
+terminal commands for file reads. Worth verifying at source (a wrapped line could in
+principle hide the entries, though the visible indentation shows `tools:` on line 4 with
+`execute/runInTerminal` on line 5).
+
+A mechanical sweep of all 23 transcribed prompts confirms Step 23 is the anomaly:
+
+| Prompt | `read/readFile` | `search/codebase` | note |
+|---|---|---|---|
+| 1 | yes | **no** | legitimate — workstation readiness needs no codebase search |
+| 9 | **no** | **no** | declares **no `tools:` block at all** (uses the
+  `description`/`name`/`argument-hint`/`agent` frontmatter style) — inherits agent defaults |
+| **23** | **no** | **no** | **has a `tools:` block but omits both**, while instructing "Read …" |
+| all others (2-8, 10-22) | yes | yes | |
+
+So 23 is the only prompt that declares a tool list and leaves out the reading tools it
+needs. Prompt 9's omission is a different (probably benign) style difference worth
+confirming separately.
+
+## Transcription uncertainties (prompt 23)
+
+- The missing `read/readFile` / `search/codebase` entries are recorded as photographed;
+  confirm against the source file before treating it as a real defect.
+- Artifact paths are consistently under `.modernization/ignition-artifacts/…` in this
+  prompt (no `.modernization/artifacts/…` variant), unlike prompts 21-22.
+- No mojibake present.
+- Long wrapped lines reconstructed from wrap positions; overlap verified at lines 33-59
+  across the two photos.
+- File ends at line 72.
 
 ## Structural facts added by prompt 22
 
