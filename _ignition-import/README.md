@@ -89,6 +89,8 @@ references, not values).
 
 | File | Role | Status |
 |---|---|---|
+| `contracts/schemas/modernization-solution-design.schema.json` | **Ignition-native** — `New-ControlPlaneSkeleton` family; `required: [reportId, title]` | transcribed from 1 photo — complete (source lines 1-19); **validates as JSON** |
+| `contracts/schemas/modernization-phase-assessment.schema.json` | **Ignition-native** — `New-ControlPlaneSkeleton` family; `required: [reportId, title]` | transcribed from 1 photo — complete (source lines 1-19); **validates as JSON** |
 | `contracts/schemas/modernization-execution-contract.schema.json` | **Ignition-native** — ★ the only schema with a **deterministic producer** and a `required[]` array | transcribed from 1 photo — complete (source lines 1-19); **validates as JSON** |
 | `contracts/schemas/fusion-migration-plan.schema.json` | **Ignition-native** — field contract for the Step 5 slice/migration ordering plan | transcribed from 1 photo — complete (source lines 1-14 + trailing blank); **validates as JSON** |
 | `contracts/schemas/fusion-decisions.schema.json` | **Ignition-native** — field contract for the Step 5 migration decisions; **the first schema that asserts a real field** | transcribed from 1 photo — source lines 1-18 + trailing blank; **validates as JSON**, but the `authoringNote` string is **truncated at the right edge** |
@@ -679,6 +681,64 @@ Headline coverage:
    implies.
 6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
    `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## ★ `New-ControlPlaneSkeleton` already covers three artifacts — the fix is even cheaper than stated
+
+`modernization-phase-assessment` and `modernization-solution-design` are
+near-identical twins of `modernization-execution-contract`: same two producers,
+same identity-only floor, same `required: ["reportId", "title"]`, same two
+`fields` definitions. Only the operational-array name differs
+(`phases` vs `sections` vs `orderedSlices`).
+
+So **`New-ControlPlaneSkeleton` is already a multi-artifact writer** — it emits at
+least three control-plane files with a guaranteed `reportId` + `title` shape.
+That makes the recommendation from the previous batch cheaper than I stated: the
+function does not need to be generalised, only **pointed at three more targets**
+(`control-point-inventory.json`, `migration-plan.json`, `decisions.json`). Every
+one of those three currently has zero required fields and, in the control-point
+case, nine hollow `hardStop` gates.
+
+The three schemas it already covers are the only ones in the family with a
+`required[]` array. That correlation is the whole argument.
+
+---
+
+## ⚠ The "machine form" JSON artifacts are effectively write-only
+
+A detail repeated across all three skeleton-backed schemas, easy to miss and
+important:
+
+| Schema | Who actually reads the content |
+|---|---|
+| `modernization-phase-assessment` | *"Steps 7 and 8 read the **markdown** Phase-Assessment report by exact path and treat this JSON defensively"* |
+| `modernization-solution-design` | *"Step 8 reads the **markdown** Solution-Design report by exact path and treats this JSON defensively"* |
+| `modernization-execution-contract` | *"Step 7 reads this as an **advisory** input with a deterministic fallback"* |
+
+So for all three, the real consumers read the **Markdown twin**
+(`Modernization-Phase-Assessment.md`, `Modernization-Solution-Design.md`,
+`Modernization-Execution-Contract.md` under `.modernization/ignition-artifacts/`),
+and the JSON "machine form" is treated defensively or advisorily.
+
+Two consequences worth stating plainly:
+
+1. **It explains why the identity-only floor is defensible.** Nothing depends on
+   the JSON's operational content, so requiring it would add risk without adding
+   protection. The kit's reasoning holds.
+2. **But it means the machine-readable half of the control plane is not actually
+   driving anything.** The portal JSONs exist, are validated for identity, and are
+   read defensively — while the decisions that matter flow through prose Markdown
+   parsed *"by exact path."* For a kit whose whole thesis is deterministic,
+   machine-checkable evidence, that is an inversion worth being deliberate about.
+   Either the JSON should become the source of truth (and the Markdown rendered
+   from it), or the JSON's status as a rendering artifact should be stated so
+   nobody mistakes a passing schema check for a validated plan.
+
+This also retro-explains the artifact-contract finding recorded much earlier:
+Step 5 produces both a `.md` and a portal `.json` for each of these three
+concepts. They are not redundant — the `.md` is the live input and the `.json` is
+the machine mirror. Nothing transcribed said so until now.
 
 ---
 

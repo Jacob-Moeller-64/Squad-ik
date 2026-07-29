@@ -1,0 +1,19 @@
+{
+  "dialect": "opx-field-contract/v1",
+  "contractId": "modernization-phase-assessment",
+  "title": "Modernization phase assessment (machine form)",
+  "appliesTo": ".modernization/portal/data/json/modernization-phase-assessment.json",
+  "rootPath": "modernization-phase-assessment",
+  "groundedBy": [
+    ".github/scripts/shared/verify-step-artifacts.ps1 :: New-ControlPlaneSkeleton (deterministic No-QA writer; authoritative minimum shape)",
+    ".github/prompts/05-P1-modernization-solution-design.prompt.md (Step 5 enriched authoring spec)"
+  ],
+  "authoringNote": "Two legitimate producers write this file: the deterministic No-QA skeleton (New-ControlPlaneSkeleton, which always writes reportId + title) and the Step 5 agent (enriched). This contract MUST pass on the skeleton, so the required floor is intentionally identity-only. The operational 'phases' array is NOT required or type-checked here because its enriched shape is owned by Step 5 and may legitimately vary; Steps 7 and 8 read the markdown Phase-Assessment report by exact path and treat this JSON defensively. Step 5's prompt mandates these same identity fields so the producer and this contract stay aligned.",
+  "type": "object",
+  "notEmpty": true,
+  "required": ["reportId", "title"],
+  "fields": {
+    "reportId": { "type": "string", "notEmpty": true },
+    "title": { "type": "string", "notEmpty": true }
+  }
+}
