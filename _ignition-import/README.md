@@ -48,9 +48,10 @@ references, not values).
 | `skills/architecture-structure/Architecture-Structure.md` | **Ignition-native** — backend layering profiles + the canonical test workspace | transcribed from 4 photos — complete (source lines 1-215, blank to 216); 30 line numbers spot-verified |
 
 | `skills/architecture-structure/REMAINING-POINTS.md` | **Ignition-native** — the five formation decisions still intentionally open | transcribed from 2 photos — complete (source lines 1-108, blank to 109); 31 line numbers spot-verified |
+| `skills/architecture-structure/SKILL.md` | **Ignition-native** — the modernization-formation move contract (largest file in the kit) | transcribed from 9 photos — complete (source lines 1-470, blank to 472); 24 line numbers spot-verified |
 
-`architecture-structure/` is a **multi-file skill**: `SKILL.md`, `Architecture-Structure.md`, and
-`REMAINING-POINTS.md`. `SKILL.md` is not yet transcribed.
+`architecture-structure/` is a **multi-file skill**, now fully transcribed: `SKILL.md` (470 lines),
+`Architecture-Structure.md` (215), `REMAINING-POINTS.md` (108).
 
 > **The `appmod-*` skills are Squad-side, not Ignition-native — CONFIRMED.** All five live in the
 > Ignition Kit's `.github/skills/` tree, but they are artifacts of *this conversion project*:
@@ -270,6 +271,122 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
 
+## Structural facts added by `architecture-structure/SKILL.md`
+
+**The largest file in the kit at 470 lines** — larger than prompt 06 (567 lines is the only
+bigger prompt) and loaded by two agents. It is the actual move contract for modernization
+formation.
+
+- **The architecture selection is a recorded run parameter, not a judgement call**:
+  > Do not make the architecture selection inside this skill. Read `architectureStyle` from
+  > `/.modernization/.readme/kit-params.md`. If `architectureStyle` is missing, assume `simple`.
+  > Use `clean` only when it is explicitly selected.
+
+  And the two profiles are reconciled rather than presented as rivals: "treat the simple
+  architecture as a **collapsed form of clean architecture** — domain, application, and
+  infrastructure concerns are still present conceptually, but organized into a single
+  `*.Library` project."
+- **A new skill: `/.github/skills/visual-parity-gate/SKILL.md`** — the gate the modern shell must
+  pass before deliberate Fusion primitive replacement begins. Tenth skill identified.
+- **A second template: `/.github/templates/AMBIGUOUS-PLACEMENT-REPORT-TEMPLATE.md`** — the format
+  for durable review of ambiguous placement decisions, "so the evidence and decision can be
+  checked outside the chat".
+- **The six protected starter-shell files, named exactly**: `Web.Api/Program.cs`,
+  `Web.Api/Extensions/FusionWebBuilderExtensions.cs` (or `Web.Api/DependencyInjection.cs`),
+  `Library/Extensions/FusionApplicationBuilderExtensions.cs` (or
+  `Library/DependencyInjection.cs`), `Web.Client/src/main.ts`,
+  `Web.Client/src/app/app.config.ts`, `Web.Client/src/app/fusion.config*.ts`. This is the
+  concrete file list behind `OpX-Fusion-Reviewer`'s six abstract "control points".
+- **A ~30-row backend file-mapping table** with simple-vs-clean destinations for every category,
+  and a **frontend mapping** (`src/app/pages/`, `src/app/components/`, `src/app/services/`).
+- **Two full reference trees** (Simple Web App Target, Clean Architecture Target) rendered as
+  box-drawing diagrams — the only place the complete target shape appears in one view.
+- **Runtime proving checks per bridge family** — the most operationally useful list in the kit:
+  AG Grid (module-registration / row-model errors), ng-bootstrap popovers/dialogs/date pickers
+  (runtime DI or template errors), auth/HTTP bridges (protected route + expected request),
+  startup bootstrap calls (first API call resolves, shell renders past the loading gate),
+  fixed-header layouts (title/action row/filter band render below the header instead of clipped).
+  With the rule: **"A green compile is not enough to prove the bridge actually instantiates
+  inside the migrated shell."**
+- **A precise auth diagnostic**: "If a bearer token produces `403` instead of `401` during
+  verification, assume authentication may be working while **role mapping** is still unresolved."
+- **The kit asks for missing inputs instead of guessing**: required role-group identifiers and
+  authoritative connection strings are "an explicit project input" — ask the user and record the
+  answer rather than inferring from `SimpleArchitectureExample` or unrelated apps.
+- **An autonomy rule, stated twice**: user directions such as `continue`, `proceed`, `resume`, or
+  `keep going` are approval to keep advancing through eligible slices and handoffs "until a real
+  blocker, failed gate, required user decision, or workflow completion is reached" — and when a
+  handoff completes cleanly and another is eligible, continue directly "instead of waiting for
+  another prompt".
+- **`Framework/` is reference-only**: four `Framework/docs/*` inputs are supplemental, and moving
+  or transplanting files out of `Framework/` into `src/` is forbidden unless the task explicitly
+  targets framework internals.
+- **A backend sign-off rule that catches a real failure mode**: sign-off is blocked "when only
+  detail-by-id routes were moved but the migrated frontend or other consumers still depend on
+  collection or list routes for the same feature family."
+
+## ⚠ Findings in `architecture-structure/SKILL.md`
+
+**1. The two files in this skill folder disagree about the test tree.**
+`Architecture-Structure.md` specifies:
+```
+tests/modernization/characterization/{testcase, testResult}/
+```
+Both reference trees in `SKILL.md` specify:
+```
+tests/modernization/
+└── characterization/
+    └── reports/
+```
+`testcase/` and `testResult/` versus `reports/` — same skill folder, same directory, two answers.
+`Architecture-Structure.md` is the more specific and more recently reasoned of the two (it
+carries the "do not create step-named folders" rule that depends on the testcase/testResult
+split), so `SKILL.md`'s trees are most likely stale. One-line fix, but an agent reading the
+reference tree will create the wrong folder.
+
+**2. The Source of Truth list numbers `6` twice.**
+Items 1-6 are listed, then after the `Framework/` paragraph the list resumes at **6, 7, 8, 9**.
+So there are two item 6s and the `Framework/` inputs are numbered as if they continued the
+required list when they are explicitly "supplemental reference-only inputs". Cosmetic in
+isolation, but this is a list an agent is told to "read first" — the ambiguity is about whether
+items 6-9 are required.
+
+**3. Another `.modernization/fusion-restructure/` path without the `ignition-artifacts/modernize/`
+prefix.**
+Line 95 cites `.modernization/fusion-restructure/styling-foundation.json` and
+`ui-visual-contract.json`. `OpX-Fusion-Reviewer` reads the same artifacts at
+`.modernization/ignition-artifacts/modernize/fusion-restructure/…`; prompt 21 uses the short
+form. The short form now has two independent sources, so this is not a one-off typo — it is a
+genuine fork in the artifact-root convention that needs one decision.
+
+**4. Token cost: this file is 470 lines and is loaded by two agents.**
+`OpX-Fusion-Reviewer` and `Ultimate-Ignition-edit` both load `architecture-structure`, and
+`SKILL.md` is its entry point. Combined with `Architecture-Structure.md` (215) and
+`REMAINING-POINTS.md` (108), fully loading this skill is ~800 lines of context before any app
+code is read. Given the stated Copilot budget concern, this is the strongest candidate in the
+kit for the lazy-loading treatment that `Ultimate-Ignition-edit` already uses — the Reference
+Trees, Future Considerations, and File Mapping Guidance sections are reference material that
+most slices do not need in context.
+
+**5. The autonomy rule will produce long unattended runs.**
+"Continue directly into that next handoff instead of waiting for another prompt" plus
+"`continue`/`proceed`/`resume`/`keep going` … until a real blocker, failed gate, required user
+decision, or workflow completion is reached" means one approval can chain many slices. That is
+the right design for an experienced operator and a liability for 40 simultaneous first-time
+users — worth pairing with a slice-count or token ceiling for the hackathon specifically.
+
+## Transcription uncertainties (`architecture-structure/SKILL.md`)
+
+- Line alignment verified at 24 anchors — 4, 6, 12, 37, 50, 67, 104, 127, 140, 157, 159, 189,
+  235, 254, 280, 306, 342, 356, 367, 371, 373, 423, 425, 470 — all matching. Content ends at 470;
+  the editor shows blank lines through 472.
+- The file is **hard-wrapped**; most bullets are single logical lines spanning several editor
+  rows. Break points are not preserved as physical newlines because the source lines are single
+  lines — verified against the gutter numbering at every anchor.
+- The two reference trees use box-drawing characters (`├──`, `└──`, `│`) rendered cleanly in the
+  photos; transcribed as UTF-8 box-drawing, not ASCII approximations.
+- No mojibake in this file.
+
 ## Structural facts added by `architecture-structure/REMAINING-POINTS.md`
 
 A companion file whose entire job is to say **what the kit has deliberately not decided yet**.
@@ -456,6 +573,14 @@ to Step 7. Recorded as ambiguous rather than assigned an offset.
 procedure for choosing between a 2-project and a 4-project backend. No step owns that choice, no
 artifact records it, and no gate checks it. Step 5 (Modernization Solution Design) is the
 natural owner — worth confirming it actually asks.
+
+> **SUPERSEDED by `architecture-structure/SKILL.md`.** There *is* a selection mechanism, and it
+> is explicit: "Do not make the architecture selection inside this skill. Read
+> `architectureStyle` from `/.modernization/.readme/kit-params.md`. If `architectureStyle` is
+> missing, assume `simple`. Use `clean` only when it is explicitly selected." So the choice is a
+> recorded run parameter with a safe default, not an unowned decision. What remains open is
+> narrower: nothing transcribed so far shows *which step sets* `architectureStyle`, or any gate
+> that validates it against the app's actual downstream-consumer situation.
 
 ## Transcription uncertainties (`architecture-structure/Architecture-Structure.md`)
 
