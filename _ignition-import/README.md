@@ -35,6 +35,15 @@ references, not values).
 | `prompts/23-P3-final-readiness-review.prompt.md` | P3 Review, Step 23 | transcribed from 2 photos |
 | `prompts/24-P3-technical-review.prompt.md` | P3 Review, Step 24 | transcribed from 27 photos (5 were a re-shot of an already-captured range); complete — 16 heading line numbers spot-verified against the source |
 
+### Instructions
+
+| File | Role | Status |
+|---|---|---|
+| `instructions/agent-process-conformance.instructions.md` | **Ignition-native** — minimum conformance shape for agents and router prompts | transcribed from 2 photos — complete (source lines 1-120, blank to 122); 13 line numbers spot-verified |
+
+`_wip/agent-integrity-checks-partial-notes.md` holds structure + findings for
+`agent-integrity-checks.instructions.md` (file complete at 383 lines; verbatim body not yet written).
+
 ### Manifests
 
 | File | Contents |
@@ -293,6 +302,80 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## Structural facts added by `agent-process-conformance.instructions.md`
+
+The conformance spec for the agent layer — 120 lines, and **the fifth file in the kit with correct
+step numbering throughout** ("Discovery steps 1 through 6", "active numbered steps 7 through 24",
+"[Step 9] Backend - .NET Integration Hardening").
+
+- **A six-part minimum agent shape**: frontmatter (`name`, `description`, tool list), a body
+  heading naming the role, `Scope`, `Core Rules`, `Response Contract`, and handoffs mapping to
+  readable process steps. This is the spec the eleven transcribed agents should be measured
+  against — and `OpX-Fusion-Reviewer` (no handoffs) and the three coordinators (no opening `---`)
+  visibly fail it.
+- **Two approved route-wording patterns, and when to use each**:
+  `Route via .github/prompts/<path>.prompt.md :: <section>.` when the prompt has multiple named
+  sections; `Use .github/prompts/<path>.prompt.md and execute it in full.` when it is
+  single-purpose. Everything transcribed uses the second form.
+- **An eight-clause Numbered Step Execution Contract** — the strictest closure rule in the kit.
+  A step is incomplete until step work, mapped QA (or explicit blocker reporting), ledger save,
+  **and ledger readback** are all done, with named field checks: `status`, `updatedAt`,
+  `latestFullResponse`, plus `lastExecutedStep.step/.status` and
+  `recommendedNextStep.step/.label`. It also requires
+  `Invoke-StepReconciliation.ps1 -Step <N>` after the save and a readback proving
+  `.StepSummary.md` regenerated **without appending a duplicate historical block**.
+- **An explicit anti-duplication rule**: "Do not copy the same generic step-state boilerplate into
+  every numbered prompt when the shared contract already covers it. Add prompt-local text only
+  when a specific prompt has unique delta behavior." That is the kit telling itself not to do the
+  thing that produced most of the drift found in this transcription.
+- **A plain-language reporting contract for non-specialists**: every step must open with exactly
+  three bullets in order — `Context`, `Dev work`, `QA after` — one short sentence each, and
+  `QA Summary` "must also use simple wording."
+- **Runtime checks are opt-in, not default**: for Steps 7-24 a live Angular runtime continuity
+  check is explicitly *not* part of the default preflight; only when the user asks for build/run
+  proof, the QA workflow needs a running app, or evidence says the runtime is down.
+- **An Evidence Link Contract** that bans citing internal scripts as proof: prefer runtime URLs,
+  step-state JSON, generated proof JSON, HTML reports. Specifically —
+  "The Quality Portal is manual-only; numbered steps never auto-run portal refresh and never
+  depend on portal pages as proof."
+- **Shared Personality Layering with a stated precedence**: put shared personality in a
+  path-scoped `.instructions.md` rather than copying into each `.agent.md`; the phase-agent
+  contract overrides the baseline; **the more specific local rule wins**. This is the mechanism
+  behind the three-layer inheritance the coordinators declare.
+- **A seven-item Conformance Checks list** for reviewing any agent or prompt.
+
+## ⚠ Findings for `agent-process-conformance.instructions.md`
+
+**1. A fifth unnumbered prompt, and it confirms the `Route via … :: <section>` form is real.**
+`.github/prompts/P2-Modernize/integration-hardening-routing.prompt.md`, cited as
+`:: [Step 9] Backend - .NET Integration Hardening.` The `P2-Modernize/` folder now holds five known
+files: `cleanup`, `fix-violations`, `mvc-to-browser-client`, `angular-to-browser-client`, and this
+routing prompt. Note the routing prompt is a *sectioned* file — the only evidence so far of the
+multi-section prompt shape the route-wording rule exists for.
+
+**2. It documents the exact failure this transcription kept finding, and blames copying.**
+The anti-duplication rule ("do not copy the same generic step-state boilerplate into every
+numbered prompt") is the correct diagnosis of how 24 prompts came to carry near-identical
+Step Artifact Self-Check blocks with drifting step numbers. The rule exists; it was not followed.
+
+**3. Its own conformance checks would fail several shipped agents.** Check 1 requires the step
+label to match `AppMod-Step-Contract.json`; checks 6 and 7 require an explicit next-step contract
+and no stale maintainer notes. Against the eleven transcribed agents:
+`OpX-Frontend-Angular-Transform` (archived but installed, stale Core Rules),
+`OpX-Fusion-Reviewer` (no handoffs, so no next-step contract), and
+`OpX-csharp-janitor` (three YAML errors) would all fail. **Running this file's own seven checks
+across `.github/agents/` is a concrete, cheap pre-hackathon task.**
+
+## Transcription uncertainties (`agent-process-conformance.instructions.md`)
+
+- Line alignment verified at 13 anchors — 46, 59, 61, 70, 74, 82, 88, 91, 98, 104, 110, 114, 120 —
+  all matching. Content ends at 120; the editor shows blank lines through 122.
+- **Source lines 71-73 are three consecutive blank lines** before `## Next-Step Contract`, where
+  every other section break uses one. Preserved as photographed.
+- Lines 48-57 and 61-70 are long single logical lines wrapping across several editor rows;
+  reconstructed from wrap positions.
+- No mojibake in this file.
 
 ## Structural facts added by `workstation-playwright-setup/SKILL.md`
 
