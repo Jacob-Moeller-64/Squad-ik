@@ -94,6 +94,7 @@ pattern-match against.
 | File | Role | Status |
 |---|---|---|
 | `starter/Starter.Library/Entities/MyEntity.cs` | reference domain entity | transcribed from 1 photo — complete (source lines 1-28) |
+| `starter/Starter.Library/Extensions/FusionApplicationBuilderExtensions.cs` | **protected starter control point** — library DI/options composition seam | transcribed from 1 photo — complete (source lines 1-39); 11 anchors verified |
 
 ### Contracts / schemas
 
@@ -697,6 +698,88 @@ Headline coverage:
 
 ---
 
+## ⚠ CORRECTED + NEW: the starter comments, but breaks a different one of its own rules
+
+**Correction first.** The section below says the starter's code carries no
+comments, generalising from `MyEntity.cs`. `FusionApplicationBuilderExtensions.cs`
+**does** carry inline comments (`// Add Options to services`,
+`// Add Library services`, `// Set this last to override all other sources`). So
+the accurate statement is narrower: **neither file has the mandated file *header*
+comment**, but inline commenting is present in the composition seam and absent in
+the entity. The blanket claim below is too strong and is marked accordingly.
+
+**New finding, and this one is a clean rule violation.** This file declares **two
+public classes**: `FusionApplicationBuilderExtensions` (line 9) and
+`AppConfiguration` (line 31). `dotnet.instructions.md` — which `applyTo`s
+`**/*.cs`, so it binds this file — states:
+
+> - **File names should match the primary type defined within.**
+> - Types should be in separate files unless they are private nested types or very
+>   small related types (e.g., enums, delegates).
+>   - **Non-trivial types should be in their own files** for clarity and
+>     maintainability.
+
+`AppConfiguration` is a public static class with a public method that registers a
+configuration source. It is not a nested type, not an enum, not a delegate. It
+belongs in `AppConfiguration.cs`.
+
+That makes this the **fifth** recorded instance of the kit's own artifacts failing
+the kit's own rules — and the most consequential so far, because
+`modernization-starter-boundaries.instructions.md` designates this exact file a
+**protected starter control point** ("Library platform composition seam") that
+agents may only edit within five narrow allowances. Agents are told to preserve
+and pattern-match this file. They will therefore reproduce the two-public-types
+pattern while a path-scoped instruction tells them not to.
+
+---
+
+## Structural facts added by `FusionApplicationBuilderExtensions.cs`
+
+39 lines. This is the Library-side half of the Fusion composition pair
+(`FusionWebBuilderExtensions.cs` in `Starter.Web.Api` is the other).
+
+**The namespace is deliberately not the folder path.** The file lives at
+`src/Starter.Library/Extensions/` but declares `namespace Fusion.Fx.App;` — the
+Fusion framework's own namespace. That is the standard C# extension-method
+discovery idiom: it makes `AddMyLibrary()` appear on `IFusionApplicationBuilder`
+without callers adding a `Starter.Library.Extensions` using. Compare
+`MyEntity.cs`, which uses the folder-matching `namespace Starter.Library.Entities;`.
+
+**This is worth flagging to the linter as a deliberate exception**, not drift. A
+naive "namespace must match folder" check would fire on it, and "fixing" it would
+silently break every call site that relies on the extension being in scope.
+
+**The registration pattern teams will copy:**
+
+```csharp
+public static IFusionApplicationBuilder AddMyLibrary(
+    this IFusionApplicationBuilder fusionApplicationBuilder
+)
+```
+
+…options bound via `Services.Configure<MyOptions>(Configuration.GetSection(MyOptions.ConfigSection))`
+— note `MyOptions.ConfigSection` is a static member on the options type, so the
+section name lives with the type rather than as a literal at the call site. Then
+`AddSingleton<IMyService, DefaultMyService>()` and
+`AddSingleton<IPublicTextService, DefaultPublicTextService>()`, and the builder is
+returned for chaining.
+
+This is the concrete shape behind the abstract rule in `copilot.instructions.md`:
+*"Move DI registration into the existing Fusion application builder extensions."*
+
+**A config file not in the file tree:** `appsettings.Override.json`, registered
+via `AddJsonFile(..., true)` (optional) and commented *"Set this last to override
+all other sources."* It appears in no transcribed instruction file and is not in
+the `.github` tree manifest — worth knowing it exists, since it is the documented
+last-write-wins configuration layer.
+
+**Formatting confirms CSharpier is actually in use** — trailing `)` on its own
+line, generic argument lists broken across lines when long. `dotnet.instructions.md`
+names CSharpier as the formatter; this file demonstrates it, which is a small
+point in the kit's favour (a stated tool that is visibly applied).
+
+---
+
 ## ⚠ The starter's own code does not follow the kit's commenting standard
 
 `MyEntity.cs` is the first `src/` file transcribed, and it is a clean, modern C#
@@ -706,9 +789,12 @@ reference: file-scoped namespace, `sealed`, nullable reference types
 the constructor. No `using System;` — implicit usings are enabled. As a
 demonstration of the target-state idiom it is good.
 
-**But it has no comments at all** — no file header, no member documentation. That
-directly contradicts the standard the kit mandates for every modernized file, in
-three separate always-on places:
+**But it has no comments at all** — no file header, no member documentation.
+*(SCOPE NARROWED: see the correction above — `FusionApplicationBuilderExtensions.cs`
+does carry inline comments. The claim that survives is that **no starter file
+transcribed so far carries the mandated file header**.)* That contradicts the
+standard the kit mandates for every modernized file, in three separate always-on
+places:
 
 `AGENTS.md` (loaded by every Squad agent, every session):
 
