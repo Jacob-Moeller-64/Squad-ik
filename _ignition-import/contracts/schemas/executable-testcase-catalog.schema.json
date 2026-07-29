@@ -1,0 +1,14 @@
+{
+  "dialect": "opx-field-contract/v1",
+  "contractId": "executable-testcase-catalog",
+  "title": "Executable testcase catalog (Step 6)",
+  "appliesTo": ".modernization/portal/data/json/executable-testcase-catalog.json",
+  "rootPath": "executable-testcase-catalog",
+  "groundedBy": [
+    ".github/scripts/QA/generate-characterization-catalog.ps1 (deterministic producer; root object with 'entries[]', each entry has id/caseId, testFile, testMethod, owningStep, status)",
+    ".github/prompts/06-P1-modernization-quality-design.prompt.md (agent producer; example uses a 'testCases[]' root with id/caseId, owningStep, testFile, testMethod)"
+  ],
+  "authoringNote": "CONSERVATIVE FLOOR + KNOWN PRODUCER DIVERGENCE. This artifact has TWO real producers that wrap their case array under DIFFERENT root keys: the deterministic generator writes 'entries[]', while the Step 6 prompt example writes 'testCases[]'. Because of that divergence the floor only asserts a non-empty object - which catches empty {}, [], blank, and truncated content - and does NOT require either array key (requiring one would false-block the other producer). The case-array presence and the per-case fields (testFile, testMethod, owningStep) are validated by the reconciliation engine (Invoke-StepReconciliation.ps1), which probes BOTH root keys. TIGHTEN ONLY after the kit reconciles the two producers to a single canonical root key; then promote that key to required + minItems here.",
+  "type": "object",
+  "notEmpty": true
+}

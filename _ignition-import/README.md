@@ -85,6 +85,12 @@ references, not values).
 | `Copilot-Customization-Cheat-Sheet.md` | **Ignition-native** — maintainer reference for which customization primitive to use; actual path is `.github/Copilot-Customization-Cheat-Sheet.md` | transcribed from 3 photos — complete (source lines 1-150); 15 anchors verified |
 | `constitution.md` | **Ignition-native** — ★ the durable governance source; actual path is **`.github/constitution.md`**, not the repo root | transcribed from 3 photos — complete (source lines 1-146); 14 section anchors verified |
 
+### Contracts / schemas
+
+| File | Role | Status |
+|---|---|---|
+| `contracts/schemas/executable-testcase-catalog.schema.json` | **Ignition-native** — `opx-field-contract/v1` field contract for the Step 6 executable testcase catalog | transcribed from 1 photo — complete (source lines 1-14); **validates as JSON** |
+
 ### Templates
 
 | File | Role | Status |
@@ -669,6 +675,66 @@ Headline coverage:
    implies.
 6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
    `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## ★ The `opx-field-contract/v1` dialect, and a defect the kit documents instead of fixing
+
+`executable-testcase-catalog.schema.json` is the first of the nine
+`.github/contracts/schemas/` files transcribed, and it reveals the dialect that
+`AppMod-Artifact-Contract.json`'s `schemaNote` referred to without explaining.
+
+**Two distinct schema directories now confirmed** — do not conflate them:
+
+| Directory | Dialect | Count | Purpose |
+|---|---|---|---|
+| `.github/contracts/schemas/` | `opx-field-contract/v1` | 9 + README | per-step artifact **field contracts**, referenced by `AppMod-Artifact-Contract.json`'s `schema` key |
+| `tools/appmod/schemas/` | JSON Schema | 5 + examples + README | the **canonical hourglass artifacts** (`app-profile`, `component-map`, `endpoint-inventory`, `scorecard`, `ui-inventory`) |
+
+**The `opx-field-contract/v1` shape**, from this example: `dialect`,
+`contractId`, `title`, `appliesTo` (the artifact path it validates), `rootPath`,
+`groundedBy[]` (the real producers, each described), `authoringNote`, then the
+assertions themselves (`type`, `notEmpty`). It is deliberately lightweight —
+`AppMod-Artifact-Contract.json` called it *"a lightweight opx-field-contract/v1
+file"* and that is accurate: this one asserts only `type: object` and
+`notEmpty: true`.
+
+**And the `authoringNote` is the most candid thing in the entire kit.** It
+documents a real, unresolved defect and explains why the schema deliberately
+declines to catch it:
+
+> **CONSERVATIVE FLOOR + KNOWN PRODUCER DIVERGENCE.** This artifact has TWO real
+> producers that wrap their case array under **DIFFERENT root keys**: the
+> deterministic generator writes `entries[]`, while the Step 6 prompt example
+> writes `testCases[]`. Because of that divergence the floor only asserts a
+> non-empty object … and does **NOT** require either array key (requiring one
+> would false-block the other producer). … **TIGHTEN ONLY after the kit reconciles
+> the two producers to a single canonical root key**; then promote that key to
+> required + minItems here.
+
+Three things worth drawing out:
+
+1. **This is a genuine producer divergence, named and located.**
+   `.github/scripts/QA/generate-characterization-catalog.ps1` and
+   `.github/prompts/06-P1-modernization-quality-design.prompt.md` disagree about
+   the root key of the same artifact. It is exactly the class of defect this import
+   has been cataloguing — except here the kit found it first and wrote it down.
+2. **The mitigation is honest but weak.** The schema degrades to "is it a
+   non-empty object" — which, as the note says, catches empty `{}`, `[]`, blank,
+   and truncated content, and nothing else. Real validation is deferred to
+   `Invoke-StepReconciliation.ps1`, *"which probes BOTH root keys."* So the
+   contract layer knowingly under-asserts and relies on a downstream script.
+3. **It records the exit condition.** "Tighten only after the kit reconciles the
+   two producers to a single canonical root key." That is a concrete, closeable
+   task with a named acceptance test — the best kind of TODO. **Reconciling
+   `entries[]` vs `testCases[]` is a small, high-value fix to land before the
+   hackathon**, because until it lands, the executable testcase catalog is
+   effectively unvalidated at the schema layer.
+
+The `groundedBy[]` field is itself a good design: it names every real producer of
+the artifact and summarises each one's actual output shape. If the other eight
+schemas carry it, that array is a ready-made producer/consumer cross-check —
+and would have answered several questions raised earlier in this document.
 
 ---
 
