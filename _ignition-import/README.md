@@ -80,6 +80,7 @@ references, not values).
 
 | File | Role | Status |
 |---|---|---|
+| `AGENTS.md` | **Squad-side** — ★ the thin always-on conventions file every Squad agent loads; repo root | transcribed from 2 photos — complete (source lines 1-114); 18 anchors verified |
 | `copilot-instructions.md` | **★★★ MERGED Squad+Ignition** — the auto-attached repo-wide entrypoint; actual path is `.github/copilot-instructions.md` | transcribed from 3 photos — complete (source lines 1-94); 10 anchors verified |
 | `Copilot-Customization-Cheat-Sheet.md` | **Ignition-native** — maintainer reference for which customization primitive to use; actual path is `.github/Copilot-Customization-Cheat-Sheet.md` | transcribed from 3 photos — complete (source lines 1-150); 15 anchors verified |
 | `constitution.md` | **Ignition-native** — ★ the durable governance source; actual path is **`.github/constitution.md`**, not the repo root | transcribed from 3 photos — complete (source lines 1-146); 14 section anchors verified |
@@ -597,6 +598,107 @@ so it sits at rank 3 — above every prompt, agent, and skill, which is the corr
 place for a write boundary. The earlier reading (that it ranked below "the current
 user request") came from `copilot.instructions.md`'s mis-scoped list, not from
 the governing document.
+
+---
+
+## ★★ `AGENTS.md` — the merge is documented from the inside, including what was deliberately left out
+
+114 lines at the repo root. This is the file `copilot-instructions.md` cites four
+times, and it turns out to be the clearest artifact of the merge itself.
+
+**It states its own migration provenance in a blockquote** (lines 6-13):
+
+> Phase 2: the always-true engineering conventions below are **migrated verbatim
+> from the legacy kit** (`.github/instructions/copilot.instructions.md`,
+> `appmod-agent-personality-baseline.instructions.md`,
+> `.github/copilot-instructions.md`), **preserving their exact wording**.
+> Ignition-specific operational plumbing (QA portal, numbered-step state files,
+> `.modernization` paths) is **intentionally NOT restated here** - it stays in the
+> Ignition process files … which Squad executes as its runner. Stack-specific
+> standards (.NET / Angular / naming) live in `.github/skills/appmod-*`, not here.
+
+That is a merge note written *into the merged file*: what was copied, from where,
+what was deliberately excluded, and why. It answers a question this import kept
+raising — whether duplicated wording between files was drift or intent. Here it is
+**intent, and labelled**.
+
+The verbatim claim checks out. The Readability, Comments, Testing, Configuration,
+Accessibility, and Git-hygiene bullets match
+`.github/instructions/copilot.instructions.md` almost word for word, and the
+Execution-posture section matches `appmod-agent-personality-baseline`. This is the
+one place in the import where duplication is provably deliberate rather than
+accidental.
+
+**The hourglass** (lines 17-19) is the single-paragraph statement of the whole
+architecture, and it did not appear anywhere else:
+
+> Many legacy stacks flow **in** -> stack-specific **adapters** normalize
+> everything into the **5 canonical JSON artifacts** (`tools/appmod/schemas/`) ->
+> **one shared target-side implementation** flows **out**. Downstream of the
+> artifacts, nothing is stack-specific.
+
+`tools/appmod/schemas/` and the "5 canonical JSON artifacts" are new — the schemas
+directory is named nowhere else in this import, and it is the pivot point of the
+design.
+
+**A sorting rule for where a new rule belongs**, which is exactly the governance
+tool this kit has been missing:
+
+> - **Plain convention / style, no real trade-off** -> here in `AGENTS.md` (keep it short).
+> - **Deliberate decision with a rationale** (something an agent must not override
+>   on a whim) -> `.squad/decisions.md` as a `D-00x` entry.
+
+**Six non-negotiables**, two of which are new information:
+
+- *"Gates are scripts, not opinions. An agent never self-declares a step done.
+  Done means the step's gate script exited `0`."*
+- *"**One active step at a time.** Fan-out (parallelism) is allowed only inside a
+  step explicitly flagged `fan-out` in
+  `.github/skills/appmod-modernization-process/SKILL.md`."* — a `fan-out` flag
+  named nowhere else.
+- *"Never mix content moves with content changes in one commit"* (D-007).
+- *"The scorecard is frozen infrastructure"* (D-008) with the `VERSION` bump rule.
+- *"**Unknown stack = halt** with 'unsupported profile'. Never improvise
+  (**D-009**)."* — **the first decision ID in the D-011..D-016 range problem that I
+  can now attach content to.** D-009 = unknown stack halts.
+- *"Never copy secrets. Use env-var references; flag any secret you find."*
+
+---
+
+## ✅ Gherkin, fourth confirmation — and it is now an always-on rule for every agent
+
+`AGENTS.md` is loaded by **every Squad agent, every session**, and its Testing
+section carries the same tag list a fourth time:
+
+> - Required test header comments: `CaseId`, `Scenario`, `Description`, `Input`, `Expected`.
+> - Required test body flow comments: `Given`, `When`, `Then`.
+
+Four independent sources, identical tags, no `.feature` file anywhere. The two
+outliers (prompt 24's `.feature` requirement and `tests.gherkinCoverage`'s
+"features with a feature file") are now conclusively the defects. This is as
+settled as anything in the kit gets.
+
+---
+
+## ⚠ Findings in `AGENTS.md`
+
+**1. It quietly contradicts `copilot.instructions.md` on `_debug`/`_tmp`/`_bak`.**
+Both forbid them, but `AGENTS.md` line 93 folds the rule into "Files and tooling"
+while `copilot-instructions.md` states it separately in Working Defaults *and*
+Editing Policies. Three statements of one rule across two always-on files — minor,
+but it is the same duplication pattern flagged repeatedly elsewhere, and this file
+explicitly exists to prevent it.
+
+**2. `.squad/decisions.md` D-010 through D-016 remain unknown.** `AGENTS.md`
+identifies D-007, D-008, and D-009 by content. The Squad repo this import lives in
+has D-001..D-010. So the genuinely new territory is **D-011..D-016 — six standing
+policies with rationale that no transcribed file describes.** They remain the top
+of the backlog.
+
+**3. `tools/appmod/schemas/` and the "5 canonical JSON artifacts" are undefined
+here.** The hourglass says everything funnels through five artifacts and names the
+directory, but not the five. Given the whole architecture pivots on them, that
+directory is now second on the backlog behind the decisions file.
 
 ---
 
