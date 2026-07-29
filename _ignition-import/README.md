@@ -66,6 +66,12 @@ references, not values).
 `_wip/agent-integrity-checks-partial-notes.md` holds structure + findings for
 `agent-integrity-checks.instructions.md` (file complete at 383 lines; verbatim body not yet written).
 
+### Governance
+
+| File | Role | Status |
+|---|---|---|
+| `constitution.md` | **Ignition-native** — ★ the durable governance source; actual path is **`.github/constitution.md`**, not the repo root | transcribed from 3 photos — complete (source lines 1-146); 14 section anchors verified |
+
 ### Templates
 
 | File | Role | Status |
@@ -536,6 +542,148 @@ file paths — and Angular `path:` values are frequently identifier references t
 route-name constants, so *"treating only quoted literals as routes produces a
 false Gate 1 (route-source) zero-target result for apps that centralize route
 names in constants."*
+
+---
+
+## ✅ RESOLVED: the precedence conflict was never a conflict — and `constitution.md` says so itself
+
+The finding below records that `copilot.instructions.md` and
+`modernization-starter-boundaries.instructions.md` disagree about what ranks
+first. `constitution.md` settles it with one sentence at the end of its own
+precedence list (line 53):
+
+> This precedence applies only **within repo-maintained guidance**. It does not
+> override higher-priority system, platform, or user instructions.
+
+So the two lists are scoped differently, not contradictory:
+
+- `constitution.md` and `modernization-starter-boundaries` rank **repo-authored
+  files against each other**, and `constitution.md` is correctly first among those.
+- `copilot.instructions.md`'s rank 1, "the current user request," sits **outside**
+  that scope entirely — it is the "higher-priority user instruction" the
+  Constitution explicitly defers to.
+
+The finding below is therefore **downgraded from HIGH to a wording defect in one
+file**. `copilot.instructions.md` states a five-level list that silently mixes
+two different scopes and omits the Constitution altogether; the fix is to add the
+Constitution at the top of its repo-guidance ranks and adopt the Constitution's
+scoping sentence. That is a one-line edit, not an architectural conflict.
+
+The Constitution's own order is now the authoritative one:
+
+| Rank | Source |
+|---|---|
+| 1 | `/.github/constitution.md` — cross-cutting governance and shared principles |
+| 2 | `/.github/copilot-instructions.md` — concise repo-wide attached defaults |
+| 3 | `/.github/instructions/*.instructions.md` — narrower path- or purpose-scoped rules |
+| 4 | `/.github/prompts/**/*.prompt.md`, `/.github/agents/*.agent.md`, `/.github/skills/<name>/SKILL.md` — task-specific execution behavior |
+| 5 | package, project, or feature-level docs and code-local conventions |
+
+Note this **also resolves the toolkit-protection ranking concern** recorded
+earlier. `agent-toolkit-protection` is an `instructions/*.instructions.md` file,
+so it sits at rank 3 — above every prompt, agent, and skill, which is the correct
+place for a write boundary. The earlier reading (that it ranked below "the current
+user request") came from `copilot.instructions.md`'s mis-scoped list, not from
+the governing document.
+
+---
+
+## ★★★ `constitution.md` transcribed — and it is a governance charter, not a rulebook
+
+146 lines at **`.github/constitution.md`** (the editor breadcrumb reads
+`.github > constitution.md`, so despite being described as "root of the repo" it
+lives inside `.github/`, exactly as every cross-reference in the kit spells it).
+
+**It knows it is not auto-attached**, and says so in its own opening block:
+
+> In this repo it is treated as a governance primitive for documentation and
+> maintenance decisions, but **it is not the repo's auto-attached Copilot
+> instruction primitive by itself.** The supported repo-wide Copilot entrypoint
+> remains `/.github/copilot-instructions.md`, which should point back to this file
+> instead of duplicating it.
+
+This is the most self-aware file in the kit. It has no `applyTo`, and rather than
+pretending otherwise it names the mechanism that actually loads and instructs
+maintainers to wire behavior through the attached surfaces:
+
+> If a future change needs Copilot to automatically use a shared governance rule,
+> wire that behavior through the supported attached instruction surfaces rather
+> than assuming the Constitution will be auto-attached by itself.
+
+**It is deliberately a boundary document, not a content document.** Section 1
+lists what does *not* belong in it (language standards, framework recipes,
+step-by-step execution logic, agent chat contracts, code examples, version-pin
+catalogs), and Section 10 — *"What Should Move Out Of The Constitution"* — names
+five content types with their correct destinations. A governance file that
+actively tries to stay small is unusual and worth preserving.
+
+**Section 6 is the cleanest statement of the kit's architecture** anywhere in the
+import — one line per customization primitive:
+
+| Surface | Owns |
+|---|---|
+| `constitution.md` | shared governance and source-of-truth boundaries |
+| `copilot-instructions.md` | concise repo-wide attached defaults that operationalize the Constitution |
+| `instructions/*.instructions.md` | language-specific, path-scoped, or purpose-scoped rules |
+| `prompts/**/*.prompt.md` | reusable task contracts and numbered step entrypoints |
+| `agents/*.agent.md` | personas, handoff lanes, tool-boundary execution roles |
+| `skills/<name>/SKILL.md` | bundled workflows, references, deeper support material |
+
+…closing with the anti-duplication rule this whole import keeps running into:
+*"Avoid repeating shared guidance across all of these surfaces when a single
+constitutional rule plus one attached instruction surface is enough."*
+
+**Section 7 explains the personality-baseline design** and confirms the earlier
+reading: the Constitution owns the *rule* that shared baseline behavior is
+centralized and overridable; the dedicated baseline instruction file owns the
+*text*. Narrower contracts may override when they own a more specific execution
+context — which is exactly what `appmod-phase-agent-contract` does.
+
+**Section 5 restates the process authority** as the 3-phase, 24-step model in
+`AppMod-Process.instructions.md` + `AppMod-Step-Contract.json`, with global step
+numbers and QA after each completed step. No numbering drift anywhere in this
+file.
+
+**Section 12 adds a maintenance rule not seen elsewhere:** exactly one canonical
+Constitution file, and when it is materially rewritten the previous version is
+archived under
+`/.modernization/OpXUtil/archive/.github-archive/github.archive/` before being
+replaced.
+
+---
+
+## ⚠ Findings in `constitution.md`
+
+**1. Lines 99 and 100 are a duplicated bullet with a spelling split.** Both read
+*"The Constitution owns the rule that shared baseline behavior should be
+centralized and …"* — line 99 ends `overrideable`, line 100 ends `overridable`.
+Almost certainly an edit that was appended instead of replaced. Transcribed
+faithfully; delete one. (Third duplicate-line defect found in the kit, after
+`kit-update.instructions.md` lines 177/178 and the triple-stated rerun rule in
+`copilot.instructions.md`.)
+
+**2. It does not mention readiness scoring, and `copilot.instructions.md` says it
+governs it.** `copilot.instructions.md` line 355 states *"Readiness scoring and
+tiers are governed by AppMod-Ignition (constitution + gate/policy catalogs)."*
+Nothing in these 146 lines defines a score, a tier, or a gate/policy catalog.
+Either the scoring lives in the "gate/policy catalogs" half of that sentence
+(untranscribed, and not named anywhere else), or the reference is aspirational.
+**This is now the most important open question in the kit**, because it is the
+one place a stated authority has no locatable content — and for a hackathon,
+readiness tiers are what teams will be judged on.
+
+**3. Section 8 references `Architecture-Structure.md` at a path one level up from
+where it was transcribed.** The Constitution says
+`/.github/skills/architecture-structure/Architecture-Structure.md`; that matches
+the transcribed skill folder, so this one is consistent — noted only because it
+is the sole architecture source the Constitution names, making it more
+load-bearing than its size suggests.
+
+**4. It never mentions `step-registry.json`.** The Constitution names
+`AppMod-Process.instructions.md` and `AppMod-Step-Contract.json` as the process
+authority (Sections 5 and 11) but not the registry that owns step *identity*.
+Given the registry is the designed fix for the numbering drift, adding it to
+Section 11's canonical-sources list would be a cheap, high-value edit.
 
 ---
 
