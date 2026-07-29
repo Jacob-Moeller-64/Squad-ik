@@ -240,7 +240,27 @@ OpX-Ignition-Kit/
             │   ├── pages/       (common-components, home, my-entity, test-datastore)
             │   └── services/    (my-entities, public-text, test-datastore)
             └── assets/icons/    (8 PNG sizes)
+│
+└── tools/appmod/
+    ├── pins.json
+    ├── verify-kit.ps1 / verify-kit.sh
+    ├── gates/
+    │   ├── check-auth-removed, check-pins, check-structure,
+    │   │   run-scorecard, validate-artifacts, verify-goldens, visual-diff   (.ps1 + .sh)
+    │   ├── README.md
+    │   └── lib/            (_common.py, _schema.py, check_*.py, run_scorecard.py,
+    │       └── tests/       validate_artifacts.py, verify_goldens.py, visual_diff.py
+    │                        + 7 pytest-style test modules)
+    ├── schemas/
+    │   ├── app-profile / component-map / endpoint-inventory / scorecard / ui-inventory   (.schema.json)
+    │   ├── examples/       (matching *.json samples)
+    │   └── README.md
+    └── scorecard/
+        ├── rubric.md, VERSION
+        └── engine/         (engine.py, README.md, tests/test_engine.py)
 ```
+
+**Reported total: 680 files** (excluding ignored folders).
 
 ## Reconciliation against this import
 
@@ -256,6 +276,7 @@ OpX-Ignition-Kit/
 | `.github/templates/` | 2 | 2 | none |
 | `.github/scripts/` | ~100+ | 0 | all (referenced only) |
 | `.squad/` | large | 0 | all — see below |
+| `tools/appmod/` | gates + schemas + scorecard | 0 | all |
 
 ### Things this tree resolves
 
@@ -289,13 +310,15 @@ OpX-Ignition-Kit/
    import may already be detectable by a script nobody has run. Its sibling is
    `audit-modernization-pollution`. **These two scripts are now the highest-value
    unread files in the kit** — they may make the linter recommendation moot.
-2. **`discovery-runner.instructions.md` and `step-registry.json` are absent from
-   this tree** — yet `AGENTS.md`, `.squad/`, and `squad.agent.md` are present, and
-   `tools/appmod/` (referenced constantly by `copilot-instructions.md`) is absent
-   too. The most likely explanation is that this tree is a **snapshot from a
-   different point in the merge** than the files photographed later. Do not treat
-   the absences as proof those files do not exist — they were photographed
-   directly. Worth confirming which snapshot is current.
+2. **CORRECTED — `tools/appmod/` IS present.** An earlier version of this note
+   claimed it was absent; that was written before the final tree photo arrived and
+   was wrong. `tools/appmod/` is the last branch of the tree, complete with
+   `gates/`, `schemas/`, `scorecard/`, and `pins.json`.
+   What does still appear absent from the `instructions/` listing is
+   `discovery-runner.instructions.md` and `step-registry.json` — both of which were
+   photographed directly, so they exist. Given the `tools/appmod/` error, treat
+   this as most likely a **rendering/scroll gap in the generated tree** rather than
+   evidence of a different snapshot. Do not treat any absence here as proof.
 3. **`.squad/` here is far larger than the Squad in this repo.** It carries
    `casting/`, `fact-checker/`, `identity/`, `memory/`, `rai/`, 11 GitHub Actions
    workflows, 30+ templates, and **50+ template skills** (agent-conduct,

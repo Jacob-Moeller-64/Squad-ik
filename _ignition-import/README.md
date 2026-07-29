@@ -672,20 +672,68 @@ Headline coverage:
 
 ---
 
-## ⚠ The tree and the later photos disagree — two different snapshots
+## ★★★ THE 5 CANONICAL JSON ARTIFACTS ARE IDENTIFIED
 
-The tree does **not** list `discovery-runner.instructions.md`, `step-registry.json`,
-or `tools/appmod/` — yet all three were photographed directly, and
-`copilot-instructions.md` references `tools/appmod/` constantly. Meanwhile the
-tree *does* show `AGENTS.md`, `.squad/`, and `squad.agent.md`.
+`AGENTS.md`'s hourglass says every legacy stack funnels through *"the 5 canonical
+JSON artifacts (`tools/appmod/schemas/`)"* without naming them. The final tree
+photo does:
 
-So the tree is almost certainly a **snapshot from a different point in the merge**
-than the individual files. It is not evidence those files are missing — they exist;
-I transcribed them from photographs of the real thing.
+| # | Schema |
+|---|---|
+| 1 | `app-profile.schema.json` |
+| 2 | `component-map.schema.json` |
+| 3 | `endpoint-inventory.schema.json` |
+| 4 | `scorecard.schema.json` |
+| 5 | `ui-inventory.schema.json` |
 
-What this does mean: **`manifests/ignition-kit-file-tree.md` should be read as a
-point-in-time inventory, not a current manifest.** Worth confirming which snapshot
-is live before using it to drive any cleanup.
+Plus `examples/` (matching `*.json` samples) and a `README.md`.
+
+These are the pivot point of the whole architecture — everything upstream is
+stack-specific, everything downstream is shared. That was the #2 item on the
+backlog and it is now closed at the name level; the schemas themselves are still
+untranscribed and are worth having, because they define the contract every
+adapter must satisfy.
+
+**The full `tools/appmod/` layout:**
+
+- `pins.json`, `verify-kit.ps1` / `verify-kit.sh`
+- `gates/` — seven gates, each shipping both `.ps1` and `.sh`:
+  **`check-auth-removed`**, `check-pins`, `check-structure`, `run-scorecard`,
+  `validate-artifacts`, `verify-goldens`, `visual-diff` — plus `README.md` and a
+  Python `lib/` (`_common.py`, `_schema.py`, `check_*.py`, `run_scorecard.py`,
+  `validate_artifacts.py`, `verify_goldens.py`, `visual_diff.py`) with **7
+  pytest-style test modules**
+- `schemas/` — the five above
+- `scorecard/` — `rubric.md`, `VERSION`, and `engine/` (`engine.py`, `README.md`,
+  `tests/test_engine.py`)
+
+**Reported total for the repo: 680 files.**
+
+---
+
+## ⚠ CORRECTION: `tools/appmod/` is present, and `check-auth-removed` exists
+
+Two things I got wrong, both now fixed in the manifest:
+
+1. **I wrote that `tools/appmod/` was absent from the tree.** It is not — it is
+   the final branch, and I said so before the last tree photo arrived. That claim
+   was unsupported and is withdrawn.
+2. **`check-auth-removed` exists.** Early in this import I listed *"`check-auth-removed`
+   gate documented but nonexistent in `.squad/gates/`"* among the five
+   highest-risk hackathon defects. It ships in `tools/appmod/gates/` as both
+   `.ps1` and `.sh`. I was looking in the wrong directory — the gates live under
+   `tools/appmod/`, not `.squad/`. **That finding is retracted.**
+
+Given I was wrong about `tools/appmod/`, the remaining apparent absences from the
+tree (`discovery-runner.instructions.md`, `step-registry.json`) should be read as
+a likely **rendering or scroll gap in the generated tree**, not as evidence of a
+different snapshot. Both files were photographed directly, so both exist. The
+manifest now says so.
+
+**`manifests/ignition-kit-file-tree.md` is still best read as a high-quality
+inventory rather than a byte-exact listing** — it collapses branches into
+parenthesised counts throughout — but the "different snapshot" theory is
+withdrawn.
 
 ---
 
