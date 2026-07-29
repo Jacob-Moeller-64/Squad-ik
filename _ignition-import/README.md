@@ -55,6 +55,8 @@ references, not values).
 | `skills/dominion-requirements/SKILL.md` | **Ignition-native** — the full Dominion rubric with WHY/WHAT/HOW (largest file in the kit) | transcribed from 25 photos — complete (source lines 1-1398, blank to 1399); 100+ line numbers spot-verified |
 | `skills/fusion-feature-standards/fusion-auth-standards.md` | **Ignition-native** — non-negotiable Okta/auth/secrets/CORS security standards | transcribed from 6 photos — complete (source lines 1-301); 26 line numbers spot-verified |
 | `skills/fusion-g1-to-g2-modernization/references/fusion-g1-recognition.md` | **Ignition-native** — portable Fusion G1 (Knockout/RequireJS/Durandal) recognition reference | transcribed from 13 photos — complete (source lines 1-744, blank to 745); 62 line numbers spot-verified |
+| `skills/fusion-g1-to-g2-modernization/references/g1-to-g2-modernization-playbook.md` | **Ignition-native** — per-slice G1→G2 conversion checklist | transcribed from 2 photos — complete (source lines 1-86); 13 line numbers spot-verified |
+| `skills/fusion-g1-to-g2-modernization/references/knockout-modernization-cheatsheet.md` | **Ignition-native** — Knockout concepts and migration tips | transcribed from 1 photo — complete (source lines 1-59, blank to 60); 11 line numbers spot-verified |
 
 `architecture-structure/` is a **multi-file skill**, now fully transcribed: `SKILL.md` (470 lines),
 `Architecture-Structure.md` (215), `REMAINING-POINTS.md` (108).
@@ -276,6 +278,98 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## Structural facts added by the two remaining `fusion-g1-to-g2-modernization` references
+
+`g1-to-g2-modernization-playbook.md` (86 lines) is the per-slice conversion checklist;
+`knockout-modernization-cheatsheet.md` (59 lines) is the Knockout-concepts primer.
+
+### `g1-to-g2-modernization-playbook.md`
+
+- **A six-stage page-slice checklist**: Capture The Legacy Surface → Model The Destination
+  Structure → Translate Control Families → Replace Service Globals → Preserve Parity-Critical
+  Behavior → Harden The Slice.
+- **An eight-item parity-critical list that must survive before a slice is "complete"**:
+  busy-state transitions, validation and save blocking, conditional visibility and enablement,
+  default values and prepopulation, route/query parameter behavior, modal or drawer open/close,
+  table filtering/sorting/paging/selection, and role- or auth-based visibility. This is the most
+  concrete definition of "parity" anywhere in the kit.
+- **Service-global replacement map**: `$data` → typed Angular services, `$navigation` → Angular
+  router-driven flows, `$dialog` → Fusion dialog services, `$toastr` → Fusion messaging,
+  `$event` → explicit component/service boundaries.
+- **`## Escalate As Unknown Instead Of Guessing`** — five named triggers for recording
+  `unknown` rather than inventing: no confirmed replacement control, unclear `$data` payload or
+  caching semantics, hidden `$event`/global-helper behavior, third-party widget behavior wrapped
+  inside a Fusion control, and unclear ownership between component / shared service / app shell.
+  Third anti-hallucination surface in this one skill.
+- **Capture includes hidden state**: "tabs, drawers, expanders, validation errors, and
+  confirmation paths" — the states a screenshot-based inventory misses.
+
+### `knockout-modernization-cheatsheet.md`
+
+- A compact Knockout primer: observables, bindings, view models, computed observables, binding
+  context; the common binding list; Knockout-Validation usage
+  (`myField.extend({ required: true, minLength: 3 })`, `validationMessage`, `ko.validation.init`).
+- Six modernization tips, including "**Dispose**: Clean up subscriptions in modern component
+  lifecycles."
+
+## ⚠ Findings in the two references
+
+**1. The playbook settles the Okta wiring conflict — 3 to 1 against `fusion-auth-standards.md`.**
+Its `## Confirmed Current G2 Starter Signals` section names the actual destination:
+
+```
+- Angular 20
+- `@fusion/ngx-fusion`
+- `@fusion/ngx-fusion-auth-oauth-okta`
+- `provideNgxFusion()`
+- `provideNgxFusionAuthOAuthOkta()`
+- Fusion config and route tokens registered in `app.config.ts`
+```
+
+plus "Prefer `provideNgxFusionAuthOAuthOkta()` for final-state auth wiring", "ensure config comes
+from `FusionConfig`", and "ensure HTTP traffic follows the starter's provider and interceptor
+model". That is **identical to `appmod-fusion-target`** and directly contradicts
+`fusion-auth-standards.md`, which presents a hand-written `AddAuthentication(...).AddJwtBearer(...)`
+backend stack plus an `OktaAuthGuard` and a hand-rolled bearer `HttpInterceptor` as "Fusion
+pattern (use this)".
+
+Tally across the kit:
+- **provider-based Fusion Okta**: `appmod-fusion-target`, this playbook (and
+  `dominion-requirements/SKILL.md` forbids "a parallel generic `AddJwtBearer` stack") — **3**
+- **hand-written `AddJwtBearer` + custom guard/interceptor**: `fusion-auth-standards.md` — **1**
+
+`fusion-auth-standards.md` is the outlier and should be rewritten to the provider model. That
+converts the kit's most dangerous open conflict into a single-file edit.
+
+**2. Angular 20 confirmed again — the odd-major references are now clearly the errors.**
+`- Angular 20` appears in the playbook's confirmed-starter-signals list. Running tally:
+**20** in prompt 02, `fusion-g1-recognition.md`, and this playbook; **20+** in prompt 24;
+**19+** in `Ultimate-AppMod-Ignition`; **21+** in `dominion-requirements/SKILL.md`. Three
+independent files state 20, and prompt 02's even-major policy rules out both 19 and 21.
+
+**3. The Knockout cheatsheet's only worked example targets React, not Angular.**
+`## Example Migration (Knockout → React)` shows `useState` hooks and JSX. The Modernization Tips
+lead with "state hooks (React), refs (Vue), or **services (Angular)**" — Angular listed third —
+and the validation tip names "Formik, Vuelidate, etc.", both React/Vue libraries, with no Angular
+Reactive Forms mention (which `fusion-g1-recognition.md` *does* name correctly).
+
+The Ignition Kit has exactly one client target: Angular 20. A G1 migration agent that loads this
+reference gets React idioms as its only concrete before/after. The prose is generic enough to be
+defensible; the worked example is not, and worked examples anchor behavior more strongly than
+prose. Rewriting the example as Knockout → Angular 20 signals is a contained fix.
+
+## Transcription uncertainties (the two references)
+
+- Playbook: 13 anchors verified (1, 5, 13, 15, 22, 30, 37, 45, 58, 65, 69, 78, 86), all matching;
+  content ends at 86.
+- Cheatsheet: 11 anchors verified (1, 5, 8, 15, 19, 25, 33, 38, 45, 54, 59), all matching;
+  content ends at 59, editor shows line 60 blank.
+- The cheatsheet's heading and one bullet use Unicode arrows (`Knockout → React`,
+  `Bindings → JSX/Template Syntax`); transcribed as the arrow character, matching the source.
+- The cheatsheet has **no blank line** between the closing fence of one code block and the opening
+  of the next (source lines 38/39 and 45/46); preserved as photographed.
+- No mojibake in either file.
 
 ## Structural facts added by `fusion-g1-to-g2-modernization/references/fusion-g1-recognition.md`
 
