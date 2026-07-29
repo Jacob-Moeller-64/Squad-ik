@@ -40,6 +40,12 @@ references, not values).
 | File | Domain | Status |
 |---|---|---|
 | `skills/appmod-backend-dotnet/SKILL.md` | backend — .NET upgrade + restructure | transcribed from 1 photo — complete (source lines 1-34, blank to 35); 11 line numbers spot-verified |
+| `skills/appmod-compliance-review/SKILL.md` | review — AI-judgment whole-codebase compliance review | transcribed from 2 photos — complete (source lines 1-119, blank to 120); 21 line numbers spot-verified |
+
+> **Provenance note on the `appmod-*` skills** — these two live in the Ignition Kit's
+> `.github/skills/` tree but appear to be **conversion-side artifacts**, not original Ignition
+> Kit content. See "⚠ The `appmod-*` skills are probably not Ignition-native" below before
+> treating them as source material for the import.
 
 ### Agents
 
@@ -163,6 +169,125 @@ references, not values).
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
 
+## ⚠ The `appmod-*` skills are probably not Ignition-native
+
+Both skills transcribed so far sit in the Ignition Kit's `.github/skills/` tree, but six
+independent signals say they were authored **for the Squad/appmod conversion** and dropped into
+the Ignition repo — not written as part of the original kit:
+
+1. **`source:` describes derivation, not authorship.**
+   `"earned (Ignition Kit Step 7 + dotnet standards)"` and
+   `"earned (Ignition Kit dominion-requirements compliance report, **re-cast as AI judgment**)"`.
+2. **The Ignition Kit is referred to in the third person.**
+   "It restores **the Ignition Kit's** before/after compliance report, but the findings come
+   from AI judgment … instead of a regex scan."
+3. **"Ignition-aligned" is a stated goal, not a property.**
+   `**Output location (Ignition-aligned):**` — you only say that when aligning a non-Ignition
+   thing *to* Ignition.
+4. **The tool paths are not Ignition's.** `tools/appmod/gates/compliance-scan.(ps1|sh)` and
+   `tools/appmod/artifacts/`. Every Ignition prompt and agent transcribed uses
+   `.github/scripts/…`.
+5. **The `.ps1|.sh` dual-launcher convention is Squad's, not Ignition's.** Squad-ik's own
+   `CLAUDE.md`: "`.squad/gates/` — every gate has `.sh` and `.ps1` launchers over shared
+   Python/Node logic." Ignition invokes PowerShell directly, everywhere.
+6. **Both cite Squad-ik's decision IDs with Squad-ik's meanings.**
+   - Ignition skill: `src/<App>.Web.Api` (move-only, **D-007**) / "behavior commits only"
+     Squad-ik `.squad/decisions.md`: **D-007** "Behavior commits and move commits never mix."
+   - Ignition skill: "The scorecard (**D-008**) is the deterministic GO/NO-GO gate" and
+     "**NEVER self-report** the score"
+     Squad-ik: **D-008** "Scorecard engine is frozen per run … scoring is executed by
+     `gates/run-scorecard.sh`, **never self-reported**."
+
+   Two of two checked IDs match on number, meaning, *and* wording.
+
+**Why this matters for the import.** These files are evidence of what the *conversion* should
+look like, not of what the Ignition Kit currently *is*. Transcribing them as Ignition source
+would pollute the before-state record and would double-count design decisions that already
+exist on the Squad side. They are kept in `skills/` because they are genuinely useful (see the
+structural facts below), but they should be tagged as conversion-side and excluded from any
+"what does the Ignition Kit contain today" analysis.
+
+**What would confirm or refute this**: the `source:` field of the other skills in
+`.github/skills/` (the eight referenced by agents and prompts — `fusion-restructure-review`,
+`dominion-requirements`, `architecture-structure`, `ignition-kit-maintenance`,
+`fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
+`screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
+rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## Structural facts added by skill `appmod-compliance-review`
+
+Regardless of provenance, this is the most sophisticated evaluation design in either kit. 119
+lines.
+
+- **A `tools:` catalog in skill frontmatter** — a new schema element. Four entries, each with
+  `name` (the literal CLI invocation), `description` (what it computes), and `when` (the
+  sequencing rule). This is a *tool manual* embedded in the skill, not a model-tool allowlist.
+- **The core design: split judgment from arithmetic.**
+  > The reviewer owns the JUDGMENT; the tool owns the MATH.
+  > You supply findings + per-category judgments; `compliance-scan assemble` computes the score,
+  > the gate table, and the before->after comparison. You do not compute or self-report the score.
+- **The manifest is a coverage proof, not a checklist.** `manifest` enumerates every in-scope
+  file with `reviewed: false`; the reviewer must flip each to `true`; `assemble --enforce`
+  **fails the review** if any row is still false. That is a mechanical guarantee against
+  sampling — the thing most AI review passes silently do.
+- **The category rubric is pre-seeded and parsed from a template.** `requirements[]` arrives
+  pre-named and pre-ordered, every row at `"status": "UNKNOWN"`, generated from
+  `/.github/templates/COMPLIANCE-ANALYSIS-REPORT.template.md`. The stated reason is the best
+  anti-drift sentence in either kit:
+  > Nothing restates the category list in code, so the two can never drift apart.
+- **`UNKNOWN` is defined as a worksheet placeholder, not a verdict** — "not yet judged", never
+  "not applicable". `--enforce` blocks on any remaining `UNKNOWN` and prints exactly which.
+- **Two rows are tool-owned**: `Test coverage >= 80%` and `Packages approved` — "Do not write
+  them; your opinion on them is discarded."
+- **App-specific categories are appended, not merged**, and surfaced under
+  `requirementsUnmapped` "so it is visible rather than silently merged".
+- **Fixed scoring**: CRITICAL -10, HIGH -5, MEDIUM -2, LOW 0; `score = max(0, 100 - weighted)`.
+  Deploy gates: score >= 80, zero CRITICAL, coverage >= 80%, review complete.
+- **The review gate has a stated rationale**: "a report with no findings would otherwise score
+  100/100 — an unreviewed manifest can never read READY."
+- **Same rubric both runs**, described as "the AI analog of *the same judge scores both
+  phases*" — before over `LegacyCode/`, after over `src/`.
+- **A worked improvement example**: before `score 0` (2 CRITICAL, 142 HIGH) -> after `score 88`
+  (0 CRITICAL, 4 HIGH), `compare` reporting `scoreChange +88`, `criticalChange -2`.
+- **The dominion rubric's twelve categories are finally enumerated**: 12-Factor, SOLID,
+  OAuth/OIDC, policy authorization, stateless, RESTful, JSON, API-docs gating, logging, async,
+  coverage, packages.
+- **A new template surface**: `/.github/templates/COMPLIANCE-ANALYSIS-REPORT.template.md`.
+  First `.github/templates/` reference anywhere.
+
+## ⚠ Findings for skill `appmod-compliance-review`
+
+**1. Two artifact roots in one paragraph — and this one is self-aware about it.**
+Compliance artifacts are written to `.modernization/ignition-artifacts/compliance/`, but "the
+tool still reads the coverage input from `tools/appmod/artifacts/`". The word *still* marks it
+as a known, deliberate seam rather than an accident — but it means the compliance lane spans
+two artifact trees, and only one of them is the Ignition-aligned one.
+
+**2. It documents a real past failure in its own anti-patterns.**
+> paraphrasing `RESTful API endpoints` into `RESTful API design` **used to leave** the canonical
+> row UNKNOWN and append a duplicate.
+
+Past tense. This is a bug that happened, got diagnosed, and got written into the skill as a
+guard. Worth noting because it is the strongest evidence anywhere that the skills layer is
+genuinely "earned" rather than aspirational.
+
+**3. The `.ps1|.sh` notation is not a real filename.**
+`compliance-scan.(ps1|sh)` is shorthand for a pair of launchers. Harmless to a human; a model
+told to run `tools/appmod/gates/compliance-scan.(ps1|sh) manifest before` verbatim will fail.
+Every other invocation in the kit names a concrete file.
+
+## Transcription uncertainties (skill `appmod-compliance-review`)
+
+- Line alignment verified at 21 anchors — 20, 22, 24, 28, 31, 35, 40, 42, 49, 53, 64, 75, 80,
+  82, 89, 91, 96, 98, 105, 107, 118 — all matching. Content ends at 119; the editor shows line
+  120 blank.
+- The file is **hard-wrapped**, not soft-wrapped: most prose paragraphs are physical multi-line
+  blocks with the break points visible in the gutter. Break positions are preserved as
+  photographed.
+- The fenced block at lines 81-89 uses trailing `#` comments aligned in a column; column
+  alignment is approximate.
+- No mojibake anywhere in this file.
+
 ## Structural facts added by skill `appmod-backend-dotnet`
 
 First skill transcribed, and it is a **third artifact type** — not a prompt (procedure) and not
@@ -212,6 +337,15 @@ signal-per-line of anything in the kit.
 
 **1. Decision-ID collision risk for the Squad conversion — worth resolving before importing
 anything.**
+
+> **SUPERSEDED by `appmod-compliance-review`.** The framing below — that Ignition and Squad
+> have independent decision ledgers which "only happen to agree at 007" — is wrong.
+> `appmod-compliance-review` cites **D-008** with the same meaning *and the same phrasing*
+> as Squad-ik's D-008 ("never self-report" the score). Two of two checked IDs match in ID,
+> meaning, and wording. These are not independent ledgers that collided; they are the same
+> ledger. The real finding is the provenance one below — these `appmod-*` skills are almost
+> certainly conversion-side artifacts, which is why they cite Squad's decision IDs. The
+> paragraphs below are kept as written for the record.
 
 This skill cites two decision IDs: **D-007** (`src/<App>.Web.Api` is *move-only*) and **D-014**
 (connection-string composition). Squad-ik's own `.squad/decisions.md` seeds **D-001…D-010**,
