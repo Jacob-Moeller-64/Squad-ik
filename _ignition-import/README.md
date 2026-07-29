@@ -45,6 +45,10 @@ references, not values).
 | `skills/appmod-fusion-target/SKILL.md` | fusion — shared target: structure, Okta/OIDC, Scalar, component swap | transcribed from 1 photo — complete (source lines 1-32, blank to 33); 13 line numbers spot-verified |
 | `skills/appmod-modernization-process/SKILL.md` | modernization — the phased wave sequence and parity gates | transcribed from 1 photo — complete (source lines 1-40, blank to 41); 17 line numbers spot-verified |
 | `skills/appmod-testing-and-gates/SKILL.md` | testing — characterization tests, gate scripts, frozen scorecard | transcribed from 1 photo — complete (source lines 1-42, blank to 43); 14 line numbers spot-verified |
+| `skills/architecture-structure/Architecture-Structure.md` | **Ignition-native** — backend layering profiles + the canonical test workspace | transcribed from 4 photos — complete (source lines 1-215, blank to 216); 30 line numbers spot-verified |
+
+`architecture-structure/` is a **multi-file skill**: `SKILL.md`, `Architecture-Structure.md`, and
+`REMAINING-POINTS.md`. Only `Architecture-Structure.md` is transcribed so far.
 
 > **The `appmod-*` skills are Squad-side, not Ignition-native — CONFIRMED.** All five live in the
 > Ignition Kit's `.github/skills/` tree, but they are artifacts of *this conversion project*:
@@ -263,6 +267,114 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## Structural facts added by `architecture-structure/Architecture-Structure.md`
+
+The first **Ignition-native** skill file transcribed — and the discriminator between the two
+skill families is now unambiguous.
+
+- **Ignition-native skills have no frontmatter at all.** This file opens directly with
+  `# App Mod Architecture Standards`. Every `appmod-*` skill opens with a `---` block carrying
+  `name`/`description`/`domain`/`confidence`/`source`. That is a clean, mechanical test for
+  sorting the two families during the conversion.
+- **Skills can be multi-file.** `architecture-structure/` holds `SKILL.md`,
+  `Architecture-Structure.md`, and `REMAINING-POINTS.md` — so `SKILL.md` is an entry point, not
+  the whole skill. This is also the first skill referenced by name from an *agent*
+  (`OpX-Fusion-Reviewer` and `Ultimate-Ignition-edit` both load it), confirming Ignition-native
+  status independently.
+- **Two named architecture profiles, selected by a blunt ownership question**:
+  - *Simple Web App* — **"No one relies on me"**. Explicitly **no CQRS**. Two projects:
+    `Project.Api` + `Project.Library`, where the Library "combines the complicated app's Domain,
+    Application, and Infrastructure projects."
+  - *Complicated Application* — **"Other apps currently or will rely on me"**. **Uses CQRS.**
+    Four layers: `Project.Api` -> `Project.Application` -> `Project.Domain`, plus
+    `Project.Infrastructure` implementing Domain's interfaces, with `DependencyInjection.cs` in
+    both Application and Infrastructure.
+- **The canonical test workspace**, which prompts 17 and 24 both reference but never define:
+
+  ```
+  LegacyCode/<App>.Data.Tests/Characterization/Baseline/
+  tests/backend/{unit, contractApi, integrationBackend}/
+  tests/frontend/{angularUnitComponent, integrationFrontend, smoke, e2e/{journeys, accessibility}, visualParity}/
+  tests/modernization/characterization/{testcase, testResult}/
+  ```
+
+  Organised "by execution surface first, then by test type", with a one-line ownership rule for
+  each folder.
+- **A precise definition of `integrationFrontend`** — browser-driven component-to-API proof that
+  "navigates to a real route, triggers the owning UI control, captures the matched network
+  request or response plus response code, and asserts the resulting UI state." That is the
+  tightest definition of an integration test anywhere in the kit.
+- **An anti-drift rule earned from a real problem**: "Do not create new step-named folders or
+  duplicate step-prefixed parity files under `tests/modernization/characterization`. Use
+  testcase metadata, stable ids, and per-step Markdown reports to track phase ownership
+  instead." Someone clearly ended up with `step12-*`, `step13-*` parity files.
+- Solution-level files are named: `Dockerfile`, `.dockerignore`, `*.yaml`.
+- A short DDD appendix, including a genuinely useful **Entity vs Value Object** heuristic:
+  "removing the ID breaks it" vs "removing the ID makes it better".
+
+## ⚠ Findings in `architecture-structure/Architecture-Structure.md`
+
+**1. This is the third independent source siding AGAINST `.feature` files — and it is the
+canonical layout.**
+The e2e tree is `tests/frontend/e2e/{journeys, accessibility}`. There is **no `features/`
+directory and no `steps/` directory** anywhere in the workspace contract. Prompt 24's Playwright
+Checklist explicitly scores "Feature files in `features/` directory" and "Step definitions in
+`steps/` directory"; Steps 12 and 17 forbid `.feature` files.
+
+Tally so far: Steps 12 and 17 forbid them, this canonical structure has no place for them, and
+`appmod-testing-and-gates` asks only for Gherkin-*style* headers inside ordinary test files.
+**Only prompt 24 requires them.** That makes prompt 24 the outlier, and the fix is to rewrite
+its §6 and Playwright Checklist rather than to change three other files.
+
+**2. A standards document with unanswered questions in it will produce 40 different answers.**
+Four open questions are marked in the source and left unresolved:
+
+```csharp
+Middleware/     // What does this do??
+- **References:** none? (`Project.Application`?)
+Project.Application/        // Separate folders by object type / feature worked with?
+MyAppObject1Query.cs    // List + handler in one? Query returns data (object or list of objects)
+```
+
+The Infrastructure layer's `References:` line is the serious one — "none? (`Project.Application`?)"
+is a load-bearing architectural dependency left as a question mark in the document that agents
+are told to follow. In Clean Architecture, Infrastructure referencing Application is a real
+decision with real consequences, and right now the kit does not state it. For a hackathon, every
+participant's agent will resolve these four differently and all of them will be able to cite the
+standard.
+
+**3. A colleague's name is embedded in the standard.**
+`// Dion thinks handler + definition in one; command returns success/failure`. Transcribed
+verbatim per the standing rule. Worth a decision before this content is distributed more widely:
+attributing an unresolved design opinion to a named individual inside a normative document is
+both a personnel-sensitivity question and a signal that the line is a note, not a rule.
+
+**4. `Step 9` in the test-workspace rules is ambiguous.**
+"Modernization Quality Design should establish the phased characterization ladder before later
+phases begin adding modernization proof, and **Step 9** should preserve the workspace contract
+as real tests grow." Modernization Quality Design is Step 6, which is correct. Step 9 is backend
+integration hardening — plausible as the last backend gate, but Step 17 ("Rewire All Tests &
+Verify") is the step that actually grows the test suite. Under the +2 offset, "Step 9" would map
+to Step 7. Recorded as ambiguous rather than assigned an offset.
+
+**5. The two profiles have no selection gate.**
+"No one relies on me" vs "Other apps currently or will rely on me" is the entire decision
+procedure for choosing between a 2-project and a 4-project backend. No step owns that choice, no
+artifact records it, and no gate checks it. Step 5 (Modernization Solution Design) is the
+natural owner — worth confirming it actually asks.
+
+## Transcription uncertainties (`architecture-structure/Architecture-Structure.md`)
+
+- Line alignment verified at 30 anchors — 1, 3, 7, 13, 17, 24, 34, 41, 62, 64, 68, 74, 81, 90,
+  92, 99, 108, 115, 127, 134, 152, 156, 161, 180, 193, 195, 203, 205, 210, 215 — all matching.
+  Content ends at 215; the editor shows line 216 blank.
+- Heading numbering is inconsistent in the source and preserved as-is: the Simple Web App
+  sections use `#### 1.` / `#### 2.` (with periods) while the Complicated Application sections
+  use `#### 1` … `#### 5` (without).
+- In-code comment alignment (column position of `//`) is approximate.
+- Lines 181, 182 and 189 hard-wrap across editor rows; break positions reconstructed.
+- No mojibake in this file.
 
 ## Structural facts added by skill `appmod-testing-and-gates`
 
