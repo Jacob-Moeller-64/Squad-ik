@@ -54,6 +54,7 @@ references, not values).
 | `skills/dominion-requirements/AppMod-Acceptance-Criteria.md` | **Ignition-native** — the canonical Dominion acceptance-criteria rubric | transcribed from 2 photos — complete (source lines 1-100); 22 line numbers spot-verified |
 | `skills/dominion-requirements/SKILL.md` | **Ignition-native** — the full Dominion rubric with WHY/WHAT/HOW (largest file in the kit) | transcribed from 25 photos — complete (source lines 1-1398, blank to 1399); 100+ line numbers spot-verified |
 | `skills/fusion-feature-standards/fusion-auth-standards.md` | **Ignition-native** — non-negotiable Okta/auth/secrets/CORS security standards | transcribed from 6 photos — complete (source lines 1-301); 26 line numbers spot-verified |
+| `skills/fusion-g1-to-g2-modernization/references/fusion-g1-recognition.md` | **Ignition-native** — portable Fusion G1 (Knockout/RequireJS/Durandal) recognition reference | transcribed from 13 photos — complete (source lines 1-744, blank to 745); 62 line numbers spot-verified |
 
 `architecture-structure/` is a **multi-file skill**, now fully transcribed: `SKILL.md` (470 lines),
 `Architecture-Structure.md` (215), `REMAINING-POINTS.md` (108).
@@ -275,6 +276,110 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## Structural facts added by `fusion-g1-to-g2-modernization/references/fusion-g1-recognition.md`
+
+The Fusion G1 recognition reference — 744 lines, and the only file in the kit **deliberately
+written to be portable**: "so it can be copied into other solutions **without assuming access to
+any specific repo folder structure or internal documentation site**."
+
+- **A `references/` subfolder pattern.** `fusion-g1-to-g2-modernization/` holds `SKILL.md` plus
+  `references/` with three files (`fusion-g1-recognition.md`,
+  `g1-to-g2-modernization-playbook.md`, `knockout-modernization-cheatsheet.md`). Second skill
+  with this shape after `step3-legacy-system-analysis`.
+- **A hallucination guard as the file's headline rule**:
+  > ## Non-negotiable rule
+  > **Do not invent Fusion APIs.** … If you can't confirm a Fusion control/service/method in the
+  > target solution (via its own docs, code, or shipped client bundles), treat it as **unknown**
+  > and ask for developer context.
+- **Fusion G1 defined precisely**: KnockoutJS bindings, RequireJS (AMD) modules, Durandal-style
+  lifecycle hooks, and **jQuery Deferred rather than native Promises**. Plus the third-party
+  stack: jQuery + jQuery UI, KnockoutJS, RequireJS, Durandal, **Kendo UI**, DataTables,
+  moment.js, toastr, SignalR v2, ArcGIS JavaScript API.
+- **27 `<fusion-*>` controls catalogued A-Z**, each with an HTML example and matching KO
+  view-model code: alertbox, appleheader, chart, chartjs, checkbox, checkboxgroup, container,
+  currency, datatable, datepicker, dropdown, esrimap, expander, kendogrid, linkexpander, list,
+  mfa-verify, radioexpander, radiogroup, slideout, stepindicator, textarea, textbox, timepicker,
+  toggle, toolbar, upload — plus six child elements. This is what makes the "don't invent APIs"
+  rule enforceable.
+- **11 `$` services documented A-Z**: `$cache`, `$config`, `$data`, `$dialog`, `$event`, `$log`,
+  `$navigation`, `$perfLogScope`, `$signalR`, `$toastr`, `$utility` — with signatures.
+- **The attribute-syntax convention**, which is easy to get wrong: string literals are
+  double-wrapped (`labelText="'Name'"`), observables are bare symbol names (`value="m.name"`),
+  booleans are bare (`true`/`false`), and complex objects should reference a view-model property.
+- **Five practical modernization rules**, led by "**Stop the bleeding first:** replace jQuery
+  Deferred with native Promise wrappers at module boundaries."
+- **KO teardown is called out explicitly**: legacy pages rely on screen lifetime, modern
+  components need `sub.dispose()`.
+- **Binding-context rules to preserve**: `$root`, `$parent`, `$parents[n]`, `$data`, `$index`
+  "can materially affect behavior in nested templates."
+- Confirms the Angular target as **20** ("typically to **Angular 20 + .NET 10**").
+
+## ⚠ Findings in `fusion-g1-recognition.md`
+
+**1. The file breaks its own non-negotiable rule five times — its examples call methods it never
+documents.**
+This is the file that says "Do not invent Fusion APIs… treat it as unknown." Yet:
+
+| Service | Documented methods | Method used in the example |
+|---|---|---|
+| `$cache` | `resetCache()` | `$cache.reset()` |
+| `$toastr` | warning, success, error, remove, clear | `$toastr.info("Heads up")` |
+| `$utility` | `tryParseBool` | `$utility.tryParseInt("42")` |
+| `$utility` | (not listed) | `$utility.combineUrl("/api", "users")` |
+| `$utility` | (not listed) | `$utility.focusNextInput()` |
+
+An agent copying the examples — which is exactly what a copy/paste-friendly reference invites —
+emits calls the same file says are unconfirmed. Since this reference is the *authority* the rule
+points at, these five entries actively manufacture the failure mode the rule exists to prevent.
+Either add them to the lists or fix the examples.
+
+**2. A real bug in the `$data` GET example.**
+```js
+$data.get("APIFunctionName", "MyFusionWebApi")
+  .then(function (result) {
+    if (result2) {          // <- undefined; should be `result`
+      m.myResult(result);
+    }
+  })
+```
+`result2` is never defined. Copied verbatim it throws a `ReferenceError` at runtime.
+
+**3. The same example mixes Promise and jQuery Deferred idioms.**
+`.then(...).fail(...)` — `.fail()` is jQuery Deferred, `.then()` is the Promise-style method.
+It works on a jQuery Deferred but teaches a hybrid that breaks the moment the "Stop the bleeding
+first" advice is followed and the call is wrapped in a native Promise (which has no `.fail()`).
+The Promise-wrapping example three lines later has the same shape.
+
+**4. App-specific names leaked into a file whose selling point is portability.**
+`$data.get("GetAutoCardEnrollEligible", "PaymentsWebApi")` — a real endpoint and web API from a
+specific application, inside the document explicitly written to be copied into other solutions.
+Fourth instance of app-specific leakage in the kit (after prompt 17's
+`LegacyConnectionStringProviderTests.cs` and the `EquipmentService .cs` filenames in
+`REMAINING-POINTS.md`).
+
+**5. `<fusion-mfa-verify>` has no counterpart in the auth migration story.**
+MFA is a G1 *UI control* (`numberOfCodeDigits`, `isValueReady`, `clearCode`).
+`fusion-auth-standards.md` and `appmod-fusion-target` describe the Okta cutover in detail but
+never mention MFA, so nothing says whether this control's flow survives, becomes an Okta-native
+factor challenge, or needs a G2 equivalent. Any G1 app using it hits an undefined migration path.
+
+**6. The high-risk widget list finally has concrete names.** Prompts 23 and 24 require explicit
+parity evidence for "grids, charts, heavily customized tables, and composite forms" without
+saying what those are in a G1 app. They are `<fusion-kendogrid>`, `<fusion-datatable>`,
+`<fusion-chart>`, `<fusion-chartjs>`, and `<fusion-esrimap>` — and `<fusion-kendogrid>` explains
+why the Kendo licensing patch in `appmod-frontend-angular` is unavoidable rather than incidental.
+
+## Transcription uncertainties (`fusion-g1-recognition.md`)
+
+- Line alignment verified at 62 anchors across all 13 photos, all matching. Content ends at 744;
+  the editor shows line 745 blank.
+- The section heading at source line 738 uses a Unicode arrow
+  (`Fusion G1 → Angular/.NET`); transcribed as `->` for ASCII-safety, as were the `->` arrows in
+  the KO-concepts mapping list (those are ASCII in the source).
+- `esriApiVersion="'4.24'"` and `m.maxFileSize = 10 * 1024 * 1024` were read at magnification and
+  are legible, but the ArcGIS version is the least certain numeric token in the file.
+- No mojibake in this file.
 
 ## Structural facts added by `fusion-feature-standards/fusion-auth-standards.md`
 
