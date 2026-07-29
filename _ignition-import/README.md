@@ -42,6 +42,7 @@ references, not values).
 | `agents/OpX-AppMod-P1-Discovery.agent.md` | Phase 1 Discovery coordinator (Steps 1-6) | transcribed from 2 photos — complete (source lines 1-102, blank to 113) |
 | `agents/OpX-AppMod-P2-Modernize.agent.md` | Phase 2 Modernize coordinator (Steps 7-18) | transcribed from 3 photos — complete (source lines 1-136, blank to 140) |
 | `agents/OpX-AppMod-P3-Review.agent.md` | Phase 3 Review coordinator (Steps 19-24) | transcribed from 2 photos — complete (source lines 1-82, blank to 83) |
+| `agents/OpX-csharp-expert.agent.md` | .NET coding-violations fixer (specialist, user-invocable) | transcribed from 8 photos — complete (source lines 1-437, blank to 439); 20 heading line numbers spot-verified |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -149,6 +150,113 @@ references, not values).
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
 
+## Structural facts added by agent `OpX-csharp-expert`
+
+First **specialist** agent transcribed (the previous three are phase coordinators), and the
+first file that reveals a second tier of kit structure.
+
+- **Different file shape from the coordinators.** It opens with `---` at line 1, carries a
+  YAML **comment** in the frontmatter (`# For the .NET coding-violations step.`), and
+  declares `user-invocable: true` — a field none of the three coordinators has.
+- **Seven tools**, and it is a *worker*: `edit/editFiles`, `read/readFile`,
+  `search/codebase`, `execute/runInTerminal`, `execute/getTerminalOutput`,
+  `read/terminalLastCommand`, `read/terminalSelection`. No `agent`, no `todo`, no `browser`.
+- **Four handoffs, all `send: false`**, one of which is a **self-handoff** (`Run Tests` →
+  `OpX-csharp-expert`). Exits are: back to `OpX-AppMod-P2-Modernize`, run tests, run
+  Step 22 via `OpX-Code-Reviewer`, or run cleanup via `OpX-csharp-janitor`.
+- **Two new agents named**: this file (`OpX-csharp-expert`) and `OpX-csharp-janitor`.
+  Ten named agent surfaces are now known: the three phase coordinators,
+  `OpX-dotnet-upgrade`, `OpX-Fusion-Reviewer`, `OpX-Code-Reviewer`, `OpX-QA-Hub`,
+  `Ultimate-Ignition-edit`, `OpX-csharp-expert`, `OpX-csharp-janitor`.
+- **There is an unnumbered prompt tree.** The cleanup handoff routes to
+  `.github/prompts/P2-Modernize/cleanup.prompt.md` — a **subdirectory** under
+  `.github/prompts/`, which breaks the flat `NN-Px-name.prompt.md` convention the 24
+  numbered prompts follow. The kit therefore contains prompts outside the numbered
+  pipeline, organised by phase folder.
+- **New script**: `.github/scripts/QA/qa-run-all-tests.ps1`.
+- **Six worked violation classes**, each as a `**Problem**` / `**Fix**` pair with `// [BAD]`
+  and `// [GOOD]` markers and the matching `Program.cs` registration:
+  DI violations → constructor injection; `.Result`/`.Wait()`/`async void` → async all the
+  way; `new HttpClient()` → `IHttpClientFactory`; static mutable state →
+  `IDistributedCache`; `User.IsInRole()`/`[Authorize(Roles=…)]` → policy-based
+  authorization; `Console.WriteLine` → `ILogger` structured logging. Plus magic numbers →
+  `IOptions<T>` + `appsettings.json`, and empty catch blocks → typed catch with
+  `OperationCanceledException` re-throw.
+- **A fixed report template** at the end (`CODE VIOLATIONS FIXED`, counts by severity with
+  per-class breakdown, `Tests:` / `Build:` lines, `Ready for final acceptance review.`).
+- **This file is completely free of emoji and of mojibake.** It uses literal `[BAD]`,
+  `[GOOD]` text markers where other kit files use corrupted emoji. It is the cleanest file
+  transcribed so far and a good model for de-emojifying the rest.
+
+## ⚠ Findings in `OpX-csharp-expert.agent.md`
+
+**1. The missing frontmatter delimiter in the three coordinators is now confirmed as a real
+inconsistency, not a rendering artifact.**
+This file's line 1 is `---`. `OpX-AppMod-P1-Discovery`, `-P2-Modernize` and `-P3-Review` all
+begin bare at `name:`. Same directory, same editor, same photo session. Under a strict
+frontmatter parser the three coordinators have no frontmatter at all — their `name`,
+`description`, `tools`, `handoffs` and `agents` would be read as body text, which would mean
+their tool allowlists and handoff menus never take effect. This supersedes the "possibly a
+VS Code artifact" note recorded three times above.
+
+**2. The mission contradicts its own priority list.**
+
+> **Your Mission** — Fix **HIGH and MEDIUM** code violations from the baseline compliance review.
+> **3. Prioritize fixes:** — CRITICAL first (security issues) / HIGH second (architectural
+> violations) / **MEDIUM if time permits**
+
+`CRITICAL` is outside the stated mission scope but is first in the priority list *and*
+appears in the mandatory report template (`CRITICAL Fixed: 0`). And "MEDIUM if time permits"
+walks back the mission's commitment to fix MEDIUM. A model reading the mission statement and
+a model reading the checklist get two different jobs.
+
+**3. Two severity vocabularies exist in the kit with no mapping between them.**
+This agent works in `CRITICAL / HIGH / MEDIUM`. Prompt 24 — the step that *invokes* violation
+remediation — scores in `P1 / P2 / P3 / P4`. Nothing translates one to the other, so a P1
+finding handed to this agent has no defined severity here, and this agent's `CRITICAL Fixed`
+count has no slot in Step 24's report.
+
+**4. Two different test commands for the same purpose, 12 lines apart.**
+Workflow step 4 says run `./.github/scripts/QA/qa-run-all-tests.ps1`; the very next section,
+`## After Each Fix`, says "Run tests to ensure no regressions:" → `dotnet test`. Both are
+"run the tests after a fix". One is the kit's QA harness, the other is raw dotnet — and
+`dotnet test` would skip the frontend suites entirely.
+
+**5. A PowerShell script is invoked inside a ` ```bash ` fence.**
+
+```bash
+./.github/scripts/QA/qa-run-all-tests.ps1
+```
+
+Cosmetic on a dev box with pwsh on PATH, but it is the same class of error as the
+`.feature` conflict: the prompt tells the model one thing and the runtime expects another.
+The `Run Tests` handoff phrases it a third way ("Run ./.github/scripts/QA/qa-run-all-tests.ps1.").
+
+**6. The Dominion skill path disagrees with the one referenced elsewhere.**
+Here: `.github/skills/dominion-requirements/SKILL.md`. Elsewhere in the kit:
+`/.github/skills/dominion-requirements/AppMod-Acceptance-Criteria.md`. Both may exist, but
+the agent is told to read "the Dominion requirements" and pointed at only one of them.
+
+**7. It resolves the two-artifact-roots conflict — in favour of `ignition-artifacts`.**
+It reads `.modernization/ignition-artifacts/discovery/baseline-review.json`, matching
+prompt 04's header block rather than prompt 04's closure contract
+(`.modernization/artifacts/reviews/baseline-review.json`). A useful vote when the single-root
+decision gets made.
+
+## Transcription uncertainties (agent `OpX-csharp-expert`)
+
+- Line alignment was spot-verified against the source at 20 anchors — 33, 37, 41, 53, 58,
+  60, 114, 164, 206, 246, 285, 303, 360, 396, 408, 415, 418, 419, 436, 437 — all matching.
+  Content ends at 437; the editor shows blank lines through 439.
+- **The fence block at source lines 49-52 is the one structurally odd spot.** It reads as
+  an opening ` ``` ` at 49, a blank line at 50, the skill path at 51, and a closing ` ``` `
+  at 52, with no blank line before `3. Prioritize fixes:` at 53 (unlike the item-1 block,
+  which has one). The line numbers are forced by the verified anchors either side, but the
+  blank-line-inside-the-fence reading is inferred from glyph positions rather than read
+  cleanly. Note the item-1 block uses ` ```bash ` with a `cat` command while this one uses a
+  bare fence with only a path — two different ways of saying "read this file".
+- No mojibake anywhere in this file; nothing was placeholder-substituted.
+
 ## Structural facts added by agent `OpX-AppMod-P3-Review`
 
 Third and shortest agent (82 lines vs 136 and 102). With all three phase coordinators in
@@ -226,8 +334,11 @@ contradictions start.
 ## Transcription uncertainties (agent `OpX-AppMod-P3-Review`)
 
 - Same as P1 and P2: **no opening `---` frontmatter delimiter** — line 1 is
-  `name: OpX-AppMod-P3-Review`, closing `---` at line 46. All three agent files show this,
-  so it is a consistent convention in this kit rather than a one-file slip.
+  `name: OpX-AppMod-P3-Review`, closing `---` at line 46. All three coordinators show this.
+  > **SUPERSEDED by `OpX-csharp-expert`**: that file, in the same directory and the same
+  > photo session, *does* open with `---` at line 1. So this is a real inconsistency
+  > between coordinator and specialist agents, not a kit-wide convention and not a VS Code
+  > rendering artifact. See the findings under `OpX-csharp-expert`.
 - Handoff labels contain both a leading pictographic emoji and a two-digit keycap sequence
   (e.g. `1️⃣9️⃣`); both are mojibake in the photo and are recorded as
   `<MOJIBAKE: emoji>` / `<MOJIBAKE: keycap NN>` placeholders. The keycap digits were
