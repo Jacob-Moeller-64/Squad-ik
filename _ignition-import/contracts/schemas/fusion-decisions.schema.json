@@ -1,0 +1,19 @@
+{
+  "dialect": "opx-field-contract/v1",
+  "contractId": "fusion-decisions",
+  "title": "Fusion restructure migration decisions",
+  "appliesTo": ".modernization/ignition-artifacts/modernize/fusion-restructure/decisions.json",
+  "rootPath": "decisions",
+  "groundedBy": [
+    ".github/prompts/05-P1-modernization-solution-design.prompt.md (Step 5 authors this; many sections are conditional on browser-surface scope)",
+    ".github/prompts/21-P3-figma-review.prompt.md (reads browserSurfaceApplicability) and Steps 10/11/22/23 (frontend-lane gate)",
+    ".github/scripts/QA/qa-refresh-portal.ps1 (reads browserSurfaceApplicability with -contains guards; presence-based otherwise)"
+  ],
+  "authoringNote": "CONSERVATIVE FLOOR. This file is agent-authored at Step 5 with NO deterministic producer and NO committed sample to ground against, and most o [TRUNCATED IN PHOTO - the rest of this string ran off the right edge and was not captured]",
+  "type": "object",
+  "notEmpty": true,
+  "fields": {
+    "browserSurfaceApplicability": { "type": "string", "notEmpty": true }
+  }
+}
+

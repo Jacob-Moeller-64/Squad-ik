@@ -89,6 +89,7 @@ references, not values).
 
 | File | Role | Status |
 |---|---|---|
+| `contracts/schemas/fusion-decisions.schema.json` | **Ignition-native** — field contract for the Step 5 migration decisions; **the first schema that asserts a real field** | transcribed from 1 photo — source lines 1-18 + trailing blank; **validates as JSON**, but the `authoringNote` string is **truncated at the right edge** |
 | `contracts/schemas/fusion-control-point-inventory.schema.json` | **Ignition-native** — field contract for the Step 5 protected control-point inventory | transcribed from 1 photo — complete (source lines 1-14 + trailing blank); **validates as JSON** |
 | `contracts/schemas/executable-testcase-catalog.schema.json` | **Ignition-native** — `opx-field-contract/v1` field contract for the Step 6 executable testcase catalog | transcribed from 1 photo — complete (source lines 1-14); **validates as JSON** |
 
@@ -676,6 +677,56 @@ Headline coverage:
    implies.
 6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
    `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## ✅ ANSWERED: yes, a schema *can* assert a field — and the mechanism is consumer-proof
+
+`fusion-decisions.schema.json` is the first of the nine to carry a `fields` block:
+
+```json
+"fields": {
+  "browserSurfaceApplicability": { "type": "string", "notEmpty": true }
+}
+```
+
+And `groundedBy[]` shows exactly why this one could when the previous two could
+not — **three independent consumers read that field**:
+
+| Consumer | How it reads it |
+|---|---|
+| `21-P3-figma-review.prompt.md` | reads `browserSurfaceApplicability`, "and Steps 10/11/22/23 (frontend-lane gate)" |
+| `qa-refresh-portal.ps1` | reads `browserSurfaceApplicability` with `-contains` guards; presence-based otherwise |
+| `05-P1-modernization-solution-design.prompt.md` | authors it (Step 5) |
+
+This confirms the rule stated in the `fusion-control-point-inventory` note as a
+working principle, not an excuse: **a field becomes assertable exactly when a real
+consumer proves it is needed.** No consumer → no required field → the schema
+degrades to a presence check. One consumer that actually reads a key → that key
+can be promoted.
+
+That is a genuinely good design principle, and it makes the earlier finding
+sharper rather than softer: `control-point-inventory.json` has no asserted field
+**because nothing reads one**, which is the same reason its nine `hardStop` gates
+are hollow. The fix for both is identical — make a script read a field.
+
+Revised pattern across the three schemas transcribed so far:
+
+| Schema | Producers | Consumers reading fields | Asserted fields |
+|---|---|---|---|
+| `executable-testcase-catalog` | 2, diverging root keys | reconciliation engine only | none (`type`+`notEmpty`) |
+| `fusion-control-point-inventory` | 1 (agent), no sample | **none** — `Test-Path` only | none (`type`+`notEmpty`) |
+| `fusion-decisions` | 1 (agent), no sample | **3**, all reading `browserSurfaceApplicability` | **1** ✅ |
+
+So `.github/contracts/schemas/` is not uniformly a presence layer — it is a
+presence layer *wherever no consumer has proven a field*, which is a much more
+defensible position and one the kit arrived at deliberately.
+
+`browserSurfaceApplicability` also turns out to be the single most load-bearing
+field in the kit: it gates the entire frontend lane (Steps 10, 11, 13-16 via
+`Required` / `NotApplicable`) plus the Step 21 visual review, and appears
+throughout `AppMod-Process.instructions.md`'s exit criteria. It is fitting that it
+is the one field with a contract.
 
 ---
 
@@ -2971,6 +3022,24 @@ for display), so their line numbers do match:
   batches. **My earlier report that this file was complete at 272 was wrong** —
   it was the end of the photo range, not the end of the file. Lines 273-355 have
   been appended and the index corrected.
+
+## Transcription uncertainties (`contracts/schemas/*`)
+
+**`fusion-decisions.schema.json` — the `authoringNote` is incomplete.** The photo
+was taken with word wrap off and the string runs off the right screen edge at
+*"…and most o"*. The captured file carries an explicit
+`[TRUNCATED IN PHOTO - ...]` marker inside the string so the gap cannot be
+mistaken for the real text, and the file still validates as JSON.
+
+Everything else in that file is fully legible: the `fields` block, all three
+`groundedBy` entries, and the assertions. **A re-shoot with `Alt+Z` (word wrap)
+would recover the missing note text** — worth doing, since the other two
+`authoringNote`s in this family turned out to be the most informative content in
+their files.
+
+The other two schemas (`executable-testcase-catalog`,
+`fusion-control-point-inventory`) were captured complete — their notes wrapped on
+screen and no text was lost.
 
 ## Transcription uncertainties (`copilot.instructions.md`)
 
