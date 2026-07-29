@@ -41,11 +41,15 @@ references, not values).
 |---|---|---|
 | `skills/appmod-backend-dotnet/SKILL.md` | backend — .NET upgrade + restructure | transcribed from 1 photo — complete (source lines 1-34, blank to 35); 11 line numbers spot-verified |
 | `skills/appmod-compliance-review/SKILL.md` | review — AI-judgment whole-codebase compliance review | transcribed from 2 photos — complete (source lines 1-119, blank to 120); 21 line numbers spot-verified |
+| `skills/appmod-frontend-angular/SKILL.md` | frontend — legacy Angular → `src/Client` parity move | transcribed from 1 photo — complete (source lines 1-35, blank to 36); 10 line numbers spot-verified |
+| `skills/appmod-fusion-target/SKILL.md` | fusion — shared target: structure, Okta/OIDC, Scalar, component swap | transcribed from 1 photo — complete (source lines 1-32, blank to 33); 13 line numbers spot-verified |
+| `skills/appmod-modernization-process/SKILL.md` | modernization — the phased wave sequence and parity gates | transcribed from 1 photo — complete (source lines 1-40, blank to 41); 17 line numbers spot-verified |
 
-> **Provenance note on the `appmod-*` skills** — these two live in the Ignition Kit's
-> `.github/skills/` tree but appear to be **conversion-side artifacts**, not original Ignition
-> Kit content. See "⚠ The `appmod-*` skills are probably not Ignition-native" below before
-> treating them as source material for the import.
+> **The `appmod-*` skills are Squad-side, not Ignition-native — CONFIRMED.** All five live in the
+> Ignition Kit's `.github/skills/` tree, but they are artifacts of *this conversion project*:
+> knowledge earned from Ignition Kit runs and written up against Squad's decision ledger and
+> phase model. They are before-state *evidence about what was learned*, not before-state
+> *content*. See "⚠ The `appmod-*` skills are Squad-side (confirmed)" below.
 
 ### Agents
 
@@ -169,7 +173,52 @@ references, not values).
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
 
-## ⚠ The `appmod-*` skills are probably not Ignition-native
+## ⚠ The `appmod-*` skills are Squad-side (confirmed)
+
+The earlier inference (below) is now confirmed by three further skills. Three independent
+proofs:
+
+**1. Every decision ID matches Squad-ik's `.squad/decisions.md` — six for six, on number,
+meaning, and often wording.**
+
+| ID | `appmod-*` skill text | Squad-ik `.squad/decisions.md` |
+|---|---|---|
+| D-003 | "No-counterpart components are wrapped, recorded, reported" | "No-Fusion-counterpart policy: **wrap** … recorded as `no-counterpart` … reported in the run report" |
+| D-004 | "preserve legacy -> flip frontend to Okta -> remove legacy path" | "**Auth strangler order.** (1) preserves legacy auth … (2) Frontend flips to Okta … (3) Legacy auth path removed" |
+| D-005 | "Internal-only by default" | "**Scalar docs route is internal-only by default.**" |
+| D-006 | "Fusion MCP (pinned) is the SOLE authority on structure and component counterparts" | "**Fusion MCP is the sole authority on target structure**, at the version pinned for the current kit release" |
+| D-007 | "`src/<App>.Web.Api` (move-only)" / "behavior commits only" | "**Behavior commits and move commits never mix.**" |
+| D-008 | "the deterministic GO/NO-GO gate" / "NEVER self-report the score" | "**Scorecard engine is frozen per run** … **never self-reported**" |
+
+**2. The phase model is Squad's, not Ignition's.** `appmod-modernization-process` lists five
+phases — **Discovery / Backend wave / Frontend wave / Fusionization / Close-out**. The Ignition
+Kit's own structure, established across all 24 transcribed prompts, is three phases
+(P1 Discovery 1-6, P2 Modernize 7-18, P3 Review 19-24) with 24 numbered steps. The wave model
+is the Squad pipeline.
+
+**3. The owning role is Squad's.** "**The Lead** owns this sequence." `Lead` is one of Squad's
+five agent roles (`.squad/team.md`). No Ignition agent is called Lead — Ignition's owners are
+`OpX-AppMod-P1-Discovery`, `-P2-Modernize`, `-P3-Review`, and the specialists.
+
+**What this means for the import.** These five files are the **most valuable thing transcribed
+so far for the actual conversion project** — they are a working draft of the Ignition→Squad
+translation, written by someone who had run the kit and knew what it teaches. But they must not
+be counted as Ignition Kit before-state content: doing so would double-count design decisions
+that already exist on the Squad side and would misrepresent what the kit contains today.
+
+They also reference **D-012 through D-016**, which are past the end of Squad's seeded
+D-001…D-010. Squad's `decisions.md` header says run-local decisions are appended per run by the
+Lead — so those five IDs exist in some run's appended ledger and are worth locating:
+
+| ID | Meaning inferred from the skills |
+|---|---|
+| D-012 | Ownership classes: app-owned / Fusion-owned final state / temporary bridge / banned final state |
+| D-013 | Policy-based authorization only |
+| D-014 | Connection string composed at startup from split `SqlServer__*` env vars |
+| D-015 | Fusion packages pinned to latest production Sonatype version, not stale sample versions |
+| D-016 | Fusion MCP authority extended to component counterparts (paired with D-006) |
+
+## ⚠ SUPERSEDED — earlier inference that the `appmod-*` skills are "probably" not Ignition-native
 
 Both skills transcribed so far sit in the Ignition Kit's `.github/skills/` tree, but six
 independent signals say they were authored **for the Squad/appmod conversion** and dropped into
@@ -213,6 +262,122 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## Structural facts added by skills `appmod-frontend-angular`, `appmod-fusion-target`, `appmod-modernization-process`
+
+Three short skills (35 / 32 / 40 lines) that between them answer the integration questions the
+prompts and agents only gestured at.
+
+### `appmod-fusion-target` — the concrete Okta + Scalar + Fusion wiring
+
+The single most useful file transcribed for "how do Scalar, Okta, and Fusion actually get
+wired?" Everything is named:
+
+- **Backend** (`src/<App>.Web.Api`): `FusionWebBuilder.CreateBuilder(...)` +
+  `await builder.BuildAndRunAsync()`. Okta, Scalar, OpenAPI, caching and CORS are all driven by
+  **appsettings config blocks**, not code. Packages: `Fusion.Fx.App.Web`,
+  `Fusion.Fx.Security.Web.OAuth.Okta`.
+- **Client** (`src/<App>.Web.Client`): `provideNgxFusionAuthOAuthOkta()` plus the
+  `fusion.config` `auth` block — issuer, clientId, redirectUri, logoutUrl, scopes,
+  **`pkce: true`**, **`authenticateOnStart: false`**. Route protection via
+  `FusionAuthenticatedGuard` / `FusionRoleGuard`. Package:
+  `@fusion/ngx-fusion-auth-oauth-okta`. (Field names only — no tenant values appear in the
+  source and none were inferred.)
+- **Scalar** serves at `/scalar` **transitively** via `Fusion.Fx.App.Web`; hand-writing
+  `AddScalar`/`MapScalar` is an anti-pattern. Internal-only by default.
+- **Component swap**: one primitive family at a time, **one component per commit**. Named
+  counterparts: standard grid = `FusionDataGridBasicComponent`, free-text+suggest =
+  `FusionSuggestionTextboxComponent`.
+- **The auth strangler has a removal gate**: `check-auth-removed`. The legacy path is not
+  optional cleanup — it is gated.
+- **Completeness is provisioning, not compilation**: "A restructured `src/` missing
+  Scalar/OpenAPI, the Okta config blocks, or the client auth provider is INCOMPLETE
+  provisioning **even if it compiles**."
+- **A runtime proof requirement for Fusion**: "A route counted 'Fusion-complete' just because
+  `<fusion-...>` tags exist — runtime smoke must prove the Fusion theme is actually applied."
+
+### `appmod-modernization-process` — the wave sequence and the parity gate
+
+- **Discovery reverse-engineers the legacy app *while it is RUNNING*** — routes, endpoints with
+  **live golden request/response pairs**, UI controls, workflows, high-risk seams, baseline
+  screenshots per route/state. Inventories land in
+  `.modernization/ignition-artifacts/discovery/`: `service-behavior-inventory.json`,
+  `interaction-wiring-inventory.json`, `workflow-trace-inventory.json`, `review-manifest.json`,
+  plus an explicit **cannot-locate backlog**.
+- **The answer-key principle**: "the parity reference is ALWAYS the legacy app in `LegacyCode/`
+  + its extracted visual contract, **never a finished modern reference**."
+- **A two-part frontend parity gate that must pass before any Fusion swap**:
+  - *Field parity* — every legacy grid column/field, filter and control present **AND wired**
+    (no column collapse, no inert stubbed handler, no dead filter, distinct data per sibling
+    list).
+  - *Visual parity* — palette, typography, header/nav/footer chrome, nav route model, layout
+    density.
+- **The backend-wave milestone is a real integration checkpoint**: "the legacy frontend runs
+  against the new backend."
+- **Close-out requires no dimension below the before score** plus closed-loop reconciliation
+  against the discovery inventory.
+
+### `appmod-frontend-angular` — parity-first migration and the Kendo trap
+
+- **The move is a parity move, not a redesign.** What must survive the move is enumerated:
+  legacy stylesheet stack, **partial import order**, assets, fonts/icons, host/body classes,
+  layout wrappers, and the DOM/class contract.
+- **The shell inherits the legacy visual language by construction**: design tokens from the
+  legacy palette/typography, Fusion theme bound to them, branded header, nav populated from the
+  route inventory, footer.
+- **Per-route behavior preservation** names the things that usually get dropped: real click
+  handlers, modal/banner triggers, export/print/download/upload controls, keyboard shortcuts,
+  data bindings.
+- `FusionErrorService` / `FusionLoggerService` from `@fusion/ngx-fusion`; `data-testid`
+  everywhere so the app is Playwright-ready.
+- **A precise auth-plumbing warning**: "Assuming `HttpClient` receives bearer tokens just
+  because `provideNgxFusionAuthOAuthOkta()` exists — prove the request path; the default
+  final-state path is **`FusionHttpService`**."
+
+## ⚠ Findings for the three skills
+
+**1. The Kendo license patch needs a licensing decision before any hackathon.**
+`appmod-frontend-angular` ships a PowerShell one-liner that rewrites the embedded expiry inside
+Progress's Kendo licensing module (`@progress/kendo-licensing/dist/index-esm.js`), replacing a
+matched date-like token with `1999999999`, to suppress the trial watermark. Transcribed verbatim
+because it is what the file says.
+
+Two separate issues, neither of them stylistic:
+- **Licensing.** This modifies a commercial vendor's licensing code. Whether that is acceptable
+  is a question for whoever owns the Kendo/Progress agreement — not something the kit should
+  decide by default, and not something to discover after 40 people have run it.
+- **Durability.** The skill itself notes the patch "is lost on every `npm install`". A fix that
+  silently reverts is a fix that will be re-applied by 40 people at unpredictable times.
+
+The underlying diagnosis is correct and worth keeping either way: `KENDO_UI_LICENSE=ignored` has
+no effect under esbuild because Angular 17+ uses `@angular/build`, which does not substitute
+`process.env` into the browser bundle. The right fix is a real license key in CI/dev
+provisioning, not a patched module.
+
+**2. `appmod-fusion-target` is the only place `pkce: true` and `authenticateOnStart: false` are
+stated.** Nothing in the 24 prompts or 11 agents names either setting, yet both materially
+change the Okta flow. If the `appmod-*` skills are Squad-side, then **the Ignition Kit itself
+never tells a developer what the Okta config block should contain** — it only says auth must be
+wired. That is a gap in the kit, not in the skill.
+
+**3. `D-016` is paired with `D-006` everywhere it appears** (`appmod-fusion-target` line 12,
+`appmod-modernization-process` line 32), always as "structure **and component counterparts**".
+It reads as an extension of D-006 rather than an independent policy — worth confirming when the
+appended ledger is located, since a merged D-006 may be cleaner than two IDs.
+
+## Transcription uncertainties (the three skills)
+
+- Line alignment verified at 10 / 13 / 17 anchors respectively, all matching. Content ends at
+  35 / 32 / 40; editors show one trailing blank line each.
+- All three are **hard-wrapped** — physical line breaks mid-paragraph, preserved as photographed.
+- `appmod-modernization-process` items 1 and 5 are single logical list items spanning many
+  editor rows; the internal break points are reconstructed from wrap positions.
+- In the Kendo patch, the regex `'\b174733\d{4}\b'` was read carefully at magnification but the
+  literal digits `174733` and the `\d{4}` quantifier are the least legible tokens in the three
+  photos. Verify against source before relying on it.
+- Okta config **field names** only are recorded (issuer, clientId, redirectUri, logoutUrl,
+  scopes); no tenant, domain, or client-ID values appear in the source and none were inferred.
+- No mojibake in any of the three files.
 
 ## Structural facts added by skill `appmod-compliance-review`
 
