@@ -1,0 +1,15 @@
+{
+  "dialect": "opx-field-contract/v1",
+  "contractId": "fusion-migration-plan",
+  "title": "Fusion restructure slice and migration ordering plan",
+  "appliesTo": ".modernization/ignition-artifacts/modernize/fusion-restructure/migration-plan.json",
+  "rootPath": "migration-plan",
+  "groundedBy": [
+    ".github/prompts/05-P1-modernization-solution-design.prompt.md (Step 5 authors this)",
+    ".github/scripts/P1-Discovery/03-P1-build-verify-legacy-runtime.ps1 (reads step7/step9UpgradeWorkspaceRoot and launchContracts.upgradedRuntime.verificationUrls - all DEFENSIVE, guarded by -contains / try-catch)"
+  ],
+  "authoringNote": "CONSERVATIVE FLOOR. Agent-authored at Step 5 with NO deterministic producer and NO committed sample. Every observed script consumer accesses fields defensively (step7UpgradeWorkspaceRoot, step9UpgradeWorkspaceRoot, launchContracts.upgradedRuntime.verificationUrls are all read behind -contains guards or try/catch), so NONE are safe to mark required without risking a false block. The floor only asserts a non-empty object, which catches empty {}, [], and truncated or hallucinated-to-non-object content. TIGHTEN ONLY after observing a real produced migration-plan.json: the workspace-root and launchContracts fields are the prime candidates to promote to required once their universal presence is confirmed.",
+  "type": "object",
+  "notEmpty": true
+}
+

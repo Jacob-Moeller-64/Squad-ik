@@ -89,6 +89,8 @@ references, not values).
 
 | File | Role | Status |
 |---|---|---|
+| `contracts/schemas/modernization-execution-contract.schema.json` | **Ignition-native** — ★ the only schema with a **deterministic producer** and a `required[]` array | transcribed from 1 photo — complete (source lines 1-19); **validates as JSON** |
+| `contracts/schemas/fusion-migration-plan.schema.json` | **Ignition-native** — field contract for the Step 5 slice/migration ordering plan | transcribed from 1 photo — complete (source lines 1-14 + trailing blank); **validates as JSON** |
 | `contracts/schemas/fusion-decisions.schema.json` | **Ignition-native** — field contract for the Step 5 migration decisions; **the first schema that asserts a real field** | transcribed from 1 photo — source lines 1-18 + trailing blank; **validates as JSON**, but the `authoringNote` string is **truncated at the right edge** |
 | `contracts/schemas/fusion-control-point-inventory.schema.json` | **Ignition-native** — field contract for the Step 5 protected control-point inventory | transcribed from 1 photo — complete (source lines 1-14 + trailing blank); **validates as JSON** |
 | `contracts/schemas/executable-testcase-catalog.schema.json` | **Ignition-native** — `opx-field-contract/v1` field contract for the Step 6 executable testcase catalog | transcribed from 1 photo — complete (source lines 1-14); **validates as JSON** |
@@ -677,6 +679,89 @@ Headline coverage:
    implies.
 6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
    `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## ★★ `New-ControlPlaneSkeleton` — the mechanism that fixes the nine-hollow-gates problem
+
+`modernization-execution-contract.schema.json` is the strongest schema in the
+family, and the reason is one line in its `groundedBy[]`:
+
+> `.github/scripts/shared/verify-step-artifacts.ps1 :: **New-ControlPlaneSkeleton**`
+> (deterministic No-QA writer; **authoritative minimum shape**)
+
+**A script already writes control-plane artifacts deterministically.** That is
+exactly the missing piece identified in the `fusion-control-point-inventory`
+finding above. The kit does not lack the capability — it has a named function,
+inside a script every step already runs, whose stated job is to emit an
+authoritative minimum shape.
+
+And the payoff is visible in the same file: this is the **only** schema so far
+with a `required[]` array:
+
+```json
+"required": ["reportId", "title"],
+"fields": {
+  "reportId": { "type": "string", "notEmpty": true },
+  "title":    { "type": "string", "notEmpty": true }
+}
+```
+
+The note explains the logic precisely:
+
+> Two legitimate producers write this file: the deterministic No-QA skeleton
+> (`New-ControlPlaneSkeleton`, which always writes `reportId` + `title`) and the
+> Step 5 agent (enriched, derived from real inventory). **This contract MUST pass
+> on the skeleton, so the required floor is intentionally identity-only.**
+
+So the rule generalises: **a deterministic producer guaranteeing a field is what
+makes that field requirable.** Consumer-proof (the `fusion-decisions` route) is
+one path; producer-guarantee is the other, and it is stronger because it does not
+depend on anyone having written a consumer yet.
+
+**Concrete recommendation, now specific rather than general:** extend
+`New-ControlPlaneSkeleton` to emit an identity floor for
+`control-point-inventory.json` (and `migration-plan.json`, and `decisions.json`).
+Each then gets a guaranteed minimum shape, each schema can promote those keys to
+`required`, and the nine hollow `hardStop` gates on the control-point inventory
+start asserting something. The function, the script, and the pattern all already
+exist — this is wiring, not invention.
+
+---
+
+## The three reasons a schema stays at "presence only" — now complete
+
+`fusion-migration-plan.schema.json` supplies a **third** distinct cause, different
+from the first two:
+
+> Every observed script consumer accesses fields **defensively**
+> (`step7UpgradeWorkspaceRoot`, `step9UpgradeWorkspaceRoot`,
+> `launchContracts.upgradedRuntime.verificationUrls` are all read behind
+> `-contains` guards or `try/catch`), so **NONE are safe to mark required without
+> risking a false block.**
+
+The full taxonomy across five schemas:
+
+| Cause | Schema | Why no field can be required |
+|---|---|---|
+| **Producer divergence** | `executable-testcase-catalog` | two producers, different root keys (`entries[]` vs `testCases[]`) |
+| **No consumer at all** | `fusion-control-point-inventory` | only `Test-Path`; nothing reads a field |
+| **Defensive consumers** | `fusion-migration-plan` | every read is guarded, so absence is already tolerated |
+| *(resolved)* consumer-proven | `fusion-decisions` | 3 consumers read `browserSurfaceApplicability` → 1 field asserted |
+| *(resolved)* producer-guaranteed | `modernization-execution-contract` | `New-ControlPlaneSkeleton` always writes `reportId` + `title` → 2 fields required |
+
+That third cause is subtly the most interesting: **defensive coding in consumers
+is what prevents the contract from tightening.** Guards were presumably added to
+stop crashes on missing fields, and the side effect is that the field can never be
+made mandatory. It is a real engineering trade-off, correctly identified, and
+worth naming explicitly when the kit decides which fields to pin.
+
+**Bonus cross-reference:** this schema confirms that **both**
+`step7UpgradeWorkspaceRoot` and `step9UpgradeWorkspaceRoot` are read by
+`03-P1-build-verify-legacy-runtime.ps1`. That is independent confirmation of the
+deliberate compatibility shim first spotted in `OpX-dotnet-upgrade.agent.md` —
+the `step9` name is a live alias, not a stale typo, and renaming it would break
+this script.
 
 ---
 
