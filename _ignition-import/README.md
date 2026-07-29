@@ -48,6 +48,7 @@ references, not values).
 | `agents/OpX-Frontend-Angular-Transform.agent.md` | **Archived** compatibility redirect for the retired Angular specialist lane | transcribed from 1 photo — complete (source lines 1-50, blank to 51) |
 | `agents/OpX-Fusion-Reviewer.agent.md` | Fusion restructure reviewer (Step 19 lane) | transcribed from 2 photos — complete (source lines 1-90, blank to 92); 16 heading line numbers spot-verified |
 | `agents/OpX-fusion-ui-component-upgrade.agent.md` | Fusion UI slice executor (Steps 15-16 lane) | transcribed from 1 photo — complete (source lines 1-57, blank to 59); 12 heading line numbers spot-verified |
+| `agents/Ultimate-AppMod-Ignition.agent.md` | Top-level modernization orchestrator | transcribed from 2 photos — complete (source lines 1-95, blank to 96); 21 heading line numbers spot-verified |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -154,6 +155,101 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by agent `Ultimate-AppMod-Ignition`
+
+The top-level orchestrator — the identity `OpX-Frontend-Angular-Transform` hands back to via
+"Back To Orchestrator". 95 lines, and structurally unlike every other agent in the kit.
+
+- **`OpX` = `OpEx`.** Line 36 spells it out: "the **OpEx** Ignition Kit". The agent-name prefix
+  is Operational Excellence.
+- **A new process name: "the DE App Mod process"** (in the `description`). Not defined
+  anywhere else transcribed so far.
+- **The target stack is named explicitly**: "the **Fusion Generation 2** stack
+  (**Angular 19+ / .NET 10**)". This is the first place the Fusion generation is stated for
+  the *target* rather than the legacy source — prompt 01 mentioned "Fusion G1" as a legacy
+  generation.
+- **26 declared tools — by far the largest allowlist in the kit**, and the only one with
+  outbound and workspace-mutating powers: `web/fetch`, `web/githubRepo`,
+  `microsoftdocs/mcp/*`, `vscode/installExtension`, `vscode/newWorkspace`,
+  `vscode/getProjectSetupInfo`, `execute/createAndRunTask`, `execute/runNotebookCell`,
+  `read/getNotebookSummary`, `execute/testFailure`, `read/problems`, `search/changes`,
+  `search/usages`, `vscode/extensions`, `ms-azuretools.vscode-containers/containerToolsConfig`,
+  plus coarse `edit`, `search`, `todo`, `agent`.
+- **`argument-hint: Outline the goal or problem to research`** — a frontmatter field seen on
+  prompt files but on no other agent.
+- **A File Protection Policy written as MAY / MUST NOT lists plus a rule of thumb**:
+  > If a file defines *how the kit works*, do not touch it. If a file is *generated output or
+  > evidence from the modernization process*, you may edit it.
+  > When in doubt, **read but do not edit**.
+
+  This is the clearest statement of the kit-protection intent anywhere, and it is the only
+  place that explains *why* the boundary sits where it does.
+- **Four generic problem-solving phases** layered on the shared baseline: Analyze & Plan,
+  **Adversarial Review** (challenge assumptions, identify failure points, consider
+  alternatives, stress-test edge cases), Implement & Validate, Verify & Complete — plus a
+  four-item Modernization-Specific Checklist.
+- **The shared baseline contract has five named sections**: Communication, Execution, Web
+  Research, Obstacle Handling, Completion Gate — all living in
+  `appmod-agent-personality-baseline.instructions.md`.
+
+## ⚠ Findings in `Ultimate-AppMod-Ignition.agent.md`
+
+**1. The orchestrator has no knowledge of the 24-step pipeline, and no way to route into it.**
+This file contains **zero references to any numbered step**, no `handoffs:` block, and no
+`agents:` key. Yet `OpX-Frontend-Angular-Transform` sends users here with
+"Back To Orchestrator" and "Build & Run Modern App". A developer returning to "the main
+workflow" lands in an agent that has never heard of Step 10, cannot present a step menu, and
+cannot hand off to `OpX-AppMod-P1-Discovery` / `-P2-Modernize` / `-P3-Review`. It is a
+general-purpose modernization agent wearing the orchestrator's name — the routing layer lives
+entirely in the three phase coordinators, which this file does not mention.
+
+**2. Angular version conflict across three files.**
+
+| File | Stated target |
+|---|---|
+| `Ultimate-AppMod-Ignition` | Fusion Generation 2, **Angular 19+** |
+| prompt 02 (rename starter) | "Angular even-major baseline, currently **Angular 20**" |
+| prompt 24 (technical review) | "**Angular 20+**" |
+
+"Angular 19+" is technically satisfied by 20, but 19 is an *odd* major and prompt 02 states
+the baseline policy is **even-major**. So the orchestrator's floor contradicts the kit's own
+stated versioning policy. One of these is the source of truth; right now a model can justify
+either.
+
+**3. The kit-maintenance agent is referenced generically, not by name.**
+> If a task requires changes to kit infrastructure, tell the user to use **the kit-maintenance
+> agent** instead.
+
+`OpX-AppMod-P1-Discovery` names it precisely — "tell the user to switch to
+`Ultimate-Ignition-edit`". Here the model has to guess which agent that is. Two files
+describing the same escalation, one with an identifier and one without.
+
+**4. The `.modernization/` boundary is stated by intent, not by path — and it is the one
+boundary that actually needs paths.**
+The MAY list permits "QA portal pages and generated reports under `.modernization/`"; the
+MUST NOT list forbids "Kit infrastructure files under `.modernization/`". Both are the same
+directory, separated only by a judgement call about what counts as infrastructure.
+`OpX-AppMod-P1-Discovery` does this correctly with globs
+(`/.modernization/.readme/**`, `/.modernization/OpXUtil/**`). The rule of thumb here is a good
+*explanation*, but it is not machine-checkable and it is the boundary a model is most likely
+to get wrong under pressure.
+
+**5. A sixth frontmatter variant.** No opening `---` (coordinator-style), but also no
+`handoffs`, no `agents`, and a unique `argument-hint` field. Across ten agent files the
+frontmatter now varies on five independent axes.
+
+## Transcription uncertainties (agent `Ultimate-AppMod-Ignition`)
+
+- Line alignment verified at 21 anchors — 30, 32, 34, 36, 38, 40, 42, 44, 50, 54, 56, 58, 60,
+  66, 73, 79, 84, 88, 90, 92, 95 — all matching. Content ends at 95; the editor shows line 96
+  blank.
+- **Source line 31 is blank, immediately before the closing `---` at line 32.** Transcribed as
+  photographed. `OpX-Frontend-Angular-Transform` shows the same blank-before-close pattern.
+- Lines 36-37 and 51-53 wrap in the editor; reconstructed from wrap positions.
+- The em dash in "application code — the actual modernization work" is transcribed as an em
+  dash; at photo resolution it could be a double hyphen.
+- No mojibake anywhere in this file.
 
 ## Structural facts added by agent `OpX-fusion-ui-component-upgrade`
 
