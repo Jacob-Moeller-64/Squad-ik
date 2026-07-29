@@ -33,6 +33,13 @@ references, not values).
 | `prompts/21-P3-figma-review.prompt.md` | P3 Review, Step 21 | transcribed from 2 photos |
 | `prompts/22-P3-final-acceptance-criteria-review.prompt.md` | P3 Review, Step 22 | transcribed from 2 photos |
 | `prompts/23-P3-final-readiness-review.prompt.md` | P3 Review, Step 23 | transcribed from 2 photos |
+| `prompts/24-P3-technical-review.prompt.md` | P3 Review, Step 24 | transcribed from 22 photos (5 were a re-shot of an already-captured range) — **INCOMPLETE: source lines 864-1154 not yet photographed**, see gap marker in the file |
+
+### Agents
+
+| File | Role | Status |
+|---|---|---|
+| `agents/OpX-AppMod-P1-Discovery.agent.md` | Phase 1 Discovery coordinator (Steps 1-6) | transcribed from 2 photos — complete (source lines 1-102, blank to 113) |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -139,6 +146,265 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by agent `OpX-AppMod-P1-Discovery`
+
+First agent file transcribed. Agents are a **different file shape** from prompts and carry
+routing behavior the prompts do not.
+
+- **Location**: `.github/agents/<Name>.agent.md`. Frontmatter fields observed:
+  `name`, `description`, `tools` (single-line JSON-ish array, not the YAML block list the
+  prompt files use), `handoffs`, `agents`.
+- **`tools` is a flat inline array of 18 entries** — a *superset* of what any single P1
+  prompt declares: `vscode/runCommand`, `execute/getTerminalOutput`, `execute/runInTerminal`,
+  `read/readFile`, `read/terminalSelection`, `read/terminalLastCommand`, `agent/runSubagent`,
+  `search/codebase`, and the full browser family (`openBrowserPage`, `readPage`,
+  `screenshotPage`, `navigatePage`, `clickElement`, `dragElement`, `hoverElement`,
+  `typeInPage`, `runPlaywrightCode`, `handleDialog`).
+- **`handoffs` is the UI menu** the coordinator renders: 8 entries, each with
+  `label` (emoji + step title), `agent`, `prompt` (a literal "Use .github/prompts/NN-….prompt.md
+  and execute it in full." sentence), and `send: true`. This is how a step is launched —
+  the coordinator does not contain step logic, it dispatches to the numbered prompt file.
+- **Handoff prompt strings are the canonical filename list**, and they match the 6 P1
+  prompt filenames exactly as transcribed (`01-P1-workstation-readiness` …
+  `06-P1-modernization-quality-design`).
+- **Two non-numbered handoffs** exist alongside the six steps:
+  `QA Portal Full Refresh` → `run .\.github\scripts\QA\qa-refresh-portal.ps1 -AutoRefresh`,
+  and `QA Test Hub` → agent `OpX-QA-Hub`.
+- **A seventh agent exists**: `OpX-QA-Hub` (previously unseen; the six known were
+  `OpX-AppMod-P1-Discovery`, `OpX-dotnet-upgrade`, `OpX-AppMod-P2-Modernize`,
+  `OpX-Fusion-Reviewer`, `OpX-AppMod-P3-Review`, `OpX-Code-Reviewer`).
+- **An eighth named surface exists**: `Ultimate-Ignition-edit` — the *only* identity
+  permitted to modify toolkit files. Referenced as the escalation target when a phase
+  agent must refuse a protected write.
+- **`agents: ["*"]`** — this coordinator may delegate to any agent.
+- **The Write Boundary is a first-class contract**, and it is enforced against *mechanisms*,
+  not just file edits: no `Set-Content`/`Out-File`/`Add-Content`/`tee` into `/.github/**`,
+  no invoking a script that writes there as a side effect, no `git` staging of toolkit files.
+  Protected roots: `/.github/**`, `/.modernization/.readme/**`, `/.modernization/OpXUtil/**`,
+  `/.vscode/**`. This is the strongest anti-drift control seen in the kit so far and it
+  lives in the agent, not the prompts.
+- **Two routing authorities are named**: `/.github/instructions/AppMod-Step-Contract.json`
+  (machine routing) and `/.github/instructions/AppMod-Process.instructions.md`
+  (human-readable phase authority). Note this is a *different* path family from the
+  `.github/contracts/schemas/` referenced by the prompts.
+- **Three-layer instruction inheritance, with explicit precedence**:
+  `appmod-agent-personality-baseline.instructions.md` (baseline) →
+  `appmod-phase-agent-contract.instructions.md` (overrides baseline for numbered-step
+  behavior, QA flow, response shape) → local agent rule / routed prompt / narrower
+  instruction file (overrides when more specific).
+- **Discovery is explicitly a proof-and-planning phase, not a code-fix phase**: no edits to
+  `LegacyCode/` or `src/`, and no rewriting `.github/` "just to make a Discovery step pass."
+  Blocked-with-exact-file is the required response instead.
+- **Ownership reclamation rule**: if a later phase reports a missing inventory fact, baseline
+  input, planning decision, or catalog rule, the fix routes *back* to the owning Discovery
+  step rather than being patched into Phase 2/3. This is the mechanism that makes
+  "one concern per step" hold across phases.
+- **Step 6 is the named Discovery completion gate** before Step 7 backend execution, and it
+  is the canonical owner of the QA planning pack (reading `qa-core-master.prompt.md`, then
+  reusing `[WORKFLOW] Modernization Solution Design` and
+  `[WORKFLOW] Modern Build Planned QA Tests`) without reassigning QA ownership back to Step 5.
+- **Retired numbered runtime steps**: manual starter verification and copied-legacy
+  verification now happen *before Step 2* rather than as standalone numbered prompts;
+  Step 1 owns the workstation/manual verification gate.
+
+## ⚠ Findings in `OpX-AppMod-P1-Discovery.agent.md`
+
+Three defects, one of them the same +2 drift signature found across the prompts.
+
+**1. +2 numbering drift — seventh confirmed instance, and the first one found in an agent file.**
+Line 83, Response Contract:
+
+> When `Modernization Quality Design` is the required follow-up, say that plainly instead of
+> implying **Step 9** can start directly from **Step 7**.
+
+`Modernization Quality Design` is Step 6. It sits between Step 5 and Step 7. The sentence is
+only coherent as *"instead of implying Step 7 can start directly from Step 5."* Both numbers
+are exactly +2. This is the same offset proven in prompts 12-16, 19, 20, 21 and acknowledged
+in prose by prompt 22 — so the renumbering missed the agent files as well as the prompt
+bodies. The linter must sweep `.github/agents/**`, not just `.github/prompts/**`.
+
+**2. A duplicated path in the writable-areas allowlist.**
+Line 77 lists `.modernization/ignition-artifacts/**` **twice**:
+
+```
+(`.modernization/portal/**`, `.modernization/ignition-artifacts/**`,
+ `.modernization/ignition-artifacts/**`, `.modernization/ignition-artifacts/discovery/**`,
+ `.modernization/ignition-artifacts/modernize/fusion-restructure/**`)
+```
+
+Harmless at runtime (the broad glob already covers the two narrower ones), but it is a
+tell: the list was hand-edited during the artifact-root migration and one entry was meant
+to be a different root. Given that prompts 04 and 22 each name *two different roots for the
+same file* (`.modernization/ignition-artifacts/…` vs `.modernization/artifacts/…`), the
+likely intent was for one of these to be `.modernization/artifacts/**`. Worth resolving as
+part of the single-artifact-root decision rather than just deduping.
+
+**3. The `QA Test Hub` handoff is missing `send: true`.**
+Every other handoff in the file — all six numbered steps and `QA Portal Full Refresh` —
+ends with `send: true`. The eighth and last one does not:
+
+```yaml
+  - label: "<emoji> QA Test Hub"
+    agent: OpX-QA-Hub
+    prompt: "Open QA Hub and route through the current workflow catalog."
+agents: ["*"]
+```
+
+It is also the only handoff that dispatches to a *different* agent, so it may be
+deliberate (hand off without auto-sending). Flagged rather than corrected — needs a
+one-line answer from the kit owner.
+
+## Transcription uncertainties (agent `OpX-AppMod-P1-Discovery`)
+
+- **No opening `---` frontmatter delimiter.** Line 1 of the file is `name: OpX-AppMod-P1-Discovery`
+  and the closing `---` is at line 37. Every prompt file transcribed so far opens with `---`
+  at line 1. Transcribed exactly as photographed (no opening delimiter) rather than
+  "corrected", per the standing rule — but this is worth verifying on the real file, since
+  it is equally likely to be a VS Code rendering artifact.
+- **Handoff label emoji are mojibake in the photo** and are recorded as
+  `<MOJIBAKE: emoji>` placeholders, the same convention used in the prompt transcriptions.
+  Best-guess readings from glyph shape: Step 1 monitor, Step 3 magnifier, Step 4 green
+  check, Step 5 ruler/triangle, Step 6 grid, QA Test Hub pencil. Not asserted.
+- Line 3 (`tools:`) wraps in the editor; the array order was reconstructed across the wrap
+  boundary (`…browser/screenshotPage,` → `browser/navigatePage,…`).
+- Line 77 wraps; reconstructed from wrap position.
+- File content ends at line 102; the editor shows blank lines through 113.
+
+## Structural facts added by prompt 24
+
+Step 24 `Technical Review - S-Tier Quality Gate` is the largest prompt in the kit
+(1251 source lines vs ~570 for the next largest) and the only one that is a **scored
+rubric** rather than a gated procedure.
+
+- **Agent**: `OpX-Code-Reviewer`. **Tier**: Premium reasoning (high thinking), 15-30 min.
+- **Nine weighted categories summing to exactly 100%**: Parity 20, Functionality 18,
+  Dominion/Fusion Compliance 15, Code Quality 12, Security 12, Testing 10, Architecture 5,
+  OCP Cloud & DevOps 5, Production Readiness 3.
+- **GO/NO-GO thresholds**: 90-100 GO, 80-89 "Close", <80 "Work needed".
+- **Step 24 Remediation Contract** with a disposition ledger of `Resolved` / `Deferred` /
+  `Blocked` / `AcceptedRisk` — the only step that both *fixes* and *reports*.
+- **Scope fence**: "PROJECT CODE ONLY" (`src/<AppName>.Library`, `.Web.Api`, `.Web.Client`,
+  `tests/backend`, `tests/frontend`) vs "DO NOT TOUCH" kit infrastructure.
+- **Emoji Integrity Check (Tooling)** — an embedded PowerShell repair that reads a file as
+  Latin1, re-decodes as UTF-8, and rewrites it when the round-trip differs. See the
+  finding below: it is scoped to the wrong directory.
+- **Step Verification Matrix** — a 14-row artifact-existence table spanning the whole
+  pipeline, used as a cross-step completeness check at the end of the run.
+- **Testing section is Playwright + Gherkin/BDD**, with a Page Object Model contract
+  (`BasePage.ts`, `<Feature>Page.ts`, no raw locators in test files), a STRICT locator
+  policy (`getByRole` preferred, `getByTestId` **required on every testable element**,
+  no CSS selectors, no XPath, no `nth-child`), and a mandate that every Angular button,
+  input, link, custom component, and dialog carry **both** `aria-label` and `data-testid`.
+- **xUnit backend contract**: `tests/backend/{unit,contractApi,integrationBackend}/`,
+  BDD naming (`Given_When_Then` or `Method_Scenario_Result`), `[Fact]`/`[Theory]`,
+  Moq or NSubstitute, FluentAssertions, >80% coverage on business logic.
+- **Durable output is markdown, not JSON** — the only step in the kit that writes one:
+  `.modernization/ignition-artifacts/technical-review-report.md`, with **append-history
+  semantics** ("don't overwrite previous runs, add to history table"), ISO timestamps,
+  raw scan output in a collapsed `<details>` block, and per-category deltas.
+- **Recheck Mode** — a second run reads the previous report, re-scans, and reports
+  Resolved / Remaining / New Issues plus an updated recommendation. No other step has a
+  re-entrant mode.
+
+## ⚠ Findings in prompt 24
+
+**1. The `.feature` file contradiction — the worst conflict found in the kit, and it is
+structural, not a stray sentence.**
+Step 24 requires Gherkin in two independent places. §6 requires `.feature` files plus a
+`steps/` directory of Cucumber definitions, and the Playwright Checklist independently
+scores:
+
+```
+- [ ] Feature files in `features/` directory
+- [ ] Step definitions in `steps/` directory
+- [ ] Every user-facing feature has a `.feature` file
+- [ ] Scenarios use Given/When/Then syntax
+- [ ] Tags: `@smoke`, `@regression`, `@journey`, `@critical`
+- [ ] Step definitions match feature file steps
+```
+
+Steps 12 and 17 (Gate 9) explicitly forbid `.feature` files ("NO .feature files").
+**No repository state satisfies both.** Because Gherkin is load-bearing in a *scored*
+category (Testing, 10%), every participant who follows Steps 12/17 correctly will take an
+unavoidable deduction at Step 24. This needs a human decision — either Step 17 stops
+forbidding `.feature` files, or Step 24's §6 and checklist are rewritten to score
+Playwright-without-Gherkin. A linter cannot resolve it.
+
+**2. Prompt 24 refers to itself as Step 23 — twice.**
+
+```
+*This report can be referenced before rerunning Step 23 to track progress.*
+When user says "recheck" or runs Step 23 again:
+```
+
+This is a **-1** self-reference, a different signature from the +2 drift elsewhere, and it
+is operationally live: Recheck Mode instructs the agent to re-run "Step 23", which is
+*Final Readiness Review*, not the technical review. Combined with finding 3 below, the
+coherent reading is that this file was formerly Step 23 and was renumbered to 24 with the
+title and frontmatter updated but internal self-references left behind.
+
+**3. A second, distinct +1 drift confined to the Step Verification Matrix's Discovery rows.**
+The matrix reads `3 | Rename complete`, `4 | Legacy analysis`, `6 | Solution design` —
+but those are Steps 2, 3 and 5. Every row from 7 onward is correct. Two separate
+compressions are therefore visible in one file.
+
+**4. The kit's own emoji-repair script is pointed at the wrong directory.**
+The Emoji Integrity Check does exactly the right Latin1→UTF-8 round-trip repair, but:
+
+```powershell
+$agentFiles = Get-ChildItem .github/agents -Filter *.agent.md -File -ErrorAction SilentlyContinue
+```
+
+It only scans `.github/agents`. The corruption is in `.github/prompts` — which is precisely
+why every prompt file transcribed here still shows mojibake. One-line fix:
+`Get-ChildItem -Path .github/prompts,.github/agents -Filter *.md -File -Recurse`.
+
+**5. Capability gap: the frontmatter cannot run what the body demands.**
+Declared tools are `agent`, `browser`, `edit/editFiles`, `todo`, `vscode/vscodeAPI`,
+`fusion/copilot-docs/*`. The body is almost entirely PowerShell scans and requires reading
+source files — yet `execute/runInTerminal`, `read/readFile`, and `search/codebase` are all
+absent. This is the most severe capability gap in the kit (prompt 23 is missing
+`read/readFile` + `search/codebase`; prompt 24 is missing those *plus* terminal execution).
+
+**6. The durable report escapes the `reviews/` convention.**
+Every other review artifact lands in `.modernization/ignition-artifacts/reviews/`.
+Step 24 writes `.modernization/ignition-artifacts/technical-review-report.md` — bare, at
+the artifacts root, and in markdown rather than JSON.
+
+**7. Sub-step numbering collides with pipeline-step numbering.**
+Within prompt 24 the internal procedure is labelled "Step 2: Create Persistent Report File"
+and "Step 3: Recheck Mode". These are sub-steps of prompt 24 itself, but they share a
+namespace with pipeline Steps 2 and 3 (rename starter / legacy analysis). Given the file
+already misnumbers itself, this is a live ambiguity for an agent reading it.
+
+**8. Loose step-range references.** `**Backend Architecture** (Steps 5-9)` — backend
+formation spans 7-9; Step 5 is solution design. Similar loose ranges appear as
+`Frontend Architecture (Steps 10-14)`, `OCP Cloud Checklist (Steps 18, 23)`,
+`Production Checklist (Steps 18, 20, 23)`, `xUnit Backend Checklist (Steps 7-9, 17)`.
+
+## Transcription uncertainties (prompt 24)
+
+- **INCOMPLETE.** Source lines **864-1154** were never photographed. The installed file
+  carries an explicit `TRANSCRIPTION GAP` HTML comment at that position. The gap swallows
+  the body of `## Issue List (10-20 items)` and three headings known from the VS Code
+  sticky-scroll breadcrumb: `# REPORT OUTPUT (MANDATORY)` (1008),
+  `## Step 2: Create Persistent Report File (MANDATORY)` (1107), and
+  `### Report File Template` (1121). This is the mandatory report schema every Step 24 run
+  emits — it must be captured before the kit audit can be considered complete.
+- Lines 571-863 were photographed twice; the second batch was diffed against the first
+  transcription and matched line-for-line with zero corrections.
+- Emoji throughout are mojibake in the source itself (UTF-8 read as Windows-1252) and are
+  recorded as `<MOJIBAKE: emoji>` placeholders. The mojibake marker inside the Emoji
+  Integrity Check's own `-match` pattern was replaced with `<MOJIBAKE MARKER>` rather than
+  transcribed literally, to avoid propagating the corrupted byte sequence into this repo.
+- Scope bullets render their leading glyph as `?` in the photos (e.g. `? src/<AppName>.Library/`);
+  preserved as photographed.
+- The History table's Delta cell shows a mojibake glyph before `X`
+  (`| Previous | [date] | [X] | [X] | [<MOJIBAKE: emoji>X] |`).
+- Recheck-example delta cells likewise contain mojibake arrows/checks
+  (`| Score | 72 | 86 | <MOJIBAKE: emoji> +14 |`).
+- File content ends at source line 1251.
 
 ## Structural facts added by prompt 23
 
