@@ -1,0 +1,37 @@
+// _variables.scss  (copy-start template - bind values to the legacy contract)
+// Shared brand + layout tokens for a Fusion/Angular client. Page component styles
+// and styles.scss `@use 'variables' as v`/`as *` via the angular.json
+// stylePreprocessorOptions.includePaths entry, so the legacy palette is bound once
+// and consumed everywhere instead of being re-hard-coded per file.
+//
+// BIND THESE to the Step 3/5 legacy visual contract:
+//    .modernization/fusion-restructure/styling-foundation.json
+//      -> themePalette.headerBg / brandPrimary  => $brand-primary
+//      -> themePalette.neutral.text / .border   => $text-color / $border-color
+//    The default below is the Fusion DE blue; REPLACE it with the legacy value
+//    when the legacy brand differs.
+
+// Brand palette (REPLACE with the extracted legacy header/brand color).
+$brand-primary: #0072ce; // legacy header background + primary actions
+$brand-primary-hover: #0664b8;
+$brand-primary-active: #004d8a;
+
+// Header chrome.
+$header-bg: $brand-primary;
+$header-fg: #fff;
+
+// Neutrals / text (bind to themePalette.neutral.*).
+$text-color: #555f67;
+$border-color: #b1bdc9;
+$white: #fff;
+$black: #000;
+
+// Grid + filter surfaces.
+$grid-header-bg: $brand-primary;
+$grid-header-fg: #fff;
+$filter-bar-bg: #f5f6f6;
+
+// Compact field width scale so filter controls are not full-bleed
+// (bind to the legacy form-control sizing in the visual contract).
+$field-width: 240px;
+$field-width-narrow: 140px;

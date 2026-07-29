@@ -61,6 +61,9 @@ references, not values).
 | `skills/runtime-parity-checkpoint/SKILL.md` | **Ignition-native** — boot-observe-assert runtime proof against the running app | transcribed from 3 photos — complete (source lines 1-91); 23 line numbers spot-verified |
 | `skills/step3-legacy-system-analysis/references/Step3-Artifact-Schema-Contract.md` | **Ignition-native** — the versioned schema for all seven Step 3 artifacts | transcribed from 3 photos — complete (source lines 1-143, blank to 145); 23 line numbers spot-verified |
 | `skills/step3-legacy-system-analysis/SKILL.md` | **Ignition-native** — Step 3 entry point, modality detection, gate enforcement | transcribed from 2 photos — complete (source lines 1-73, blank to 75); 22 line numbers spot-verified |
+| `skills/visual-parity-gate/references/fusion-client-foundation-templates/_variables.scss` | **Ignition-native** — brand/layout token template bound to the legacy visual contract | transcribed from 1 photo — complete (source lines 1-37, blank to 38) |
+| `skills/visual-parity-gate/references/fusion-client-foundation-templates/_collection-grid.scss` | **Ignition-native** — collection-grid layout template | transcribed from 1 photo — complete (source lines 1-59, blank to 60) |
+| `skills/visual-parity-gate/references/fusion-client-foundation-templates/_legacy-bootstrap-baseline.scss` | **Ignition-native** — Bootstrap-3/4 utility re-baseline template | transcribed from 2 photos — complete (source lines 1-101, blank to 102) |
 
 `architecture-structure/` is a **multi-file skill**, now fully transcribed: `SKILL.md` (470 lines),
 `Architecture-Structure.md` (215), `REMAINING-POINTS.md` (108).
@@ -282,6 +285,98 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## Structural facts added by `visual-parity-gate/references/fusion-client-foundation-templates/`
+
+Three SCSS **copy-start templates** — the concrete mechanism behind a rule asserted repeatedly
+across the kit but never previously shown: *"the modern shell must inherit the legacy visual
+language **by construction**."* Until now that was a principle; these are the files that
+implement it.
+
+- **`_variables.scss` (37 lines)** — the single binding point for the legacy palette, with an
+  explicit instruction to replace the defaults:
+  > BIND THESE to the Step 3/5 legacy visual contract:
+  > `.modernization/fusion-restructure/styling-foundation.json`
+  > `themePalette.headerBg / brandPrimary => $brand-primary`
+  > `themePalette.neutral.text / .border => $text-color / $border-color`
+  > The default below is the **Fusion DE blue**; REPLACE it with the legacy value when the legacy
+  > brand differs.
+
+  Tokens: `$brand-primary: #0072ce` (+ hover `#0664b8`, active `#004d8a`), `$header-bg/$header-fg`,
+  `$text-color: #555f67`, `$border-color: #b1bdc9`, `$grid-header-bg/-fg`,
+  `$filter-bar-bg: #f5f6f6`, and a compact field scale `$field-width: 240px` /
+  `$field-width-narrow: 140px` "so filter controls are not full-bleed".
+  **Note the step numbers are correct** — "Step 3/5 legacy visual contract" matches Legacy System
+  Analysis (3) and Modernization Solution Design (5) under current numbering.
+- **`_collection-grid.scss` (59 lines)** — layout for filterable data-grid pages, with a stated
+  load-order rule: "**Layout only** - no Fusion-theme overrides here, so it is safe to load
+  **before** the theme. Brand/theme overrides … live in `styles.scss` **AFTER** the theme include
+  where override order is correct." Constrains `fusion-textbox`, `fusion-dropdown`, `.k-textbox`,
+  `.k-dropdownlist`, `input`, `select` to the legacy field widths.
+- **`_legacy-bootstrap-baseline.scss` (101 lines)** — the diagnosis is the valuable part:
+  > `@fusion/theme` does **NOT** provide these classes, so without this baseline the ported markup
+  > renders as **unstyled stacked blocks** and the Fusion form controls **stretch full-bleed**
+  > across the page.
+
+  Re-baselines the Bootstrap-3/4 subset legacy templates actually emit — `.row`, `.col-*`,
+  `.mr-*`/`.ml-*`/`.mb-*`, `.text-right`, `.align-self-end`, `.collection-filter-area`,
+  `.form-group` (with a `.short-field` variant), `.grid-filter` / `.inline-labels`, and
+  `.btn.btn-link`. With a scope rule: extend it "with any additional legacy utility classes the
+  templates actually emit (**harvest them from the markup**), not a full Bootstrap import", and a
+  kit-level rule that "**any route that re-emits legacy Bootstrap utility classes must
+  re-baseline them here**."
+- All three are wired through **`angular.json` `stylePreprocessorOptions.includePaths`**
+  (`src/assets/scss`) and consumed globally from `styles.scss` via `@use`, "so the legacy palette
+  is bound once and consumed everywhere instead of being re-hard-coded per file."
+
+### New surfaces revealed by the directory listing
+
+The file-tree photo shows `.github/skills/` contents not previously known:
+
+| Path | Status |
+|---|---|
+| `skills/test-quality-standards/SKILL.md` | **new skill**, not transcribed |
+| `skills/workstation-playwright-setup/` | **new skill**, not transcribed |
+| `skills/visual-parity-gate/SKILL.md` | not transcribed (references now done) |
+| `.github/templates/` | confirms the folder `appmod-compliance-review` and `architecture-structure` both reference |
+| `.github/constitution.md` | **new top-level file**, never referenced by anything transcribed |
+| `.github/Copilot-Customization-Cheat-Sheet.md` | **new top-level file** |
+
+`constitution.md` is the notable one: a root-level document with a name implying kit-wide
+governing rules, which **no prompt, agent, or skill transcribed so far mentions**.
+
+## ⚠ Findings in the `fusion-client-foundation-templates`
+
+**1. They bind to the short artifact root.** `_variables.scss` points at
+`.modernization/fusion-restructure/styling-foundation.json` — no `ignition-artifacts/modernize/`
+prefix. That matches `architecture-structure/SKILL.md` and prompt 21, and conflicts with
+`OpX-Fusion-Reviewer` and `browser-source-decomposition`, which use the long form for the same
+artifact. These templates are *executable* (a developer copies them and follows the path), so the
+fork now has a concrete consumer rather than just prose.
+
+**2. A default brand colour ships in a template that says to replace it.** `$brand-primary: #0072ce`
+is the Fusion DE blue, and the comment does say REPLACE. But a copy-start file with a working
+default is exactly the kind of thing that survives to production unchanged — the same failure mode
+as the starter-sample-styling anti-pattern the kit warns about elsewhere. Worth a gate check that
+`$brand-primary` no longer equals the shipped default when `styling-foundation.json` records a
+different legacy brand.
+
+**3. Nothing transcribed so far references `visual-parity-gate`'s templates by path.**
+`architecture-structure/SKILL.md` names `/.github/skills/visual-parity-gate/SKILL.md` as the gate
+the modern shell must pass, but no file points at
+`references/fusion-client-foundation-templates/*.scss`. If the skill's own `SKILL.md` does not
+name them, three copy-start files sit unused next to a gate that would fail without them.
+
+## Transcription uncertainties (`fusion-client-foundation-templates`)
+
+- Line counts match the source exactly: `_variables.scss` 37 (blank to 38), `_collection-grid.scss`
+  59 (blank to 60), `_legacy-bootstrap-baseline.scss` 101 (blank to 102).
+- Hex colours were read at magnification and are legible, but `#0664b8`, `#004d8a`, `#555f67`,
+  `#b1bdc9` and `#f5f6f6` are the least certain tokens; the VS Code colour swatches confirm they
+  parse as valid colours but not their exact digits.
+- The `&.short-field` selector list in `_legacy-bootstrap-baseline.scss` spans source lines 63-65;
+  reconstructed across a photo boundary (photo 1 ends at 64, photo 2 begins at 46).
+- No mojibake in any of the three files.
 
 ## Structural facts added by `step3-legacy-system-analysis/SKILL.md`
 

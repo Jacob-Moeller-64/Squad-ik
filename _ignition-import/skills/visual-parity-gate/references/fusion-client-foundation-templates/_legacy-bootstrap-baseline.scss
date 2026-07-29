@@ -1,0 +1,101 @@
+// _legacy-bootstrap-baseline.scss  (copy-start template)
+// Re-baseline of the Bootstrap-3/4 utility classes legacy templates were ported
+// with. Legacy views use Bootstrap for layout (`row`/`col-*`), spacing
+// (`mr-*`/`ml-*`), and form grouping (`form-group`/`grid-filter`/`inline-labels`).
+// `@fusion/theme` does NOT provide these classes, so without this baseline the
+// ported markup renders as unstyled stacked blocks and the Fusion form controls
+// stretch full-bleed across the page.
+//
+// This is the minimal subset used by typical ported templates - extend it with
+// any additional legacy utility classes the templates actually emit (harvest them
+// from the markup), not a full Bootstrap import. Per the kit's Bootstrap-baseline
+// rule, any route that re-emits legacy Bootstrap utility classes must re-baseline
+// them here.
+//
+// Consumed globally by styles.scss (`@use 'legacy-bootstrap-baseline';`).
+
+@use 'variables' as *;
+
+// --- Grid: row + 12-column flex columns -----------------------------------
+.row { display: flex; flex-wrap: wrap; }
+.no-gutters { margin-right: 0; margin-left: 0; }
+.d-flex { display: flex; }
+.col { flex: 1 0 0%; max-width: 100%; }
+.col-3 { flex: 0 0 25%; max-width: 25%; }
+.col-4 { flex: 0 0 33.333333%; max-width: 33.333333%; }
+.col-6 { flex: 0 0 50%; max-width: 50%; }
+.col-8 { flex: 0 0 66.666667%; max-width: 66.666667%; }
+.col-12 { flex: 0 0 100%; max-width: 100%; }
+
+// --- Spacing utilities (Bootstrap spacer scale: 1 = 0.25rem) ---------------
+.mr-2 { margin-right: 0.5rem; }
+.mr-3 { margin-right: 1rem; }
+.mr-4 { margin-right: 1.5rem; }
+.ml-2 { margin-left: 0.5rem; }
+.ml-4 { margin-left: 1.5rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.text-right { text-align: right; }
+.align-self-end { align-self: flex-end; }
+
+// --- Filter area + form groups (the control-sizing fix) --------------------
+.collection-filter-area {
+  background: $filter-bar-bg;
+  padding: 8px 12px;
+}
+
+.form-group {
+  display: inline-block;
+  vertical-align: top;
+  margin-bottom: 1rem;
+
+  // Keep the contained Fusion control at a legacy field width instead of 100%.
+  fusion-textbox,
+  fusion-dropdown,
+  .k-textbox,
+  .k-dropdownlist,
+  input,
+  select {
+    width: 100%;
+    min-width: 180px;
+    max-width: $field-width;
+  }
+
+  &.short-field fusion-textbox,
+  &.short-field .k-textbox,
+  &.short-field input {
+    min-width: 100px;
+    max-width: $field-width-narrow;
+  }
+}
+
+// Inline-label filter rows: label and control sit on one line, groups inline.
+.grid-filter {
+  .form-group {
+    display: inline-block;
+    margin-bottom: 0;
+
+    label {
+      font-weight: 700;
+      padding-right: 8px;
+      color: $text-color;
+    }
+  }
+
+  &.inline-labels .form-group {
+    label,
+    .form-control { display: inline-block; }
+  }
+}
+
+// --- Link-style buttons (legacy `.btn.btn-link`) ---------------------------
+.btn.btn-link,
+.btn-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: $brand-primary;
+  text-decoration: none;
+
+  &:hover { color: $brand-primary-hover; text-decoration: underline; }
+  &:focus { box-shadow: none; outline: none; }
+}

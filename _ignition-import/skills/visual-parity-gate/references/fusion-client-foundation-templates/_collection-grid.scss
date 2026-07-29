@@ -1,0 +1,59 @@
+// _collection-grid.scss  (copy-start template)
+// Shared collection-grid LAYOUT for the data-grid pages. Constrains filter
+// controls to legacy width/density so the modern pages inherit the legacy layout
+// by construction instead of rendering full-bleed controls.
+//
+// Layout only - no Fusion-theme overrides here, so it is safe to load before the
+// theme. Brand/theme overrides (header chrome, grid-header tint) live in
+// styles.scss AFTER the theme include where override order is correct.
+//
+// Consumed globally by styles.scss (`@use 'collection-grid';`) via the
+// angular.json stylePreprocessorOptions.includePaths entry (src/assets/scss).
+
+@use 'variables' as *;
+
+// Page container for a filterable collection grid.
+.collection-grid {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+}
+
+// Horizontal, wrapping filter row (legacy `.collection-filter-area` + `.grid-filter`).
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem 1rem;
+  background: $filter-bar-bg;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+
+// A single constrained filter field (legacy `.form-group` inline-block).
+.filter-field {
+  display: inline-block;
+  min-width: 160px;
+  max-width: $field-width;
+
+  fusion-textbox,
+  fusion-dropdown,
+  .k-textbox,
+  .k-dropdownlist,
+  input,
+  select {
+    width: 100%;
+  }
+}
+
+.filter-field--narrow {
+  max-width: $field-width-narrow;
+}
+
+// Action buttons sit at the end of the filter row, aligned to the field baseline.
+.filter-actions {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
