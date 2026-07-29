@@ -60,6 +60,7 @@ references, not values).
 | `skills/fusion-ui-component-upgrade/SKILL.md` | **Ignition-native** — route-level Fusion primitive adoption (Steps 15-16 lane) | transcribed from 5 photos — complete (source lines 1-239, blank to 244); 28 line numbers spot-verified |
 | `skills/runtime-parity-checkpoint/SKILL.md` | **Ignition-native** — boot-observe-assert runtime proof against the running app | transcribed from 3 photos — complete (source lines 1-91); 23 line numbers spot-verified |
 | `skills/step3-legacy-system-analysis/references/Step3-Artifact-Schema-Contract.md` | **Ignition-native** — the versioned schema for all seven Step 3 artifacts | transcribed from 3 photos — complete (source lines 1-143, blank to 145); 23 line numbers spot-verified |
+| `skills/step3-legacy-system-analysis/SKILL.md` | **Ignition-native** — Step 3 entry point, modality detection, gate enforcement | transcribed from 2 photos — complete (source lines 1-73, blank to 75); 22 line numbers spot-verified |
 
 `architecture-structure/` is a **multi-file skill**, now fully transcribed: `SKILL.md` (470 lines),
 `Architecture-Structure.md` (215), `REMAINING-POINTS.md` (108).
@@ -281,6 +282,66 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## Structural facts added by `step3-legacy-system-analysis/SKILL.md`
+
+**The best-structured skill in the kit** — 73 lines, and it demonstrates the split every oversized
+skill should copy: a short entry point that delegates all detail to `references/`.
+
+- **A stated ownership rule that keeps prompts thin**:
+  > This skill owns the contract; **do not re-expand schema inline in prompts.**
+  Combined with the schema contract's own "Keep the prompt thin and deterministic", this is the
+  kit's own answer to its context-cost problem, applied in exactly one place.
+- **Three entry points named together**: the prompt
+  (`03-P1-legacy-system-analysis.prompt.md`), the agent (`OpX-AppMod-P1-Discovery`), and the gate
+  script (`.github/scripts/P1-Discovery/03-P1-legacy-system-analysis-gate.ps1`). No other skill
+  names its whole triad.
+- **Deterministic modality detection** before any artifact enforcement, keyed on source markers
+  (`.cshtml`, `angular.json`, `package.json`, API-only controllers): `api-only`, `mvc`, `spa`,
+  `hybrid`.
+- **A 7×4 applicability matrix** so `api-only` apps are not failed for missing browser artifacts —
+  Artifacts 2, 3, 5, 6 and 7 are `X` for `api-only` and required everywhere else.
+- **Four gate validations** and **three mandatory gate statuses**: `scanCoverageStatus`,
+  `traceabilityStatus`, `planningReadinessStatus`. "A `Blocked` status prevents progression to
+  **Step 4**" — correct under current numbering.
+- **Confirms the pipeline length again**: `AppMod-Process.instructions.md` is described as
+  "**24-step** workflow context".
+- **Names `AppMod-Step-Contract.json`** as "QA workflow mapping and step ownership" — the
+  clearest statement yet of what that routing file contains.
+- **A fourth skill-identity convention**: no frontmatter at all, with `**Skill ID:**` declared in
+  the body instead. (The others: `appmod-*` full frontmatter with `source`/`confidence`;
+  `architecture-structure`/`browser-source-decomposition` with `name`/`description` frontmatter;
+  `dominion-requirements` with `version`.)
+
+## ⚠ Findings in `step3-legacy-system-analysis/SKILL.md`
+
+**1. The modality values and the matrix columns do not match.**
+Modality Detection defines four values — `api-only`, **`mvc`**, `spa`, `hybrid`. The Applicability
+Matrix columns are — `browser-led`, `api-only`, `spa`, `hybrid`. **`mvc` and `browser-led` are
+used for the same thing but never equated anywhere in the file.**
+
+This matters because the matrix is the enforcement table: a gate that detects modality `mvc` and
+then looks up its column finds no match, and a model reading the file has to infer that
+`browser-led` means `mvc`. Either rename the column to `mvc` or state the alias. Small edit,
+but it sits directly on the path between deterministic detection and deterministic enforcement.
+
+**2. It is one of only two skills in the kit whose prompt, agent, and gate script are all named
+in one place** — and the only one where that triad is a first-class section. Worth propagating:
+the recurring difficulty in this transcription has been working out which prompt owns which agent
+owns which script, and this file answers all three in five lines.
+
+## Transcription uncertainties (`step3-legacy-system-analysis/SKILL.md`)
+
+- Line alignment verified at 22 anchors — 1, 3, 5, 7, 9, 13, 15, 17, 25, 27, 36, 39, 45, 47, 53,
+  55, 57, 59, 61, 69, 71, 73 — all matching. Content ends at 73; the editor shows blank lines
+  through 75.
+- The applicability matrix uses `✓` and `X` (a capital letter X, not `✗`); transcribed as
+  photographed.
+- Markdown link targets are relative (`../../prompts/…`, `../../instructions/…`,
+  `references/…`); preserved exactly.
+- The title and several bullets use em dashes (`—`); genuine characters, no escape sequences in
+  this file.
+- No mojibake in this file.
 
 ## Structural facts added by `step3-legacy-system-analysis/references/Step3-Artifact-Schema-Contract.md`
 
