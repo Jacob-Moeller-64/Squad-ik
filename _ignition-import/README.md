@@ -61,6 +61,7 @@ references, not values).
 | `skills/runtime-parity-checkpoint/SKILL.md` | **Ignition-native** — boot-observe-assert runtime proof against the running app | transcribed from 3 photos — complete (source lines 1-91); 23 line numbers spot-verified |
 | `skills/step3-legacy-system-analysis/references/Step3-Artifact-Schema-Contract.md` | **Ignition-native** — the versioned schema for all seven Step 3 artifacts | transcribed from 3 photos — complete (source lines 1-143, blank to 145); 23 line numbers spot-verified |
 | `skills/step3-legacy-system-analysis/SKILL.md` | **Ignition-native** — Step 3 entry point, modality detection, gate enforcement | transcribed from 2 photos — complete (source lines 1-73, blank to 75); 22 line numbers spot-verified |
+| `skills/visual-parity-gate/SKILL.md` | **Ignition-native** — dual-port legacy-visual-parity gate (Step 13 closeout) | transcribed from 4 photos — complete (source lines 1-101, blank to 102); 25 line numbers spot-verified |
 | `skills/visual-parity-gate/references/fusion-client-foundation-templates/_variables.scss` | **Ignition-native** — brand/layout token template bound to the legacy visual contract | transcribed from 1 photo — complete (source lines 1-37, blank to 38) |
 | `skills/visual-parity-gate/references/fusion-client-foundation-templates/_collection-grid.scss` | **Ignition-native** — collection-grid layout template | transcribed from 1 photo — complete (source lines 1-59, blank to 60) |
 | `skills/visual-parity-gate/references/fusion-client-foundation-templates/_legacy-bootstrap-baseline.scss` | **Ignition-native** — Bootstrap-3/4 utility re-baseline template | transcribed from 2 photos — complete (source lines 1-101, blank to 102) |
@@ -286,6 +287,89 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
 
+## Structural facts added by `visual-parity-gate/SKILL.md`
+
+The Step 13 closeout gate — 101 lines, and **the third file in the kit with zero numbering
+defects** (after `OpX-AppMod-P3-Review` and `step3-legacy-system-analysis/SKILL.md`). Every step
+reference is correct under current numbering: Step 10 (apply), Step 13 (stabilize and gate),
+Step 14 (entry discipline), and the Step 7 `LegacyCode_NETXX_Upgrade` workspace.
+
+- **It composes rather than duplicates**, and says so:
+  > This skill does not invent its own boot or capture machinery. It **composes** the two existing
+  > skills … Keep this separation. Do not add a parallel boot path or a parallel screenshot path
+  > here.
+
+  It reuses `runtime-parity-checkpoint` for boot-observe-assert and `screenshot-capture` for
+  capture mechanics. **This is the first evidence that `runtime-parity-checkpoint` is not an
+  orphan** — a skill explicitly loads it.
+- **It names the SCSS templates**, resolving the open question from the previous entry: the
+  copy-start bundle "materializes the structure for all of the above … so Step 10 binds the
+  extracted legacy values into a known structure instead of authoring it from scratch."
+- **A stated definition of "done" for the foundation** that inverts the usual instinct:
+  > "Looks like a clean modern app" is **not** the foundation target; "looks like the legacy app"
+  > is.
+
+  Five verified dimensions: pinned color scheme (independent of OS `prefers-color-scheme`),
+  branded header/footer chrome, constrained inline filter/form controls, branded data grids at
+  legacy density with the full column set, and preserved legacy navigation affordances (a side nav
+  stays a side nav, "not a single dropdown").
+- **The same evidence-integrity rule as `runtime-parity-checkpoint`**, applied to appearance: a
+  report "written from build/scanner/HTTP signals, or from a prior session's screenshots restamped
+  as current, is invalid evidence, not a pass." Colour scheme, header/footer background, primary
+  button colour and form-control sizing are **enforced computed-style dimensions, not eyeball
+  checks**.
+- **Visual parity and field parity are explicitly separated**, and Step 13 requires both:
+  > a route can pass palette/typography/chrome while a grid has silently dropped columns or a
+  > control's handler is stubbed. Step 13 requires **both** — this visual gate `pass` **and** the
+  > runtime-parity-checkpoint `fieldParity` roll-up `pass` — before Step 14 begins.
+- **A practical dual-port answer to a real toolchain problem**: legacy and modern clients need
+  different Node majors and `nvm` switches one active version per shell, so the file gives three
+  workarounds (version-pinned Node per dev server, build the legacy client once and serve the
+  static output, or containers) and then removes the need entirely — "the enforced comparison runs
+  against the **legacy answer key captured during Discovery**, so the legacy app does not need to
+  be running at gate time."
+- **A fallback chain for the legacy reference**: live QA URL → verified local legacy runtime →
+  the Step 7 `LegacyCode_NETXX_Upgrade` workspace ("its browser client is the same legacy UI, so it
+  is a faithful side-by-side answer key") → captured reference screenshots + static contract values.
+- **Two more concrete surfaces**: the static gate
+  `/.github/scripts/parity/scan-styling-foundation.ps1` (colour scheme, style include paths, shared
+  partials, grid column widths) and the canonical comparator
+  `tests/frontend/visualParity/run-visual-parity.mjs` — with an explicit instruction to reuse it
+  "rather than inventing a second comparator".
+- **A three-value route verdict** (`pass` / `partial` / `fail`) with `partial` precisely defined —
+  chrome and nav present and the screen recognizably legacy, but lower-priority style dimensions
+  still drift.
+
+## ⚠ Findings in `visual-parity-gate/SKILL.md`
+
+**1. It uses the short artifact root throughout — consistent with its own templates.**
+All contract, inventory and output paths are `.modernization/fusion-restructure/…`
+(`ui-visual-contract.json`, `styling-foundation.json`, `inventory.json`, `ui-inventory.json`,
+`visual-parity-report.json`). That matches `_variables.scss`, `architecture-structure/SKILL.md`
+and prompt 21, and conflicts with `OpX-Fusion-Reviewer` and `browser-source-decomposition`. The
+**short form now has five independent sources and a runnable consumer**, which makes it the
+stronger candidate if the fork is resolved by majority rather than by decree.
+
+**2. `screenshot-capture/SKILL.md` is named as a required composition target but has not been
+transcribed.** It is one of two skills this gate depends on. Worth capturing, since a
+"reuse the existing capture path" instruction is only enforceable if that path is documented.
+
+**3. No defects found in the step numbering, the internal cross-references, or the artifact
+schema.** Recorded explicitly because it is rare: this is a clean file.
+
+## Transcription uncertainties (`visual-parity-gate/SKILL.md`)
+
+- Line alignment verified at 25 anchors — 5, 7, 9, 11, 16, 18, 20, 22, 24, 26, 28, 30, 36, 38, 40,
+  48, 58, 65, 67, 81, 83, 92, 94, 99, 101 — all matching. Content ends at 101; the editor shows
+  line 102 blank.
+- Source line 95 is one very long logical line spanning many editor rows; a clause was initially
+  dropped in transcription and has been restored ("…is distinct from **field parity (does it
+  expose the same fields, columns, and controls as legacy): a route can pass palette/typography/
+  chrome while a grid has silently dropped columns or a** control's handler is stubbed").
+  Verify this line against source if precision matters.
+- The `description` frontmatter spans four editor rows; reconstructed from wrap positions.
+- No mojibake in this file.
+
 ## Structural facts added by `visual-parity-gate/references/fusion-client-foundation-templates/`
 
 Three SCSS **copy-start templates** — the concrete mechanism behind a rule asserted repeatedly
@@ -364,8 +448,12 @@ different legacy brand.
 **3. Nothing transcribed so far references `visual-parity-gate`'s templates by path.**
 `architecture-structure/SKILL.md` names `/.github/skills/visual-parity-gate/SKILL.md` as the gate
 the modern shell must pass, but no file points at
-`references/fusion-client-foundation-templates/*.scss`. If the skill's own `SKILL.md` does not
-name them, three copy-start files sit unused next to a gate that would fail without them.
+`references/fusion-client-foundation-templates/*.scss`.
+> **RESOLVED by `visual-parity-gate/SKILL.md`.** Its source line 38 names the bundle directly:
+> "the copy-start bundle at `references/fusion-client-foundation-templates/` (in this skill)
+> materializes the structure for all of the above — scheme pin, `includePaths`, the shared
+> partials, the header-chrome override, and grid sizing — so Step 10 binds the extracted legacy
+> values into a known structure instead of authoring it from scratch." Not orphaned.
 
 ## Transcription uncertainties (`fusion-client-foundation-templates`)
 
