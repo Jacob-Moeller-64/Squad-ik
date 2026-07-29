@@ -85,6 +85,16 @@ references, not values).
 | `Copilot-Customization-Cheat-Sheet.md` | **Ignition-native** — maintainer reference for which customization primitive to use; actual path is `.github/Copilot-Customization-Cheat-Sheet.md` | transcribed from 3 photos — complete (source lines 1-150); 15 anchors verified |
 | `constitution.md` | **Ignition-native** — ★ the durable governance source; actual path is **`.github/constitution.md`**, not the repo root | transcribed from 3 photos — complete (source lines 1-146); 14 section anchors verified |
 
+### Starter application source (`src/`)
+
+The kit ships a starter app under `src/Starter.*` that Step 2 renames to
+`<AppName>.*`. These are the **target-state reference implementations** teams
+pattern-match against.
+
+| File | Role | Status |
+|---|---|---|
+| `starter/Starter.Library/Entities/MyEntity.cs` | reference domain entity | transcribed from 1 photo — complete (source lines 1-28) |
+
 ### Contracts / schemas
 
 | File | Role | Status |
@@ -684,6 +694,58 @@ Headline coverage:
    implies.
 6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
    `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## ⚠ The starter's own code does not follow the kit's commenting standard
+
+`MyEntity.cs` is the first `src/` file transcribed, and it is a clean, modern C#
+reference: file-scoped namespace, `sealed`, nullable reference types
+(`string? Description`), the C# 11 `required` modifier with matching
+`[SetsRequiredMembers]` on both constructors, and a get-only `Guid Id` assigned in
+the constructor. No `using System;` — implicit usings are enabled. As a
+demonstration of the target-state idiom it is good.
+
+**But it has no comments at all** — no file header, no member documentation. That
+directly contradicts the standard the kit mandates for every modernized file, in
+three separate always-on places:
+
+`AGENTS.md` (loaded by every Squad agent, every session):
+
+> - Be more aggressive with comments than a typical production repo.
+> - **Every new or modified source, test, and important configuration file should
+>   contain enough comments for a junior developer and QA reviewer to understand
+>   the file quickly.**
+> - Important files should start with a short header comment explaining the file
+>   purpose, the main behavior or responsibility, key dependencies or
+>   collaborators, and any notable safety or parity constraints.
+
+`copilot.instructions.md` says the same thing verbatim (it is the migration
+source), and `tests-commenting.instructions.md` extends it to everything under
+`tests/`.
+
+**Why this matters more than a normal style nit:** `src/Starter.*` is not
+incidental code. `modernization-starter-boundaries.instructions.md` names it as
+*"the implementation source of truth for Fusion-owned platform behavior"*, and
+`copilot.instructions.md` says to *"use the starter projects in `src/` as the
+working reference for Fusion-aligned hosting, configuration, logging, and frontend
+structure."* Agents are told to pattern-match against these files.
+
+So the kit tells every agent "comment aggressively," then hands them a reference
+implementation with zero comments. In a hackathon, the demonstrated pattern will
+beat the written rule — agents copy what they see. Either the starter files get
+the header comments the standard requires, or the standard should exempt
+starter/reference code explicitly.
+
+This is the same class of defect as the duplicated rerun rule and the
+`kit-update.instructions.md` formatting errors: **the kit's own artifacts do not
+pass the kit's own rules.** It is now the fourth instance recorded, and the first
+one in shipped source code rather than documentation.
+
+*(Caveat: this is one file of the starter. Other `src/` files may well carry
+headers. Worth a spot-check across `Program.cs`,
+`FusionWebBuilderExtensions.cs`, and a service or controller before treating it as
+systemic.)*
 
 ---
 
