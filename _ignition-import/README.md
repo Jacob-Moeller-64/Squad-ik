@@ -39,6 +39,9 @@ references, not values).
 
 | File | Role | Status |
 |---|---|---|
+| `instructions/AppMod-Artifact-Contract.json` | **Ignition-native** — the per-step artifact input/output contract that drives the shared verifier | **PARTIAL** — see `_wip/AppMod-Artifact-Contract-partial.md`; lines 1-291 of an unknown total, and long lines are cut off at the right screen edge (word wrap was off) |
+| `instructions/angular.instructions.md` | **Ignition-native** — Angular coding standards, auto-applied by glob | transcribed from 2 photos — complete (source lines 1-67, blank to 68); 9 line numbers spot-verified |
+| `instructions/appmod-agent-personality-baseline.instructions.md` | **Ignition-native** — shared coordinator execution baseline for the four AppMod coordinator agents | transcribed from 2 photos — complete (source lines 1-71, blank to 72); 12 line numbers spot-verified |
 | `instructions/agent-toolkit-protection.instructions.md` | **Ignition-native** — the single source of truth for toolkit-edit boundaries; contains the Definitive Agent List | transcribed from 2 photos — complete (source lines 1-84, blank to 86); 23 line numbers spot-verified |
 | `instructions/agent-process-conformance.instructions.md` | **Ignition-native** — minimum conformance shape for agents and router prompts | transcribed from 2 photos — complete (source lines 1-120, blank to 122); 13 line numbers spot-verified |
 
@@ -304,6 +307,426 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
 
+## ✅ RESOLVED: the artifact-root fork — `AppMod-Artifact-Contract.json` uses the long form, exclusively
+
+This was the largest open inconsistency in the kit, and the contract settles it.
+
+Across all 291 transcribed lines — roughly 90 `"path"` entries spanning steps 1
+through 19 — the fusion-restructure root appears **only** as:
+
+```
+.modernization/ignition-artifacts/modernize/fusion-restructure/…
+```
+
+The short form `.modernization/fusion-restructure/…` appears **zero times**.
+
+This agrees exactly with the Allowed Runtime Artifact Areas list in
+`agent-toolkit-protection.instructions.md`. Two independent Ignition-native
+control files now say the same thing, so the fork is decided:
+
+- **Canonical:** `.modernization/ignition-artifacts/modernize/fusion-restructure/**`
+- **Wrong:** `.modernization/fusion-restructure/**`
+
+The five transcribed files that use the short form are therefore **defects**, not
+an alternative convention: `visual-parity-gate/SKILL.md`,
+`architecture-structure/SKILL.md`, `prompts/21-P3-figma-review.prompt.md`,
+`runtime-parity-checkpoint/SKILL.md`, and the `_variables.scss` template. Each
+needs a path rewrite. This is the single highest-value mechanical fix available
+before a hackathon: it is unambiguous, machine-checkable, and a wrong root means
+a downstream step's `hardStop` gate fires on a file that was actually written.
+
+Two other roots are confirmed canonical by the same evidence:
+
+- `.modernization/ignition-artifacts/discovery/…` — Discovery artifacts
+- `.modernization/portal/data/json/…` — portal/control-plane artifacts
+
+And the identity file resolves as `agent-toolkit-protection` requires:
+`"appNameSource": ".modernization/.readme/kit-params.md"` — the long, non-retired form.
+
+---
+
+## ✅ RESOLVED: the +2 drift is *deliberately preserved* in artifact filenames
+
+`agent-integrity-checks.instructions.md` proved the +2 drift was applied
+per-line. The artifact contract proves something stronger: in at least three
+places the drift is **intentional and documented**, not a mistake.
+
+Step 17 ("Rewire All Tests & Verify") produces:
+
+```json
+{ "path": ".modernization/portal/data/json/step19-gate-results.json", …
+  "note": "Comprehensive quality-gate results. Filename retains the l[egacy step number…]" }
+```
+
+Step 18 ("Deployment & Clean Up") produces:
+
+```json
+{ "path": ".modernization/portal/data/json/step20-rollback-dryrun.json", …
+  "note": "Rollback dry-run record. Filename retains the legacy st[ep number…]" }
+{ "path": ".modernization/portal/data/json/step20-perf-verification.json", … }
+```
+
+`step19-` produced by step 17, `step20-` produced by step 18 — exactly +2, and
+the `note` field says so in words: *"Filename retains the legacy step number."*
+
+**Implication for the linter:** filenames matching `^step\d+-` must be
+**excluded** from any +2 renumbering sweep. They are frozen on purpose, presumably
+because renaming them would break every consumer that globs for them. This is the
+same class of deliberate shim as `step9UpgradeWorkspaceRoot` in
+`OpX-dotnet-upgrade.agent.md`. Two confirmed intentional shims now — the
+"fix all the numbers" instinct would break both.
+
+---
+
+## ⚠ NEW FINDING: `e2e-spec` is an undeclared producer (contract self-violation)
+
+The contract opens with a `producerLegend` that defines exactly four producers:
+
+| Producer | Meaning |
+|---|---|
+| `dev-agent` | authored directly by the step's owning agent; always produced on a normal run, **including No QA runs** |
+| `dev-script` | produced by the step's own helper script under `.github/scripts/`; independent of QA |
+| `qa-script` | historically produced by `.github/scripts/QA/qa-refresh-portal.ps1`; **only runs when QA runs** |
+| `tool` | produced by a parity/test runner (`parity-score.mjs`, `run-visual-parity.mjs`, `dotnet/npm test`) |
+
+The `tool` entry carries an explicit rule:
+
+> Any control-plane file here MUST also have a dev-agent or dev-script owner so No QA runs are not blocked.
+
+Step 12 then declares a producer that is not in the legend at all:
+
+```json
+{ "path": ".modernization/ignition-artifacts/discovery/behavioral-parity-checkpoint.json",
+  "producer": "e2e-spec", "noQaSafe": false, "consumedBySteps": [], … }
+```
+
+Two problems, and they compound:
+
+1. **`e2e-spec` is undefined.** Nothing in the legend says what produces it, when
+   it runs, or what to do when it is absent. An agent reading this contract has
+   no rule to apply.
+2. **It is the only `"noQaSafe": false` entry in all 19 transcribed steps.**
+   Every other output is `true`. So on a No-QA run this one artifact is not
+   produced — and the legend's stated purpose for the `noQaSafe`/dual-owner
+   machinery is precisely to stop that from blocking a run. It has no second
+   owner.
+
+For the hackathon this is a live stall risk: a team running without the e2e lane
+gets a missing `behavioral-parity-checkpoint.json` and no documented recovery.
+Fix is one of: add `e2e-spec` to the legend with a self-heal, or give the entry a
+`dev-agent` co-owner. Recommend the latter — it matches the rule the contract
+already states for `tool`.
+
+Also worth noting: `qa-script` is **declared but never used** in steps 1-19. Its
+description is already written in the past tense ("Historically produced by…"),
+so it may be a dead legend entry. Steps 20-24 may still use it.
+
+---
+
+## Structural facts added by `AppMod-Artifact-Contract.json` (lines 1-291)
+
+This is the machine-readable spine of the pipeline — the file the shared verifier
+reads to decide whether a step may start and whether it finished.
+
+**Header block (lines 1-29).**
+
+- `"schemaVersion": "1.0"`.
+- `"purpose"` names it a *"Per-step artifact input/output contract for the
+  **24-step** modernization workflow"* and says it drives
+  `.github/scripts/shared/verify-step-artifacts.ps1` **and the per-step
+  self-check wording in each** prompt. That second clause matters: prompt
+  self-check text is supposed to be *generated from* this contract, which means
+  any prompt whose self-check disagrees with this file is drifted by definition.
+- `"appNamePlaceholder": "<AppName>"`, `"appNameSource": ".modernization/.readme/kit-params.md"`.
+- `producerLegend` (4 entries) and `gateLegend` (3 entries) — tabulated above and below.
+- `"verifyNote"`: entries with `verify=false` are source-tree or glob outputs the
+  verifier does not presence-check. It *"only asserts presence and non-emptiness
+  of concrete JSON and Markdown artifacts."*
+- `"schemaNote"`: an entry may declare an optional `schema` pointing to a
+  lightweight **`opx-field-contract/v1`** file under `.github/contracts/schemas/`.
+  This is the first sighting of that contract format name.
+
+**The three gate kinds.**
+
+| Gate | Behavior |
+|---|---|
+| `hardStop` | required upstream input; if missing/empty the step must self-heal via its `selfHeal` command or report **Blocked** |
+| `advisory` | read when present; if missing, self-heal deterministically and continue without QA |
+| `conditional` | required only when the matching condition holds (e.g. a browser surface exists, or MVC/Angular source is detected) |
+
+Note `conditional` is **declared but unused** in steps 1-19 — same status as
+`qa-script`. Steps 20-24 may use it.
+
+**`restorePointPolicy` (lines 19-29) — new subsystem, not seen in any prompt yet.**
+
+- `"invariant": "A"`.
+- Purpose: *"Isolation and reversibility for mutating steps. Before a step that
+  changes `src/` or `LegacyCode/` runs, a workspace baseline must exist so the
+  repository can be restored to the last known-good state…"*
+- Manifest: `.modernization/OpXUtil/Backup/WorkspaceBaseline/workspace-baseline.manifest.json`
+  — **`.modernization/OpXUtil/` is a sixth artifact root**, and it is *not* in
+  `agent-toolkit-protection`'s Allowed Runtime Artifact Areas list. See finding below.
+- Five commands, all `powershell -NoProfile -ExecutionPolicy Bypass -File …`:
+  - `.github/scripts/Workspace/Invoke-StepRestorePoint.ps1 -Step <N> -Mode Ensure`
+  - same script `-Mode Verify`
+  - same script `-Mode Recover`
+  - `.github/scripts/Workspace/backup-src-and-legacy-baseline.ps1 -Target All`
+  - `.github/scripts/Workspace/restore-src-and-legacy-baseline.ps1 -Target All`
+- `"note"`: Mode Ensure creates the baseline if absent and is non-destructive;
+  **Mode Verify blocks with exit code 2** when no baseline exists. Exit code 2
+  matches the Squad gate convention (`RESULT: BLOCKED` = exit 2).
+
+**The 9 steps carrying `"restorePoint": { "required": true, "invariant": "A" }`:**
+8, 9, 11, 12, 13, 15, 16, 18 — and *not* 7, 10, 14, 17. Steps 1-6 and 19 have none.
+
+**Canonical step names 1-19, straight from `readableName`:**
+
+| # | readableName |
+|---|---|
+| 1 | Workstation Readiness |
+| 2 | Rename Starter To `<AppName>` |
+| 3 | Legacy System Analysis |
+| 4 | Baseline Acceptance-Criteria Review |
+| 5 | Modernization Solution Design |
+| 6 | Modernization Quality Design |
+| 7 | Backend - Upgrade .NET |
+| 8 | Backend - Modernization Formation |
+| 9 | Backend - .NET Integration Hardening |
+| 10 | Frontend Foundation & Scaffold |
+| 11 | Frontend Migration |
+| 12 | Frontend Platform Integration |
+| 13 | Frontend Shell Stabilization |
+| 14 | Frontend UI Inventory & Fusion Map |
+| 15 | Fusion UI Integration |
+| 16 | Next Fusion UI Upgrade Slice |
+| 17 | Rewire All Tests & Verify |
+| 18 | Deployment & Clean Up |
+| 19 | Final Fusion Restructure Review |
+
+These match the 24 prompt filenames one-for-one with **no offset**. The contract's
+`"step"` numbers are the *new* (correct) numbering throughout — including inside
+`selfHeal` strings ("Re-run Step 5.", "Re-run Step 14."). So this file is on the
+correct side of the +2 drift everywhere except the deliberately-frozen
+`step19-`/`step20-` filenames.
+
+**Schemas referenced under `.github/contracts/schemas/` (9 distinct, all new names):**
+`step-workflow-state.schema.json`, `fusion-decisions.schema.json`,
+`fusion-migration-plan.schema.json`, `fusion-control-point-inventory.schema.json`,
+`modernization-execution-contract.schema.json`,
+`modernization-phase-assessment.schema.json`,
+`modernization-solution-design.schema.json`,
+`executable-testcase-catalog.schema.json`, `per-route-behavior-plan.schema.json`.
+
+**Helper scripts named (4 distinct):**
+`.github/scripts/P1-Discovery/generate-manifest.ps1` (with
+`-RepoPath ./LegacyCode -LegacySystemAnalysis`),
+`.github/scripts/shared/verify-step-artifacts.ps1`,
+`generate-ui-api-map.ps1`, and the two `Workspace/` baseline scripts above.
+
+**Source-tree outputs with `"verify": false`** (step 8 only, so far):
+`src/<AppName>.Library`, `src/<AppName>.Web.Api`. Step 8 also produces a real
+project file: `tests/backend/unit/<AppName>.Library.Tests/<AppName>.Library.Tests.csproj`.
+
+---
+
+## ⚠ Findings in `AppMod-Artifact-Contract.json` (lines 1-291)
+
+**1. `.modernization/OpXUtil/**` is written but not in the allowed write zone.**
+`restorePointPolicy.manifest` points at
+`.modernization/OpXUtil/Backup/WorkspaceBaseline/workspace-baseline.manifest.json`,
+and the backup scripts necessarily write beside it. But
+`agent-toolkit-protection.instructions.md`'s Allowed Runtime Artifact Areas list
+is exactly five globs, and `OpXUtil` is not among them. Same class of gap as the
+short-root problem, only here the *contract* is the thing outside the boundary,
+so the fix belongs in `agent-toolkit-protection` (add `/.modernization/OpXUtil/**`),
+not in the contract.
+
+**2. Step 4 has a `selfHeal` that re-runs a Discovery script for an input it does
+not own.** Step 4's `review-manifest.json` input self-heals by invoking
+`.github/scripts/P1-Discovery/generate-manifest.ps1` — the same script step 3
+uses as its `selfHealCommand`. Not wrong, but it means two steps can regenerate
+the same artifact with different flags, and only step 3's invocation is fully
+visible in these photos (the step 4 and step 5 copies are cut off before their
+flags). Worth confirming the flags match on re-shoot; if they differ, running
+step 4's heal after step 3 could silently overwrite a richer manifest with a
+thinner one.
+
+**3. `qa-test-plan.json` is consumed by six steps and produced by one.**
+Step 6 produces it with `consumedBySteps: [8,11,12,13,14,17]`. It is the
+widest-fanout artifact in the contract and it is `dev-agent`-authored, i.e. free
+prose from a model rather than script output. If a team's step 6 produces a thin
+plan, six later steps degrade at once with no gate to catch it. There is no
+`schema` on this entry — unlike `executable-testcase-catalog.json` right below
+it, which does have one. Recommend adding a schema.
+
+**4. Step 16 produces nothing.** `"producedOutputs": []` for "Next Fusion UI
+Upgrade Slice". It consumes `ui-migration-order.json` and `ui-fusion-map.json`
+and emits no artifact at all, so there is nothing for the verifier to assert and
+no way to tell a completed slice from a skipped one. Step 1 is also empty on both
+sides, which is fine for a readiness check — but step 16 is a *mutating* step
+(it carries `restorePoint.required: true`). A mutating step with no output is
+un-auditable. This is a real hackathon risk: step 16 is the loop step teams will
+run repeatedly.
+
+**5. `characterization-test-planning.json` root is ambiguous in the photo.**
+Recorded in `_wip/` as `.modernization/ignition-artifacts/…` but the adjacent row
+reads `.modernization/portal/data/json/…`. Needs the re-shoot to settle.
+
+---
+
+## Structural facts added by `appmod-agent-personality-baseline.instructions.md`
+
+An 71-line shared behavior file bound by `applyTo` to exactly four agents:
+`Ultimate-AppMod-Ignition`, `OpX-AppMod-P1-Discovery`, `OpX-AppMod-P2-Modernize`,
+`OpX-AppMod-P3-Review`. It opens by telling the reader how to interpret it:
+
+> Interpret second-person directives below as inheritable behavior rules, not as
+> a standalone agent definition.
+
+That framing is the answer to a question raised earlier in this import — why
+several agent files carry near-identical posture text. This file is where it is
+*supposed* to live. Sections: Core Posture, Communication Contract, Execution
+Contract, Web Research Contract, Obstacle Handling, Completion Gate, Precedence Rule.
+
+Concrete rules worth pulling out:
+
+- **A mandated reasoning block.** At major decisions the agent must emit a
+  fenced `text` block with exactly four labels: `Analyzing:`, `Approach:`,
+  `Risks:`, `Verification:`.
+- **Resume vocabulary is fixed:** `resume`, `continue`, `try again` all mean
+  "continue from the last incomplete todo item."
+- **"When you say you will run a tool call, run it in the same turn."** A direct
+  countermeasure to the announce-then-stall failure mode.
+- **A four-step obstacle ladder:** state the blocker → attempt an in-scope
+  deterministic remediation → re-verify → escalate only with concrete evidence.
+- **A five-item Completion Gate** that must pass before the agent closes.
+- **Precedence Rule:** when this baseline and a narrower instruction both apply,
+  the narrower or more specific instruction wins.
+
+The Precedence Rule is the second such rule in the instruction layer
+(`agent-process-conformance` has its own), and the two agree.
+
+---
+
+## ⚠ Findings in `appmod-agent-personality-baseline.instructions.md`
+
+**1. It binds four agents by name — and the fourth is one of the two identical twins.**
+`applyTo` lists `Ultimate-AppMod-Ignition.agent.md` but **not**
+`Ultimate-Ignition-edit.agent.md`. Given that those two files have byte-identical
+frontmatter apart from `name:`, and that `Ultimate-Ignition-edit` is the *only*
+agent permitted to rewrite `.github/`, the toolkit editor is the one coordinator
+running **without** the shared Completion Gate and Obstacle Handling ladder. That
+is backwards from a safety standpoint: the most privileged agent has the least
+behavioral scaffolding. Either intentional and undocumented, or an oversight.
+
+**2. "Never ask for confirmation to continue routine execution" has no carve-out
+for destructive steps.** Read literally alongside the artifact contract's
+`restorePoint` policy, an agent at step 8/11/18 would proceed through a mutating
+step without pause. The restore-point machinery exists precisely because those
+steps are dangerous. The baseline should exempt steps with
+`restorePoint.required: true` from the no-confirmation rule, or at minimum
+require the Ensure command to have succeeded first.
+
+**3. Frontmatter uses `name:` — `angular.instructions.md` does not.** See the
+cross-file finding below.
+
+---
+
+## Structural facts added by `angular.instructions.md`
+
+67 lines, `applyTo: "**/*.ts,**/*.html,**/*.scss,**/*.css"` — so it auto-applies
+to every TypeScript, template, and stylesheet in a modernized app. Four sections:
+General, Kendo UI License Handling, Security, Testing.
+
+**General** is short and mostly conventional (prefer signals, prefer standalone
+components, keep templates lean), with two Fusion-specific mandates:
+
+- capture errors with `FusionErrorService` from `@fusion/ngx-fusion`, *"which
+  already logs and executes policies"*
+- use `FusionLoggerService` from the same package
+
+It also tells agents to consult `patch-notes/**` first when troubleshooting
+post-upgrade breakage — a directory not referenced by anything else transcribed
+so far.
+
+**Kendo UI License Handling** is over half the file (lines 17-52) and is the most
+detailed root-cause writeup in any instruction file so far. The mechanism:
+`@fusion/ngx-fusion` bundles Kendo Angular packages carrying a `publishDate`; the
+embedded license in `@progress/kendo-licensing/dist/index-esm.js` carries a
+`licenseExpirationDate`; when `publishDate > licenseExpirationDate` the check
+fails and the watermark renders even in development. It then explicitly kills the
+folk remedy:
+
+> The `KENDO_UI_LICENSE=ignored` environment variable approach only works with
+> the legacy webpack-based Angular builder. Angular 17+ uses esbuild
+> (`@angular/build`), which does NOT substitute `process.env` variables into the
+> browser bundle from the Node.js environment.
+
+Three escalating remedies are given: a dev-only regex patch of the vendored
+licensing bundle, full activation via `npx kendo-ui-license activate`, and a CI/CD
+path using a pipeline secret.
+
+**Security** is two lines (built-in sanitization; CSP and Trusted Types).
+**Testing** is a link list to `angular.dev` guides plus `#tool:angular-cli/*`.
+
+---
+
+## ⚠ Findings in `angular.instructions.md`
+
+**1. The Kendo license patch is a self-inflicted wound waiting to happen.**
+The documented "Quick Suppression" rewrites a file inside `node_modules` belonging
+to Progress's licensing module:
+
+```powershell
+$patched = $raw -replace '\b174733\d{4}\b', '1999999999'
+```
+
+Three separate problems, in ascending order of seriousness:
+
+- The regex `\b174733\d{4}\b` is pinned to Unix timestamps beginning `174733`,
+  i.e. a narrow window in May 2025. When Fusion ships a bundle with any other
+  expiration date, the patch silently matches nothing, the watermark returns, and
+  the operator has no signal that the "fix" no-opped. Nothing in the file says to
+  verify the replacement happened.
+- The file already admits the patch is lost on every `npm install` and suggests
+  making it a `postinstall` script — which converts a one-time manual hack into
+  something that runs automatically on every developer machine and every CI agent.
+- It is a modification to a vendor's licensing enforcement. Whatever the intent,
+  a `postinstall` hook that rewrites Progress's license-expiry check and commits
+  it via `patch-package` is not something to standardize across a company-wide
+  hackathon without legal sign-off. The "Full Activation" section immediately
+  below describes the licensed path and should be the default, with the patch
+  removed or clearly marked as unsupported.
+
+This is the same finding previously logged against the kit's Kendo licensing
+patch; this file is where it actually lives, so it is now located, not just suspected.
+
+**2. Frontmatter shape disagrees with every other instruction file.**
+`angular.instructions.md` has only `description` and `applyTo` — **no `name`**.
+`appmod-agent-personality-baseline`, `agent-toolkit-protection`, and
+`agent-process-conformance` all carry `name`. Whether `name` is required is
+unknown (VS Code's instructions frontmatter treats `applyTo` as the only
+meaningful key), but three-against-one is a lint rule waiting to be written, and
+it hints `angular.instructions.md` was authored earlier or by a different hand
+than the `appmod-*` files.
+
+**3. `applyTo` glob will attach this file to the legacy app too.**
+`**/*.ts,**/*.html,**/*.scss,**/*.css` has no exclusion for `LegacyCode/`. During
+Discovery, an agent reading legacy AngularJS or Knockout templates gets "prefer
+signals, prefer standalone components" injected into its context. That is exactly
+the instruction least applicable to a G1 legacy file and it arrives with no
+phase gating. Compare `agent-toolkit-protection`, which scopes tightly to
+`.github/agents/*.agent.md`. Recommend narrowing to the modernized client root.
+
+**4. Angular version floor is stated as 17+, not 20.** Lines 24 and 26 anchor on
+"Angular 17+ uses esbuild". That does not contradict the Angular-20 target
+(20 > 17), but it is a fifth distinct version number in the kit's Angular
+discussion (17+, 19+ for the Kendo banner, 19+, 20, 21+). Only 20 is a *target*;
+the others are floors. Worth stating that distinction once, centrally, so the
+linter does not flag them all as conflicts.
+
+---
+
 ## Structural facts added by `agent-toolkit-protection.instructions.md`
 
 84 lines, and the highest-leverage instruction file transcribed so far. It resolves three open
@@ -434,6 +857,42 @@ and no stale maintainer notes. Against the eleven transcribed agents:
 `OpX-Fusion-Reviewer` (no handoffs, so no next-step contract), and
 `OpX-csharp-janitor` (three YAML errors) would all fail. **Running this file's own seven checks
 across `.github/agents/` is a concrete, cheap pre-hackathon task.**
+
+## Transcription uncertainties (`angular.instructions.md`, `appmod-agent-personality-baseline.instructions.md`, `AppMod-Artifact-Contract.json`)
+
+**`angular.instructions.md`** — none of substance. Both photos were legible end
+to end and the file closes at source line 67 (editor shows a blank 68). Nine
+heading/fence line numbers were spot-verified. One formatting note: this file
+places prose immediately adjacent to code fences with no blank line between them
+(lines 27/28, 35/36, 44/45, 48/49). That is unusual but consistent throughout, and
+the line-number arithmetic only closes at 67 if it is reproduced, so it is
+transcribed as-is rather than normalized.
+
+**`appmod-agent-personality-baseline.instructions.md`** — none. Twelve anchors
+verified, file closes at 71. Note that lines 37-38, 44-45 and 46-47 are
+hard-wrapped bullets (a 2-space continuation indent), not soft wraps; the gutter
+numbering in the photos confirms they are separate source lines.
+
+**`AppMod-Artifact-Contract.json`** — substantial, and structural rather than
+incidental:
+
+1. **Right-edge truncation.** The file was photographed with word wrap **off**.
+   It is JSON with very long lines, so on most `{ "path": … }` entries the tail
+   runs off the screen and is gone. Roughly 30 of the ~90 entries transcribed are
+   cut. What is lost is usually the end of `consumedBySteps` and/or the end of
+   `note`. Every affected line carries a `[CUT]` marker in
+   `_wip/AppMod-Artifact-Contract-partial.md`.
+   **Requested:** re-shoot with `Alt+Z` (Toggle Word Wrap) enabled.
+2. **Keystone row-shift.** The photos were taken at an angle steep enough that
+   the right half of each row appears offset by about one row from its left half.
+   Path↔note pairings were therefore reconstructed *semantically* (e.g.
+   `decisions.json` ↔ `fusion-decisions.schema.json`). Every pairing came out
+   self-consistent, so confidence is high — but it is inference, not a direct read.
+3. **Vertical incompleteness.** Lines 1-291 captured; the file continues (step
+   19's `producedOutputs` array is still open at 291). Steps 20-24 are not yet
+   photographed.
+4. **One genuinely ambiguous path** — `characterization-test-planning.json`,
+   recorded under `ignition-artifacts/` but possibly `portal/data/json/`.
 
 ## Transcription uncertainties (`agent-process-conformance.instructions.md`)
 
