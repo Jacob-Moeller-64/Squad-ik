@@ -1,8 +1,8 @@
 # `agent-integrity-checks.instructions.md` — partial transcription notes
 
-Photos read: 5 of an unknown total, covering **source lines 1-294**. Full verbatim transcription
-not yet written — this file is ~90% PowerShell and very dense. These notes capture the structure
-and the findings so nothing is lost.
+Photos read: **7 of 7 — file complete at source lines 1-383** (384 blank). Full verbatim
+transcription not yet written — this file is ~90% PowerShell and very dense. These notes capture
+the structure and every finding.
 
 ## Frontmatter (lines 1-5) — a new mechanism
 
@@ -35,7 +35,11 @@ numbered checks:
 | 6 | Modernize QA Timing Drift | see finding 2 |
 | 7 | Discovery Handoff Drift | see finding 1 |
 | 8 | Planning Prompt Load Drift | `$step6` → prompt 04, `$step7` → prompt 05 |
-| 9 | Review Prompt Load Drift | `$step23` → prompt 21, `$step24` → prompt 22 |
+| 9 | Review Prompt Load Drift | `$step23` → prompt 21, `$step24` → prompt 22, `$step25` → prompt 23 |
+| 10 | Step 7 Required Outputs Drift | `$step7` → prompt 05; asserts three named reports by explicit path |
+
+Closes with `### Runtime verification (per-app)` (a disk check for the three reports) and
+`## Review Rule`.
 
 ## ⚠ FINDING 1 — the definitive proof of the +2 drift, and it is operator-facing
 
@@ -76,6 +80,21 @@ find nothing wrong, while the actual gap is in prompt 03.
 It is also the cleanest confirmation of the offset: same line, correct path and stale label, five
 times, with no ambiguity.
 
+## ⚠ FINDING 1b — check 9 is internally inconsistent, block by block
+
+Within the single "Review Prompt Load Drift" check, three near-identical blocks disagree:
+
+| Block | Variable | Path read | Message says | Verdict |
+|---|---|---|---|---|
+| a | `$step23` | `21-P3-figma-review` | "Step 23 missing…" | message **stale** |
+| b | `$step24` | `22-P3-final-acceptance-criteria-review` | "Step 24 missing…" | message **stale** |
+| c | `$step25` | `23-P3-final-readiness-review` | **"Step 23 missing…"** | message **correct**, variable stale |
+
+Block c is the giveaway: the variable was renamed on the old scheme (`$step25`) while its messages
+were updated to the new scheme ("Step 23"). Blocks a and b had neither updated. This is the
+per-line update pattern seen in prompt 21 and `OpX-AppMod-P2-Modernize`, here reproduced *inside a
+single check* — which is why a blanket find-and-replace on this file would be wrong.
+
 ## ⚠ FINDING 2 — check 6 can never fire
 
 Line 174 (and repeated at 203):
@@ -107,6 +126,37 @@ integrity-check file does not match its own search pattern when scanned.
 Clever, but undocumented: nothing in the file explains what the token is, so a maintainer editing
 this check has to decode it by hand. A comment would cost one line.
 
+## Three new top-level artifacts
+
+Check 10 asserts prompt 05 names these by **explicit path**, and forbids reverting to glob naming
+(`Refresh \`Modernization-Solution-Design\.\*\``):
+
+- `.modernization/ignition-artifacts/Modernization-Solution-Design.md`
+- `.modernization/ignition-artifacts/Modernization-Execution-Contract.md`
+- `.modernization/ignition-artifacts/Modernization-Phase-Assessment.md`
+
+Three markdown reports at the `ignition-artifacts/` **root** — not under `discovery/`,
+`modernize/`, or `reviews/`. `Modernization-Execution-Contract.md` is notable: `OpX-dotnet-upgrade`
+repeatedly cites `Modernization-Execution-Contract.*` as the definition of the Step 7 upgrade
+workspace, so this is that file. The runtime check tests both existence **and zero-byte length**:
+
+```powershell
+Where-Object { -not (Test-Path $_) -or (Get-Item $_).Length -eq 0 }
+```
+
+with the failure message "Step 7 outputs MISSING or zero-byte (Step 9/10 will fail-fast)" — under
+the +2 offset, Steps 5's outputs gate Steps 7/8.
+
+## Closing Review Rule
+
+> - Run these checks after route extraction, step-label renames, QA workflow renames, or QA
+>   timing-contract edits.
+> - **Treat failures as process-surface defects even when code generation is otherwise
+>   unaffected.**
+
+That second line is the clearest statement in the kit of why this whole drift class matters: the
+generated code can be fine and the process surface still be broken.
+
 ## Other surfaces named
 
 - `.github/scripts/parity/verify-gate-integrity.ps1` — expected output
@@ -130,5 +180,5 @@ this check has to decode it by hand. A comment would cost one line.
 
 ## Remaining work
 
-- Full verbatim transcription of lines 1-294 not yet written.
-- Source continues past line 294; further photos needed.
+- Full verbatim transcription of lines 1-383 not yet written (structure and findings captured
+  above). The file is dense PowerShell; transcribing it verbatim is worthwhile but large.
