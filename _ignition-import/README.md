@@ -59,6 +59,7 @@ references, not values).
 | `skills/fusion-g1-to-g2-modernization/references/knockout-modernization-cheatsheet.md` | **Ignition-native** — Knockout concepts and migration tips | transcribed from 1 photo — complete (source lines 1-59, blank to 60); 11 line numbers spot-verified |
 | `skills/fusion-ui-component-upgrade/SKILL.md` | **Ignition-native** — route-level Fusion primitive adoption (Steps 15-16 lane) | transcribed from 5 photos — complete (source lines 1-239, blank to 244); 28 line numbers spot-verified |
 | `skills/runtime-parity-checkpoint/SKILL.md` | **Ignition-native** — boot-observe-assert runtime proof against the running app | transcribed from 3 photos — complete (source lines 1-91); 23 line numbers spot-verified |
+| `skills/step3-legacy-system-analysis/references/Step3-Artifact-Schema-Contract.md` | **Ignition-native** — the versioned schema for all seven Step 3 artifacts | transcribed from 3 photos — complete (source lines 1-143, blank to 145); 23 line numbers spot-verified |
 
 `architecture-structure/` is a **multi-file skill**, now fully transcribed: `SKILL.md` (470 lines),
 `Architecture-Structure.md` (215), `REMAINING-POINTS.md` (108).
@@ -280,6 +281,86 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## Structural facts added by `step3-legacy-system-analysis/references/Step3-Artifact-Schema-Contract.md`
+
+The versioned schema behind Step 3, referenced by prompt 03's frontmatter. 143 lines, and the
+**second versioned artifact in the kit** after `dominion-requirements` (`version: "2.0"`).
+
+- **`step3ArtifactSchemaContractVersion: 1.0.1`**, with an explicit pairing rule: "This version
+  must match `.github/prompts/03-P1-legacy-system-analysis.prompt.md`." Prompt 03 carries the same
+  string, so the two are pinned to each other — the only two-sided version pin found in the kit.
+- **Stated purpose is prompt slimming**: "Single owned schema reference … Keep
+  `03-P1-legacy-system-analysis.prompt.md` **thin and deterministic**." That is the extraction
+  pattern the oversized skills (`dominion-requirements` ~1,500 lines, `architecture-structure`
+  ~800) should follow.
+- **Seven artifacts defined**, three as standalone files and four as sections embedded in other
+  files:
+  | # | Artifact | Location |
+  |---|---|---|
+  | 1 | `service-behavior-inventory.json` | standalone |
+  | 2 | `interaction-wiring-inventory.json` | standalone |
+  | 3 | `workflow-trace-inventory.json` | standalone |
+  | 4 | `apiEndpointCatalog` | in `inventory.json` |
+  | 5 | `uiControlClassification` | in `inventory.json` |
+  | 6 | `screenshotCoverageMatrix` | in `legacy-system-analysis-report.json` |
+  | 7 | `fusionPrimitiveCoverageCensus` | in `inventory.json` |
+- **An anti-pollution mechanism with a named failure mode.** Every entry in Artifacts 1-3 needs a
+  `legacyEvidence` object whose `filePath` must resolve to a real file under `LegacyCode/` or
+  `src/`. Evidence pointing at `coverage/`, `node_modules/`, `bin/`, `obj/`, or `dist/` "will
+  cause the gate to classify the inventory as **polluted**". Unresolvable evidence must be marked
+  `wiringStatus: cannot-locate` rather than omitted — so a gap is recorded, never silently
+  dropped.
+- **A backward-compatibility rule that refuses to be ambiguous**: `file` "may be included for
+  backward compatibility but **DOES NOT substitute for** `filePath`."
+- **DB typing hints that exist to prevent a specific downstream bug**: `dbParameterTypeHints[]`
+  and `dbResultColumnTypeHints[]` (with `sqlTypeHint`, `targetClrTypeHint`, `evidence`), whose
+  stated purpose is "so Step 8 and Step 9 do not infer incorrect row model types" and to "reduce
+  **Dapper constructor materialization failures** caused by SQL/CLR type mismatches." That is the
+  exact failure `appmod-backend-dotnet` lists as an anti-pattern — Step 3 is being asked to
+  capture the evidence that prevents it six steps later.
+- **`effectClass` and `wiringStatus` finally have a home.** `runtime-parity-checkpoint` asserts
+  against `interaction-wiring-inventory.json`; this contract is what defines its shape
+  (`controlId`, `surface`, `label`, `controlKind`, `triggerEvent`, `wiringKind`, `target`,
+  `sideEffects`, `authGate`, `legacyEvidence`, `wiringStatus`).
+- **Eight screenshot states enumerated**: `idle`, `populated`, `empty`, `validationError`,
+  `postAction`, `dialogOpen`, `focus`, `authStateVariant` — with four capture statuses and a
+  mandatory `blockerReason` when not captured.
+- **A Fusion gap census with four states**: `covered`, `needsWrapperExtension`,
+  `needsFusionFeatureRequest`, `noFusionEquivalent`, each stamped `mcpVerifiedUtc`. This is the
+  Discovery-side input to D-003's wrap policy.
+- **A new script path family**: `.github/scripts/P1-Discovery/03-P1-legacy-system-analysis-gate.ps1`
+  named as "the executable enforcement path", with this file as "the canonical human-readable
+  schema contract". Clean separation of executable gate from readable spec.
+
+## ⚠ Findings in `Step3-Artifact-Schema-Contract.md`
+
+**1. It resolves a long-standing prompt 03 uncertainty — and it was not a defect.**
+Prompt 03's Required Artifacts table has 10 rows while its prose says "each of the 7 artifacts".
+This contract defines exactly seven (`## Artifact 1` … `## Artifact 7`), so the prose is correct
+and refers to the schema-contract grouping; the 10-row table is a different, larger enumeration
+of Step 3 outputs. The earlier note is marked resolved.
+
+**2. Four consecutive blank lines inside the document** (source lines 14-17, between the Scope
+bullets and `## Shared field definitions`). Every other section break in the file uses one.
+Cosmetic, preserved as photographed, but it reads like a deleted section.
+
+**3. This is the model the rest of the kit should copy — and only one other file does.**
+Two versioned artifacts exist in the whole kit (this and `dominion-requirements`), and this is the
+only one with a *two-sided* pin ("this version must match the prompt"). Given that the hackathon
+risk is 40 divergent copies of the kit, a version field plus a stated pairing rule is the cheapest
+drift detector available, and six of the seven skill families have neither.
+
+## Transcription uncertainties (`Step3-Artifact-Schema-Contract.md`)
+
+- Line alignment verified at 23 anchors — 1, 3, 7, 11, 18, 20, 23, 33, 39, 54, 61, 65, 79, 81,
+  100, 102, 111, 113, 123, 130, 132, 141, 143 — all matching. Content ends at 143; the editor
+  shows blank lines through 145.
+- The top-level section labels (`Schema Contract Version`, `Purpose`, `Scope`,
+  `Validation expectation`) are plain text, not markdown headings — only the artifact sections use
+  `##`. Preserved as photographed.
+- Line 21 wraps across three editor rows; reconstructed from wrap positions.
+- No mojibake in this file.
 
 ## Structural facts added by `runtime-parity-checkpoint/SKILL.md`
 
@@ -4938,6 +5019,12 @@ not corrected:
 - Source-internal inconsistency preserved as-is: the Required Artifacts table has **10**
   rows, but Required Response Sections / Output Normalization Rules say "each of the 7
   artifacts" / "list all 7 artifacts every run" (likely the A1-A7 schema artifacts).
+  > **RESOLVED by `Step3-Artifact-Schema-Contract.md`.** The schema contract defines exactly
+  > **seven** artifacts (`## Artifact 1` … `## Artifact 7`), so the "7 artifacts" prose is
+  > correct and refers to the schema-contract artifacts. The 10-row Required Artifacts table
+  > is a different, larger list (the schema contract covers 3 standalone JSON files plus 4
+  > sections embedded inside `inventory.json` and `legacy-system-analysis-report.json`).
+  > Not a defect — two different groupings of the same output.
 - Line 88's `OPX_ENABLE_QA_PORTAL_REFRESH=1;` prefix transcribed exactly as shown
   (env-assignment + semicolon before a `powershell` invocation).
 - Long wrapped lines (Hard Stops, capture requirements, enrichment rules, visual
