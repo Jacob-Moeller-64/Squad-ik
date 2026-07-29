@@ -39,6 +39,7 @@ references, not values).
 
 | File | Role | Status |
 |---|---|---|
+| `instructions/agent-toolkit-protection.instructions.md` | **Ignition-native** — the single source of truth for toolkit-edit boundaries; contains the Definitive Agent List | transcribed from 2 photos — complete (source lines 1-84, blank to 86); 23 line numbers spot-verified |
 | `instructions/agent-process-conformance.instructions.md` | **Ignition-native** — minimum conformance shape for agents and router prompts | transcribed from 2 photos — complete (source lines 1-120, blank to 122); 13 line numbers spot-verified |
 
 `_wip/agent-integrity-checks-partial-notes.md` holds structure + findings for
@@ -302,6 +303,73 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## Structural facts added by `agent-toolkit-protection.instructions.md`
+
+84 lines, and the highest-leverage instruction file transcribed so far. It resolves three open
+findings and introduces one new one.
+
+- **The Definitive Agent List — 18 agents.** The complete roster, finally stated in one place:
+  `Ultimate-Ignition-edit` (the sole toolkit editor), plus `Ultimate-AppMod-Ignition`,
+  `OpX-AppMod-P1-Discovery`, `-P2-Modernize`, `-P3-Review`, **`OpX-Fusion-Transform`**,
+  `OpX-csharp-expert`, `OpX-csharp-janitor`, `OpX-dotnet-upgrade`,
+  **`OpX-Pre-Modernization-Test-Generator`**, `OpX-QA-Hub`, **`OpX-QA-Create`**, `OpX-QA-Run`,
+  `OpX-Code-Reviewer`, `OpX-Fusion-Reviewer`, `OpX-fusion-ui-component-upgrade`,
+  **`modernize-dotnet`**, **`Microsoft-Researcher`**. Four are new; `OpX-Fusion-Transform` was
+  previously flagged as unverified.
+- **`OpX-Frontend-Angular-Transform` is absent from the list** — consistent with its archived
+  status, and confirmation that the roster is maintained. The file is still installed in
+  `.github/agents/`, so the list and the directory disagree.
+- **A canonical-path rule with a named retired location**:
+  > The canonical app identity file is always `.modernization/.readme/kit-params.md` … The path
+  > `.readme/kit-params.md` (without the `.modernization/` prefix) is a **retired location and
+  > MUST NOT be used**. If a script or prompt currently reads from it … treat that as a **defect**.
+- **The "even when" clause** — the part that makes the boundary hold under pressure. A non-edit
+  agent must refuse *even when* the user says "just fix it quickly," the change looks trivial, the
+  request arrived inside a step prompt, or the target is a PowerShell script under
+  `.github/scripts/`.
+- **A precise allowed/denied split inside `.modernization/`**: writes are allowed to
+  `portal/**`, `coverage/**`, `ignition-artifacts/**` (generated evidence and reports only),
+  `ignition-artifacts/discovery/**` (generated analysis only), and
+  `ignition-artifacts/modernize/fusion-restructure/**` (generated planning only) — while
+  `.modernization/.readme/` is explicitly **not** in the allowed zone "even though it sits under
+  `.modernization/`."
+- **A Routing Rule that forbids silent recovery**: "Do not auto-handoff, auto-route, or silently
+  continue in another agent lane. Tell the user to manually switch … The message to the user MUST
+  name the **exact file and the exact change** that requires toolkit access."
+- **A worked allowed case** so the rule is not over-applied: `qa-refresh-test-plan.ps1` and similar
+  QA scripts that write only to `portal/**` or `ignition-artifacts/**` are allowed for any agent.
+
+## ⚠ Findings for `agent-toolkit-protection.instructions.md`
+
+**1. NEW — the short artifact root is not an approved write area.**
+The Allowed Runtime Artifact Areas list contains only the **long** form:
+`/.modernization/ignition-artifacts/modernize/fusion-restructure/**`. The **short** form
+`.modernization/fusion-restructure/**` does not appear anywhere in the allowed zone.
+
+That matters because five transcribed files write to the short path:
+`visual-parity-gate/SKILL.md` (its `visual-parity-report.json` output),
+`architecture-structure/SKILL.md`, prompt 21 (`figma-review.json`), `runtime-parity-checkpoint`
+(`runtime-parity-checkpoint.json`), and the `_variables.scss` template. Under a literal reading of
+this file, **those writes are outside the permitted zone** — not toolkit-protected, but not
+explicitly allowed either.
+
+This converts the long-running artifact-root fork from a documentation inconsistency into a
+**permissions question**, and it tips the balance: the long form is the one the protection
+contract sanctions. Recommend standardising on
+`.modernization/ignition-artifacts/modernize/fusion-restructure/` and fixing the five short-form
+consumers.
+
+**2. The roster and the directory disagree by one file.** `OpX-Frontend-Angular-Transform` is
+installed but not listed. Either it should be deleted (per `Ultimate-Ignition-edit`'s own
+no-stale-files rule) or the list should name it as retired. Right now an agent picker shows a
+twelfth agent that the governing document does not acknowledge.
+
+**3. Four agents in the list have no transcribed file**: `OpX-Pre-Modernization-Test-Generator`,
+`OpX-QA-Create`, `modernize-dotnet`, `Microsoft-Researcher`. Together with `OpX-QA-Hub`,
+`OpX-QA-Run` and `OpX-Fusion-Transform`, **seven of the eighteen agents are still unseen.**
+`Microsoft-Researcher` and `modernize-dotnet` are notable for breaking the `OpX-`/`Ultimate-`
+naming convention entirely.
 
 ## Structural facts added by `agent-process-conformance.instructions.md`
 
@@ -2564,6 +2632,9 @@ concrete Fusion facts.
 ## ⚠ Findings in `OpX-fusion-ui-component-upgrade.agent.md`
 
 **1. Its only handoff points at an agent not yet seen — `OpX-Fusion-Transform`.**
+
+> **RESOLVED by `agent-toolkit-protection.instructions.md`.** Its Definitive Agent List names
+> `OpX-Fusion-Transform` explicitly. The agent is real and the handoff is not a dead end.
 This is the agent's sole exit, and the Reporting Contract instructs the model to tell the user
 to click it by name. If `OpX-Fusion-Transform` does not exist in `.github/agents/`, this lane
 is a dead end and the closing instruction is unfollowable. Note the kit already contains an
@@ -3220,6 +3291,14 @@ target — or the `edit` grant was dropped by accident. This is a hard blocker f
 not a lint nit.
 
 **3. Phase 2 has no Write Boundary section at all.**
+
+> **CORRECTED by `agent-toolkit-protection.instructions.md`.** That file carries
+> `applyTo: ".github/agents/*.agent.md"`, so the toolkit-edit boundary auto-applies to **every**
+> agent, P2 and P3 included. They are not unprotected. The real defect runs the other way:
+> `OpX-AppMod-P1-Discovery` **duplicates** the shared rule inline, which is exactly what
+> `agent-process-conformance` forbids ("do not copy the same generic boilerplate … when the
+> shared contract already covers it"). The duplicate has already drifted — P1's inline copy lists
+> `.modernization/ignition-artifacts/**` twice, a defect the shared file does not have.
 P1 Discovery devotes 18 lines to protected toolkit roots and the all-mechanisms
 prohibition. P2 Modernize — the phase that actually rewrites the application, has `edit`,
 and runs twelve steps — has **no equivalent section**. The agent most able to damage
