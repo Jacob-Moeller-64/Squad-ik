@@ -35,6 +35,12 @@ references, not values).
 | `prompts/23-P3-final-readiness-review.prompt.md` | P3 Review, Step 23 | transcribed from 2 photos |
 | `prompts/24-P3-technical-review.prompt.md` | P3 Review, Step 24 | transcribed from 27 photos (5 were a re-shot of an already-captured range); complete — 16 heading line numbers spot-verified against the source |
 
+### Manifests
+
+| File | Contents |
+|---|---|
+| `manifests/github-instructions-listing.md` | Full `.github/instructions/` listing (25 entries), `.github/templates/` (2), and the `.github/` top level — transcribed from 1 directory-tree photo |
+
 ### Skills
 
 | File | Domain | Status |
