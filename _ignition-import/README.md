@@ -43,6 +43,7 @@ references, not values).
 | `agents/OpX-AppMod-P2-Modernize.agent.md` | Phase 2 Modernize coordinator (Steps 7-18) | transcribed from 3 photos — complete (source lines 1-136, blank to 140) |
 | `agents/OpX-AppMod-P3-Review.agent.md` | Phase 3 Review coordinator (Steps 19-24) | transcribed from 2 photos — complete (source lines 1-82, blank to 83) |
 | `agents/OpX-csharp-expert.agent.md` | .NET coding-violations fixer (specialist, user-invocable) | transcribed from 8 photos — complete (source lines 1-437, blank to 439); 20 heading line numbers spot-verified |
+| `agents/OpX-csharp-janitor.agent.md` | .NET cleanup / quick-wins specialist (user-invocable) | transcribed from 5 photos — complete (source lines 1-275, blank to 277); 18 heading line numbers spot-verified. **Source file is currently broken — 3 YAML errors, see findings** |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -149,6 +150,116 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by agent `OpX-csharp-janitor`
+
+Sibling specialist to `OpX-csharp-expert`, same shape, narrower job: safe, behavior-preserving
+cleanup rather than violation remediation.
+
+- **Same specialist frontmatter shape as `OpX-csharp-expert`**: opening `---` at line 1, a
+  YAML comment (`# For the .NET cleanup step.`), `user-invocable: true`, and the identical
+  seven-tool list (`edit/editFiles`, `read/readFile`, `search/codebase`,
+  `execute/runInTerminal`, `execute/getTerminalOutput`, `read/terminalLastCommand`,
+  `read/terminalSelection`). This confirms a genuine two-tier agent convention:
+  coordinators (no opening `---`, browser tools, `agents: ["*"]`) vs specialists
+  (opening `---`, `user-invocable`, edit + terminal only, no `agents` key).
+- **Four handoffs, all `send: false`**, including a self-handoff (`Run Tests` →
+  `OpX-csharp-janitor`) exactly mirroring the expert's. The specialists form a triangle:
+  janitor → `OpX-csharp-expert` (Fix Code Violations), expert → `OpX-csharp-janitor`
+  (Run Cleanup), and both → `OpX-AppMod-P2-Modernize` (Back To Phase 2 Workflow).
+- **A second unnumbered prompt**: `.github/prompts/P2-Modernize/fix-violations.prompt.md`
+  (the expert revealed `.github/prompts/P2-Modernize/cleanup.prompt.md`). The
+  `P2-Modernize/` prompt folder therefore holds at least two prompts outside the numbered 24,
+  and each is owned by the *other* specialist — the janitor routes to `fix-violations`, the
+  expert routes to `cleanup`.
+- **It also routes into the numbered pipeline**: `Upgrade .NET` →
+  `OpX-dotnet-upgrade` running `07-P2-backend-upgrade-dotnet.prompt.md`.
+- **Thirteen numbered cleanup tasks**, each a `[BAD]`/`[GOOD]` pair: remove unused usings
+  (IDE0005), sort usings (System first then alphabetical), remove unused variables (CS0219),
+  remove unused private members (IDE0051), simplify null checks (`?.`/`??`), expression-body
+  members, object initializers, collection expressions (C# 12+), pattern matching (including
+  switch expressions), string interpolation, `nameof()`, remove commented-out code, remove
+  empty regions.
+- **Emoji-free and mojibake-free**, like `OpX-csharp-expert`. Both specialists use literal
+  `[BAD]`/`[GOOD]` markers.
+
+## ⚠ Findings in `OpX-csharp-janitor.agent.md`
+
+**1. The file is currently broken. VS Code reports three errors in it.**
+This is the first transcribed file with objective evidence of being invalid rather than
+merely inconsistent: the editor tab reads `OpX-csharp-janitor.agent.md 3` and the status bar
+shows `⊗ 3  ⚠ 0`. The three errors correspond to three YAML indentation faults in the
+`handoffs:` block, at source lines 16, 18 and 20:
+
+```yaml
+handoffs:
+  - label: "Back To Phase 2 Workflow"
+        agent: OpX-AppMod-P2-Modernize          # line 16 — over-indented
+      prompt: "Cleanup complete. Continue the Phase 2 workflow from the next required step."
+  send: false                                    # line 18 — under-indented, escapes the mapping
+  - label: "Run Tests"
+        agent: OpX-csharp-janitor                # line 20 — over-indented
+    prompt: "Run ./.github/scripts/QA/qa-run-all-tests.ps1."
+    send: false
+```
+
+The last two handoffs (`Upgrade .NET`, `Fix Code Violations`) are correctly indented. If the
+frontmatter fails to parse, this agent has no tool allowlist and no handoff menu at runtime.
+**This one is not a judgement call and not a style preference — it is a broken file sitting in
+`.github/agents/`, and it should be fixed before anyone runs the kit.**
+
+**2. The mission places the janitor before modernization; every route into it arrives after.**
+
+> **Your Mission** — Clean up the codebase **before major modernization work**.
+
+But `OpX-AppMod-P2-Modernize` states that `Optional Run Cleanup` "never replaces any numbered
+modernization or review step, and **Step 24 owns cleanup** once review reaches the technical
+gate", and `OpX-csharp-expert` reaches the janitor via its `Run Cleanup` handoff *after*
+fixing violations. So the agent's self-description says "before" while the kit's routing puts
+it at the end. Its own `Upgrade .NET` handoff (to Step 7) is the only thing consistent with
+"before".
+
+**3. Section 13 does not do what its title says.**
+The heading is `### 13. Remove Empty Regions`, but the `[BAD]` example includes a region that
+is *not* empty, and the `[GOOD]` fix is captioned "Just remove regions entirely":
+
+```csharp
+#region Properties
+public string Name { get; set; }     // not an empty region
+#endregion
+```
+
+Removing all `#region` markers is a defensible house style, but it is a different, broader
+change than "remove empty regions" — and it is the kind of edit a developer will be surprised
+by in a diff. The title and the rule need to agree.
+
+**4. No `## Workflow` and no `## Output` section — unlike its sibling.**
+`OpX-csharp-expert` ends with a Workflow (read finding → find file → apply fix → run tests →
+pass/fail branch), an `After Each Fix` regression-test step, and a fixed `CODE VIOLATIONS
+FIXED` report template. The janitor has none of the three. It has a `Run Tests` handoff but no
+instruction to use it, no completion report, and no definition of done. Two sibling
+specialists with the same frontmatter and opposite levels of procedural rigour.
+
+**5. `Select-String` invoked inside a ` ```bash ` fence** — the same bash/PowerShell confusion
+found in `OpX-csharp-expert`:
+
+```bash
+dotnet build --no-incremental 2>&1 | Select-String "IDE0005"
+```
+
+## Transcription uncertainties (agent `OpX-csharp-janitor`)
+
+- Line alignment was spot-verified against the source at 18 anchors — 33, 37, 41, 43, 60, 67,
+  80, 99, 118, 135, 158, 176, 188, 213, 224, 236, 262, 275 — all matching. Content ends at
+  275; the editor shows blank lines through 277.
+- **The exact indentation on source lines 16, 18 and 20 is approximate.** Column positions
+  were read from glyph offsets in the photo, so the reproduced space counts may be off by a
+  character or two. What is *not* approximate is that those three lines are misaligned
+  relative to their siblings and that the editor reports exactly three errors — the count
+  matches the three anomalies one-for-one.
+- No mojibake anywhere in this file; nothing was placeholder-substituted.
+- The file was open with unsaved changes (dot on the tab) when photographed, so it may differ
+  from the committed version in the kit repo.
 
 ## Structural facts added by agent `OpX-csharp-expert`
 
