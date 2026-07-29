@@ -1,7 +1,8 @@
 # `.github/instructions/AppMod-Artifact-Contract.json` — PARTIAL transcription
 
-**Status:** lines 1–291 read from 5 photos. File continues past 291 (step 19's
-`producedOutputs` array is still open). Steps 20–24 not yet photographed.
+**Status:** VERTICALLY COMPLETE — lines 1–345 read from 6 photos. The file ends
+at source line 345 (`}`), with the editor showing blanks to 347. All 24 steps are
+captured. Still **horizontally** truncated: see the caveat below.
 
 ## Transcription caveat — READ THIS BEFORE TRUSTING THE BODY
 
@@ -27,7 +28,7 @@ with `fusion-decisions.schema.json`, `migration-plan.json` with
 `fusion-migration-plan.schema.json`). Every such pairing was self-consistent, so
 confidence is high, but it is a reconstruction, not a direct read.
 
-## Body (lines 1–291)
+## Body (lines 1–345)
 
 ```json
 {
@@ -320,6 +321,61 @@ confidence is high, but it is a reconstruction, not a direct read.
       ],
       "producedOutputs": [
         { "path": ".modernization/ignition-artifacts/reviews/final-fusion-restructure-review.json", "producer": "dev-agent", "noQaSafe": true, "consumedBySteps": [20], "note": "Final restructure review proof." }
+      ]
+    },
+    {
+      "step": 20,
+      "readableName": "Final Verification",
+      "requiredInputs": [
+        { "path": ".modernization/ignition-artifacts/modernize/fusion-restructure/decisions.json", "gate": "hardStop", "selfHeal": "Re-run Step 5.", "note": "Decisions." },
+        { "path": ".modernization/ignition-artifacts/reviews/final-fusion-restructure-review.json", "gate": "hardStop", "selfHeal": "Re-run Step 19.", "note": "Step 19 review proof." }
+      ],
+      "producedOutputs": []
+    },
+    {
+      "step": 21,
+      "readableName": "Figma Review",
+      "requiredInputs": [
+        { "path": ".modernization/ignition-artifacts/modernize/fusion-restructure/decisions.json", "gate": "hardStop", "selfHeal": "Re-run Step 5.", "note": "Resolves browserSurfaceApplicability." }
+      ],
+      "producedOutputs": [
+        { "path": ".modernization/ignition-artifacts/reviews/figma-review.json", "producer": "dev-agent", "noQaSafe": true, "consumedBySteps": [22], "note": "Visual review proof, or lightweight not-applicable proof."[CUT]
+      ]
+    },
+    {
+      "step": 22,
+      "readableName": "Final Acceptance-Criteria Review",
+      "requiredInputs": [
+        { "path": ".modernization/ignition-artifacts/discovery/review-manifest.json", "gate": "hardStop", "selfHeal": "powershell -NoProfile -ExecutionPolicy Bypass -File .github/scripts/P1-Discovery/generate-manifes[CUT]
+        { "path": ".modernization/ignition-artifacts/discovery/baseline-review.json", "gate": "hardStop", "selfHeal": "Re-run Step 4.", "note": "Baseline to compare against." }
+      ],
+      "producedOutputs": [
+        { "path": ".modernization/ignition-artifacts/reviews/final-review.json", "producer": "dev-agent", "noQaSafe": true, "consumedBySteps": [23], "note": "Final acceptance review." },
+        { "path": ".modernization/portal/data/json/FINAL-COMPLIANCE-REPORT.json", "producer": "dev-agent", "noQaSafe": true, "consumedBySteps": [23], "note": "Final gate compliance artifact." }
+      ]
+    },
+    {
+      "step": 23,
+      "readableName": "Final Readiness Review",
+      "requiredInputs": [
+        { "path": ".modernization/ignition-artifacts/reviews/final-review.json", "gate": "hardStop", "selfHeal": "Re-run Step 22.", "note": "Step 22 final acceptance artifact." }
+      ],
+      "producedOutputs": [
+        { "path": ".modernization/ignition-artifacts/reviews/deployment-readiness-review.json", "producer": "dev-agent", "noQaSafe": true, "consumedBySteps": [24], "note": "Durable deployment-readiness artifact." }
+      ]
+    },
+    {
+      "step": 24,
+      "readableName": "Technical Review",
+      "requiredInputs": [
+        { "path": ".modernization/portal/data/json/step-response-ledger.json", "gate": "hardStop", "selfHeal": null, "note": "Evidence ledger to audit." }
+      ],
+      "producedOutputs": [
+        { "path": ".modernization/portal/data/json/review-evidence-defects.json", "producer": "dev-agent", "noQaSafe": true, "consumedBySteps": [], "note": "Review-time defect log." }
+      ]
+    }
+  ]
+}
 ```
 
 ## Line-number anchors verified against the photos
@@ -346,7 +402,13 @@ confidence is high, but it is a reconstruction, not a direct read.
 | 258 | `"step": 17,` |
 | 269 | `"step": 18,` |
 | 282 | `"step": 19,` |
-| 291 | last line read (final `producedOutputs` entry of step 19) |
+| 294 | `"step": 20,` |
+| 303 | `"step": 21,` |
+| 313 | `"step": 22,` |
+| 325 | `"step": 23,` |
+| 335 | `"step": 24,` |
+| 344 | `]` (closes `steps`) |
+| 345 | `}` (last line of file) |
 
 ## Uncertain / reconstructed reads
 

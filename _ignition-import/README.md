@@ -39,7 +39,9 @@ references, not values).
 
 | File | Role | Status |
 |---|---|---|
-| `instructions/AppMod-Artifact-Contract.json` | **Ignition-native** — the per-step artifact input/output contract that drives the shared verifier | **PARTIAL** — see `_wip/AppMod-Artifact-Contract-partial.md`; lines 1-291 of an unknown total, and long lines are cut off at the right screen edge (word wrap was off) |
+| `instructions/AppMod-Process.instructions.md` | **Ignition-native** — the human-readable 3-phase / 24-step authority; the narrative counterpart to the artifact contract | transcribed from 6 photos — complete (source lines 1-265, blank to 266); 29 line numbers spot-verified |
+| `instructions/appmod-phase-agent-contract.instructions.md` | **Ignition-native** — shared critical rules + chat contract for the three numbered phase coordinators | transcribed from 4 photos — complete (source lines 1-174 plus 3 trailing blanks, blank to 178); 16 line numbers spot-verified |
+| `instructions/AppMod-Artifact-Contract.json` | **Ignition-native** — the per-step artifact input/output contract that drives the shared verifier | **PARTIAL** — see `_wip/AppMod-Artifact-Contract-partial.md`; vertically complete (lines 1-345, all 24 steps) but long lines are still cut off at the right screen edge (word wrap was off) |
 | `instructions/angular.instructions.md` | **Ignition-native** — Angular coding standards, auto-applied by glob | transcribed from 2 photos — complete (source lines 1-67, blank to 68); 9 line numbers spot-verified |
 | `instructions/appmod-agent-personality-baseline.instructions.md` | **Ignition-native** — shared coordinator execution baseline for the four AppMod coordinator agents | transcribed from 2 photos — complete (source lines 1-71, blank to 72); 12 line numbers spot-verified |
 | `instructions/agent-toolkit-protection.instructions.md` | **Ignition-native** — the single source of truth for toolkit-edit boundaries; contains the Definitive Agent List | transcribed from 2 photos — complete (source lines 1-84, blank to 86); 23 line numbers spot-verified |
@@ -307,6 +309,326 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
 
+## ⚠ PARTIAL CORRECTION to the artifact-root finding below
+
+The section immediately below says the artifact-root fork is decided. That
+remains true **for the fusion-restructure root**, which was the fork in
+question. But `AppMod-Process.instructions.md` has since surfaced a *second,
+separate* root fork that the artifact contract does not share — so "the root
+question is settled" would be too strong a reading. Details in the
+`AppMod-Process` findings section below (`generated/` artifacts).
+
+---
+
+## ⚠ NEW FINDING: the two authorities disagree about what Step 20 produces
+
+The kit names two authorities and says they must stay aligned:
+
+- `AppMod-Artifact-Contract.json` — machine-readable, drives the verifier
+- `AppMod-Process.instructions.md` — "the durable human-readable authority"
+
+They contradict each other on Step 20 ("Final Verification"):
+
+| Source | Says |
+|---|---|
+| Artifact contract, step 20 | `"producedOutputs": []` |
+| Process file, Review Exit Criteria | *"Step 20 final verification evidence **exists** for build, suites, runtime, and control-point alignment."* |
+| Process file, Review Entry Discipline | Steps 21, 22, 23 all *"require current Step 20 final verification evidence"* |
+
+So three downstream steps are told to require an artifact that the verifier
+contract says is never produced. There is no path for the verifier to check it,
+and no `selfHeal` string can regenerate a file no step owns. Under a strict
+reading, Steps 21-23 can never satisfy their own stated entry discipline.
+
+This is the second empty-output step (step 16 is the other), but it is worse
+than step 16: step 16 at least has no downstream consumer asserting the artifact
+exists. Recommended fix: give step 20 a concrete `producedOutputs` entry —
+`.modernization/ignition-artifacts/reviews/final-verification.json` would match
+the naming of every other Review-phase output.
+
+---
+
+## ✅ The cleanest single-file proof of the +2 drift yet
+
+`appmod-phase-agent-contract.instructions.md` contradicts itself **within 24
+lines**, and the contradiction is exactly +2 in both directions.
+
+Line 39 (Shared Critical Rule 22):
+
+> Every numbered-step response in **Phase 2 (Step 9 through Step 20)** must
+> include concrete counts and percentages … Discovery steps
+> (**Step 5 through Step 8**) must populate the underlying totals.
+
+Lines 45-47 (Shared Phase Discipline), in the same file:
+
+> **Discovery (Steps 1 through 6)** … **Modernize (Steps 7 through 18)** …
+> **Review (Steps 19 through 24)**
+
+Apply −2 to rule 22 and it lands exactly on the Phase Discipline block:
+9→7, 20→18, 5→3, 8→6. Both ranges in one sentence, both stale, both by the same
+offset, in a file whose *own next section* has the corrected numbers. This is
+the tightest evidence in the whole import that the renumber was done per-line
+and this line was missed.
+
+`AppMod-Process.instructions.md` has one of the same class, though only the
+start of the range drifted. Line 54:
+
+> Re-architect the browser surface into `src/` using the Fusion starter
+> standards (**Steps 8 through 13**).
+
+Re-architecting the browser surface is Steps 10-13; Steps 8-9 are backend
+formation and hardening, per this file's own Phase 2 table 70 lines later. The
+end of the range (13) was updated and the start (8) was not — a half-applied
+edit rather than a clean +2, which is if anything more dangerous, because the
+range still looks plausible.
+
+**Linter rule this justifies:** any prose range of the form "Steps N through M"
+must be checked against the phase map in `AppMod-Process.instructions.md`, not
+just against a global +2 rule. Neither of these two would be caught by a
+uniform-offset check.
+
+---
+
+## Structural facts added by `AppMod-Process.instructions.md`
+
+265 lines. Frontmatter is `name` + `description` only — **no `applyTo`**, so
+unlike every other instruction file transcribed, this one does not auto-attach
+to anything. It is referenced by name instead (five times across the two files
+transcribed today). Worth knowing: an agent only reads this if something tells
+it to.
+
+It opens by stating its own job in a way no other file does:
+
+> Use this file to answer these questions before acting: 1. Which phase is
+> active … 5. What is the next numbered step when the current step succeeds?
+> If the current request conflicts with this sequence, surface the conflict
+> instead of inventing a new path.
+
+**Full step table, all 24 steps, with QA workflow mapping.** Discovery steps 1-5
+all map to QA prompt `None`; Steps 7-24 each map to a `[WORKFLOW] <step name>`
+QA workflow named after the step. Step 6 is the exception — it is the *Required
+Discovery Companion Gate*, has no standalone QA handoff, and instead reuses
+`[WORKFLOW] Modernization Solution Design` then
+`[WORKFLOW] Modern Build Planned QA Tests` inside itself.
+
+**The legacy-parity contract, stated in full for the first time.** Section
+`### Frontend Parity Gate (before Step 14)` defines three named roll-ups that no
+previously transcribed file names:
+
+- `fieldParity` — every legacy grid column/field rendered (**no column
+  collapse**) and every filter/action control wired to a real handler (**no
+  inert stubbed-handler control**)
+- `filterEffectParity` — every filter actually changes the visible row set; *"a
+  filter that returns identical rows before and after is a dead filter, not a
+  working one"*
+- `siblingListDistinctnessOverall` — routes with multiple sibling list sections
+  must return distinct data per section; identical rows across tabs indicates a
+  wrong discriminator
+
+Ownership is split precisely: Step 13 **owns** visual parity and only
+**confirms** field parity, whose content work belongs to Step 11 (control/column
+presence) and Step 12 (live data). A `fieldParity` failure surfaced at 13 is
+explicitly *"a Step 11/12 regression to fix at its source, not new Step 13
+work."* That is the clearest ownership statement in the kit.
+
+**The answer-key principle** (line 59) is the strongest anti-drift rule in the
+kit and deserves to survive the port to Squad verbatim:
+
+> the visual-parity reference is always the **legacy application in
+> `LegacyCode/`** plus the extracted legacy visual contract, never a finished
+> modern reference … so "the modern app does not resemble the legacy app" is a
+> gate failure, not an accepted default.
+
+**Other new facts:**
+
+- `LegacyCode/` is immutable after Step 1, with exactly one allowed exception:
+  `LegacyCode/<LegacyTestProject>/Characterization/Baseline`.
+- Step 7 backend uplift happens in a separate mutable workspace named
+  `LegacyCode_NETXX_Upgrade`, where `XX` is *"the approved highest **even** .NET
+  major version"* — the even-major policy, previously seen only in prompt 02,
+  restated here.
+- Step 7 declares a topology mode: `RunnableRuntime` or `ConstrainedLegacyHost`
+  (for a legacy System.Web host that cannot run net10 in-place). Constrained
+  topology is an explicitly valid completion path. This is new — no transcribed
+  prompt mentions it.
+- Step 24's issue disposition ledger uses exactly four verdicts: `Resolved`,
+  `Deferred`, `Blocked`, `AcceptedRisk`.
+- Required Evidence Pack lists 11 `reports/*` deliverables, eight of which
+  (`Manifest-Coverage-Report`, `Current-State-Classification-Report`,
+  `Enterprise-Target-State-Report`, `App-Target-Delta-Report`,
+  `Modernization-Distance-Assessment`, `Lane-Recommendation-Report`,
+  `Gap-and-Exception-Register`, `Leadership-Summary`) appear **nowhere** in the
+  artifact contract and are produced by no numbered step in it.
+
+---
+
+## ⚠ Findings in `AppMod-Process.instructions.md`
+
+**1. A second artifact-root fork, on the `generated/` family.** Three paths here
+disagree with the artifact contract:
+
+| Artifact | Process file says | Artifact contract says |
+|---|---|---|
+| `testing-ownership-matrix.generated.json` | `.modernization/artifacts/generated/` (line 88) | `.modernization/ignition-artifacts/discovery/` |
+| `frontend-parity-status.generated.json` | `.modernization/ignition-artifacts/generated/` (line 241) | `.modernization/portal/data/json/` |
+| `parity-report.generated.json` | `.modernization/ignition-artifacts/generated/` (line 240) | not present anywhere |
+
+Note the first row is a *different root prefix entirely* —
+`.modernization/artifacts/` with no `ignition-` — which appears exactly once in
+everything transcribed and is in neither the contract nor
+`agent-toolkit-protection`'s allowed write zone. Three different opinions about
+where generated parity artifacts live is worse than the fusion-restructure fork
+was, because these are the files the visual/field parity gates read.
+
+**2. Eleven `reports/*` deliverables with no producer.** The Required Evidence
+Pack demands them "at minimum" when the flow completes, but no step in the
+artifact contract produces them and the verifier therefore cannot check them.
+Either the list is aspirational (and should say so) or the contract is missing
+eleven outputs. For a hackathon this reads as a checklist teams will be judged
+against and cannot satisfy.
+
+**3. `characterization-test-planning.json` resolved — in the process file's
+favor.** Line 88 puts it at `.modernization/portal/data/json/`. That settles the
+one genuinely ambiguous read in the artifact contract photos.
+
+**4. No `applyTo`.** Nothing auto-loads this file. Given it is called "the
+durable human-readable authority" and is named as the phase authority by the
+phase-agent contract, relying on prose cross-references to get it into context
+is fragile. Adding `applyTo` (or having the phase agents load it explicitly)
+would be cheap insurance.
+
+---
+
+## Structural facts added by `appmod-phase-agent-contract.instructions.md`
+
+174 content lines plus 3 trailing blanks. Binds **three** agents by name:
+`OpX-AppMod-P1-Discovery`, `-P2-Modernize`, `-P3-Review`. Note the contrast with
+`appmod-agent-personality-baseline`, which binds those same three **plus**
+`Ultimate-AppMod-Ignition`.
+
+**The precedence chain is now explicit and three deep.** Line 13:
+
+> When this contract and
+> `/.github/instructions/appmod-agent-personality-baseline.instructions.md` both
+> apply to a phase agent, **this contract wins** for chat shape, QA routing,
+> numbered-step execution behavior, and state persistence rules.
+
+Combined with the baseline's own "narrower instruction wins" rule, the resolved
+order for a phase agent is: phase-agent-contract > personality-baseline >
+agent-process-conformance's shared contract.
+
+**The Evidence Contract (rule 20) is the best thing in the kit.** It is a
+genuine anti-hallucination clause with a closed list of accepted proofs:
+
+> (a) the file path plus the exact line range that proves the change; (b) the
+> exact command and its actual exit code from the most recent run; (c) the
+> artifact path plus its current `lastUpdatedUtc` or file mtime; (d) the
+> screenshot path that was actually produced.
+
+…and a closed list of forbidden phrases without evidence: *"I verified", "I
+tested", "I ran", "I confirmed", "should now work", "is complete", "is wired",
+"is fully covered"*. When proof cannot be produced the agent must state
+`UnverifiedClaim` and stop the substep. Rule 21 adds a mandatory re-read
+self-check before any step may report `Completed`. **Port these to Squad
+verbatim.** They are directly on point for the drift risk that motivated this
+whole exercise.
+
+**Rule 15 is the counterweight** and is equally worth keeping: an explicit
+invocation ("run Step 5", "rerun Step 12") means *full fresh execution* — never
+a "validation-only reconciliation" — because *"the user may have added new code,
+changed the environment, or be deliberately hunting for what you missed."*
+
+**Required Chat Shape** — six mandatory sections in fixed order: `Step Status`,
+`Modernization Added`, `Modernization Progress`, `Returned Data`, `QA Summary`,
+`Step Execution State`; plus three optional: `Evidence Links`,
+`Change Summary Needed`, `Reply Shortcut`.
+
+**Modernization Progress Metric** — 13 named counters (`backend.movedFiles`,
+`backend.endpointsHardened`, `frontend.routesMigrated`,
+`frontend.componentsClassified`, `frontend.componentsMigrated`,
+`frontend.subPatternsClosed`, `frontend.screenshotsCaptured`,
+`frontend.fusionPrimitiveCoverage`, `tests.pomCoverage`,
+`tests.gherkinCoverage`, `tests.ariaCoverage`, `tests.testIdCoverage`,
+`tests.backendUnitCoveragePercent`) plus three rollups, all in
+`done / remaining / total (percent%)` form, persisted under
+`modernizationProgress` in `step-workflow-state.json`.
+
+**New script and artifact:** `.github/scripts/shared/Invoke-StepReconciliation.ps1 -Step <N>`,
+which regenerates `.modernization/.readme/.StepSummary.md` from saved state.
+
+**The Quality Portal is manual-only, emphatically.** No numbered step, helper
+lane, agent, or QA workflow may auto-run `qa-refresh-portal.ps1` *"regardless of
+the OPX_ENABLE_QA_PORTAL_REFRESH shell flag"* — a documented environment flag
+that the rule explicitly overrides.
+
+---
+
+## ⚠ Findings in `appmod-phase-agent-contract.instructions.md`
+
+**1. `tests.gherkinCoverage` re-opens the `.feature`-file conflict.** Rule 22's
+metric list requires counting *"user-facing features with a feature file vs
+total features."* That is a `.feature` file by any reading, and it is now a
+**mandatory reported metric on every Phase 2 step response**. The earlier
+finding recorded that only prompt 24 wanted `.feature` files, that Steps 12/17
+forbid them, and that the canonical test workspace has no `features/` directory.
+That resolution needs revisiting: this file makes Gherkin coverage a standing
+obligation, not a one-prompt quirk. Either the metric should be redefined
+against Gherkin-style headers inside ordinary test files (matching
+`appmod-testing-and-gates`), or the kit needs to decide it really does want
+`.feature` files and fix Steps 12/17.
+
+**2. `Ultimate-AppMod-Ignition` is outside this contract.** The three phase
+agents get the Evidence Contract, the self-check rule, and the Required Chat
+Shape. The top-level coordinator does not. Combined with the earlier finding
+that `Ultimate-Ignition-edit` is outside the personality baseline, the pattern
+is consistent and backwards: **the two most privileged agents in the kit carry
+the least behavioral scaffolding.**
+
+**3. Rule 22's Phase 2 range is stale (+2).** See the drift section above.
+
+**4. Rule 1 forbids creating scripts; the kit references scripts that may not
+exist.** *"Do not create new scripts. All scripts already exist in
+`.github/scripts/`."* Combined with rule 12 ("do not invent … return `Blocked`"),
+an agent that hits a missing script has exactly one legal move: block. That is
+correct behavior, but it means every referenced script path is a potential hard
+stop. The scripts named across today's files —
+`Invoke-StepReconciliation.ps1`, `Invoke-StepRestorePoint.ps1`,
+`backup-src-and-legacy-baseline.ps1`, `restore-src-and-legacy-baseline.ps1`,
+`verify-step-artifacts.ps1`, `generate-manifest.ps1`, `generate-ui-api-map.ps1`,
+`qa-refresh-portal.ps1` — should be existence-checked before the hackathon.
+This is a cheap, high-value pre-flight script.
+
+**5. Markdown structure defects.** Missing blank line before three headings
+(`## Shared Chat Contract` at 52, `### Required Chat Shape` at 139,
+`### Quality Portal Rule` at 160) and a double blank at 167-168. Some Markdown
+renderers will fold those headings into the preceding list. Cosmetic, but this
+file is meant to be read by both agents and humans.
+
+**6. A blank line splits the numbered Shared Critical Rules list** (line 36,
+between rule 19 and rule 20). Most Markdown renderers restart or break the
+ordered list there, so rules 20-22 may render as a new list starting at 1.
+
+---
+
+## ⚠ `AppMod-Step-Contract.json` is now the highest-value un-transcribed file
+
+It is named as **the routing authority** five times across the two files
+transcribed today, and it is the only stated source for:
+
+- the exact step-to-workflow mapping
+- the machine-checkable **Discovery-to-Modernize gate between Steps 6 and 7**
+- the `InLoopCheckpoint` step classification that decides when QA runs inside
+  the step loop versus after it
+
+Nothing transcribed so far contains any of that. It has now overtaken
+`constitution.md` on my list — `constitution.md` is an unknown quantity, whereas
+this file is a known, load-bearing dependency of the agents' routing behavior.
+
+Second priority alongside it: `qa-portal-reporting.instructions.md`, named as
+*"the canonical rule"* for portal reporting.
+
+---
+
 ## ✅ RESOLVED: the artifact-root fork — `AppMod-Artifact-Contract.json` uses the long form, exclusively
 
 This was the largest open inconsistency in the kit, and the contract settles it.
@@ -476,8 +798,8 @@ Note `conditional` is **declared but unused** in steps 1-19 — same status as
   **Mode Verify blocks with exit code 2** when no baseline exists. Exit code 2
   matches the Squad gate convention (`RESULT: BLOCKED` = exit 2).
 
-**The 9 steps carrying `"restorePoint": { "required": true, "invariant": "A" }`:**
-8, 9, 11, 12, 13, 15, 16, 18 — and *not* 7, 10, 14, 17. Steps 1-6 and 19 have none.
+**The 8 steps carrying `"restorePoint": { "required": true, "invariant": "A" }`:**
+8, 9, 11, 12, 13, 15, 16, 18 — and *not* 7, 10, 14, 17. Steps 1-6 and 19-24 have none.
 
 **Canonical step names 1-19, straight from `readableName`:**
 
@@ -857,6 +1179,32 @@ and no stale maintainer notes. Against the eleven transcribed agents:
 `OpX-Fusion-Reviewer` (no handoffs, so no next-step contract), and
 `OpX-csharp-janitor` (three YAML errors) would all fail. **Running this file's own seven checks
 across `.github/agents/` is a concrete, cheap pre-hackathon task.**
+
+## Transcription uncertainties (`AppMod-Process.instructions.md`, `appmod-phase-agent-contract.instructions.md`, `AppMod-Artifact-Contract.json` part 2)
+
+**`AppMod-Process.instructions.md`** — none of substance. Word wrap was on for
+all six photos, so nothing was lost off the right edge. 29 heading line numbers
+were spot-verified and the file closes at 265. One reconstructed pairing: in the
+Required Evidence Pack, the qualifiers *"when `browserSurfaceApplicability` is
+`Required`"* and *"(the Step 13 visual-parity gate output)"* appeared one visual
+row below their bullets because of camera keystone; they are recorded on lines
+241 and 242 respectively, which is the only semantically coherent assignment (a
+`Legacy-System-Analysis-Report` does not gate on browser applicability).
+
+**`appmod-phase-agent-contract.instructions.md`** — none of substance. 16
+anchors verified, content closes at 174 with three trailing blank lines (the
+editor shows 178). The missing blank lines before headings at 52/139/160 and the
+double blank at 167-168 are **faithful to the source**, not transcription slips
+— the line-number arithmetic only closes at 174 if they are reproduced exactly.
+Same for the blank line at 36 that splits the numbered rules list.
+
+**`AppMod-Artifact-Contract.json`** — the vertical gap is closed (1-345, all 24
+steps) but **the horizontal truncation is unchanged**. The last photo was shot
+the same way as the first five, with word wrap off, so roughly 30 entries still
+end in `[CUT]`. The `Alt+Z` re-shoot request stands; it is the only way to
+recover the missing `consumedBySteps` and `note` tails. Steps 20-24 happen to be
+mostly short lines, so the newly-captured range is largely intact — the losses
+are concentrated in steps 3-14.
 
 ## Transcription uncertainties (`angular.instructions.md`, `appmod-agent-personality-baseline.instructions.md`, `AppMod-Artifact-Contract.json`)
 
