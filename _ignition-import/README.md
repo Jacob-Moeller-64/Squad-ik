@@ -49,6 +49,7 @@ references, not values).
 | `agents/OpX-Fusion-Reviewer.agent.md` | Fusion restructure reviewer (Step 19 lane) | transcribed from 2 photos — complete (source lines 1-90, blank to 92); 16 heading line numbers spot-verified |
 | `agents/OpX-fusion-ui-component-upgrade.agent.md` | Fusion UI slice executor (Steps 15-16 lane) | transcribed from 1 photo — complete (source lines 1-57, blank to 59); 12 heading line numbers spot-verified |
 | `agents/Ultimate-AppMod-Ignition.agent.md` | Top-level modernization orchestrator | transcribed from 2 photos — complete (source lines 1-95, blank to 96); 21 heading line numbers spot-verified |
+| `agents/Ultimate-Ignition-edit.agent.md` | Kit-maintenance agent (edits the toolkit itself) | transcribed from 2 photos — complete (source lines 1-93, blank to 94); 26 heading line numbers spot-verified. **Frontmatter is byte-identical to `Ultimate-AppMod-Ignition` except the `name:` line — see findings** |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -155,6 +156,115 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by agent `Ultimate-Ignition-edit`
+
+The kit-maintenance agent — the only identity permitted to modify toolkit files, named as the
+escalation target by `OpX-AppMod-P1-Discovery`. 93 lines.
+
+- **Its Primary Role is the inverse of every other agent's**: "making changes directly to the
+  Ignition Kit itself — prompts, agents, scripts, instructions, skills, and modernization
+  guidance files under `.github/` and `.modernization/`." Every other agent is forbidden from
+  exactly this.
+- **A two-tier reference-loading contract.** *Always load*:
+  `.github/instructions/kit-update.instructions.md` (kit structure, reusable asset boundaries,
+  naming, validation) and `.github/skills/ignition-kit-maintenance/SKILL.md`. *Load on demand*,
+  four more, each gated on what the user asked for.
+- **Keyword-triggered lazy loading**, spelled out with the literal trigger phrases:
+  | Reference | Triggers |
+  |---|---|
+  | AppMod-Process | "edit step", "change workflow", "update 24-step", "new phase", "routing" |
+  | Architecture-Structure | "restructure", "formation", "move to src", "LegacyCode-to-src" |
+  | PowerShell-Maintenance | ".ps1", "script", "powershell" |
+  | Branch-Integration | "sync", "merge", "branch", "integrate", "propagate" |
+
+  With the rationale stated: "This prevents unnecessary context loading when the task doesn't
+  actually require those domains." This is the most token-conscious design in the kit and the
+  pattern worth copying elsewhere.
+- **"update 24-step"** as a literal trigger phrase confirms 24 is the current, intended step
+  count.
+- **A Branch Sync Policy**: syncing a non-main validation branch into `main` or `main-dev`
+  defaults to **toolkit-only integration**, excluding `LegacyCode/**`, `src/**`, and
+  local-only runtime or generated folders under `/.modernization/**`. So the kit is developed
+  on validation branches against a real app and only the toolkit is merged back — which is
+  exactly the workflow this transcription effort is reconstructing.
+- **Three more instruction files**: `kit-update.instructions.md`,
+  `AppMod-Process.instructions.md`, `powershell-script-maintenance.instructions.md`. **Two
+  more skill surfaces**: `ignition-kit-maintenance/SKILL.md` and its
+  `references/branch-integration-policy.md`.
+
+## ⚠ Findings in `Ultimate-Ignition-edit.agent.md`
+
+**1. HIGHEST RISK FOR THE HACKATHON — this agent is indistinguishable from the orchestrator in
+an agent picker.**
+
+Lines 1-32 of `Ultimate-Ignition-edit.agent.md` and `Ultimate-AppMod-Ignition.agent.md` are
+**byte-identical except for the `name:` line** (verified by diff). Both declare:
+
+```
+description: Ultimate agent for application modernization using the DE App Mod process with Fusion
+argument-hint: Outline the goal or problem to research
+```
+
+…and the same 26 tools, including `edit`, `web/fetch`, `vscode/installExtension`, and
+`vscode/newWorkspace`.
+
+The kit-maintenance agent's description was copied from the orchestrator and never updated. It
+describes a job this agent does not do. In any UI that lists agents by name + description, a
+developer sees two entries whose descriptions are identical, one of which **rewrites the
+toolkit itself**. The body (line 36) is correct — but by then the agent has already been
+selected.
+
+For a hackathon with 40 participants sharing one kit, this is the defect most likely to cause
+real damage: a participant picks `Ultimate-Ignition-edit` expecting to modernize their app,
+and instead gets an agent whose stated primary job is editing `.github/`. Every other agent in
+the kit has a Write Boundary specifically to prevent that; this one is the exception, and its
+description hides it. **A one-line description fix removes the entire risk class.**
+
+**2. The kit violates its own maintenance contract — in three places, all already documented
+above.**
+
+> **Consistency Rule**: Any change to modernization processes, steps, agents, prompts, or file
+> structure **must be propagated across all files** … Remove all stale references to old
+> processes, retired steps, or former file locations … **every file in the repo must stay
+> consistent**.
+> **Consistency Enforcement**: If a file path was renamed, update all references and delete the
+> old location (**no redirect shims**).
+
+Against that standard, the kit currently contains:
+
+| Violation | Evidence |
+|---|---|
+| Stale references to retired steps | The +2 drift in prompts 12-16, 19-21, `OpX-AppMod-P2-Modernize` line 113, and `OpX-Frontend-Angular-Transform`'s entire Core Rules block |
+| A retired file not deleted | `OpX-Frontend-Angular-Transform.agent.md`, archived but still installed in `.github/agents/` |
+| A redirect shim | `step9UpgradeWorkspaceRoot` as fallback for `step7UpgradeWorkspaceRoot`, four times in `OpX-dotnet-upgrade` |
+
+This is useful rather than merely ironic: **the kit already contains the written standard the
+cleanup should be measured against.** The fix list does not need to be invented — it needs to
+be enforced. Note the redirect-shim rule and the `step9` fallback are in genuine conflict, so
+that one needs a human decision (keep the shim and amend the rule, or drop the shim and
+migrate the artifacts).
+
+**3. The Consistency Rule and Consistency Enforcement disagree about scope.**
+Line 58 says changes must propagate across `.github/` and `.modernization/`. Line 80 says to
+verify propagation across `.github/` and `.modernization/OpXUtil/**`. The second is a strict
+subset of the first, in the same file, describing the same obligation.
+
+**4. A seventh frontmatter variant** — no opening `---`, `argument-hint` present, no
+`handoffs`, no `agents`. Identical in shape to `Ultimate-AppMod-Ignition`, which is the point
+of finding 1.
+
+## Transcription uncertainties (agent `Ultimate-Ignition-edit`)
+
+- Line alignment verified at 26 anchors — 30, 32, 34, 36, 38, 40, 42, 44, 47, 49, 54, 56, 58,
+  60, 62, 64, 66, 70, 72, 74, 76, 78, 84, 86, 88, 93 — all matching. Content ends at 93; the
+  editor shows line 94 blank.
+- **Source line 31 is blank before the closing `---` at line 32**, matching
+  `Ultimate-AppMod-Ignition` exactly.
+- Lines 36-37, 58-59 and 64-65 wrap in the editor; reconstructed from wrap positions.
+- The frontmatter was verified against `Ultimate-AppMod-Ignition` by direct diff rather than by
+  eye; the two are identical on lines 2-32.
+- No mojibake anywhere in this file.
 
 ## Structural facts added by agent `Ultimate-AppMod-Ignition`
 
