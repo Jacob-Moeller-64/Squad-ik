@@ -89,6 +89,7 @@ references, not values).
 
 | File | Role | Status |
 |---|---|---|
+| `contracts/schemas/README.md` | **Ignition-native** — ★★ the dialect spec, authoring rules, and the kit's own registry table for all nine contracts | transcribed from 3 photos — complete (source lines 1-148 + trailing blanks); 11 anchors verified |
 | `contracts/schemas/step-workflow-state.schema.json` | **Ignition-native** — ★ by far the richest schema (nested objects, `arrayOf`, four `required[]` levels) — **and it does NOT pin a status enum** | transcribed from 2 photos — complete (source lines 1-66); **validates as JSON** |
 | `contracts/schemas/per-route-behavior-plan.schema.json` | **Ignition-native** — ⚠ the weakest floor in the family: **no `type` key at all**, only `notEmpty` | transcribed from 1 photo — complete (source lines 1-13); **validates as JSON** |
 | `contracts/schemas/modernization-solution-design.schema.json` | **Ignition-native** — `New-ControlPlaneSkeleton` family; `required: [reportId, title]` | transcribed from 1 photo — complete (source lines 1-19); **validates as JSON** |
@@ -683,6 +684,111 @@ Headline coverage:
    implies.
 6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
    `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## ★★ The schemas README validates the analysis above — and makes the enum fix trivial
+
+`contracts/schemas/README.md` is the spec for the whole family, and it confirms
+independently almost everything derived by inspection in the sections below.
+
+**1. `enum` is a first-class key in the dialect — and the README's own example
+uses it on a `status` field.** The dialect reference lists eight keys (`type`,
+`required`, `fields`, `notEmpty`, **`enum`**, `minItems`, `arrayOf`, `rootPath`),
+and the Minimal example shows exactly the shape recommended earlier:
+
+```json
+"status": { "type": "string", "notEmpty": true, "enum": ["Ready", "Blocked"] }
+```
+
+So the status-enum fix is not a feature request — **the mechanism exists, is
+documented, and is demonstrated on a field literally named `status`.** Adding
+`"enum": [...]` to `step-workflow-state.schema.json` is a supported one-key edit.
+
+**2. Why a custom dialect at all** — a genuinely good constraint I had not seen
+stated: *"The kit must run on **Windows PowerShell 5.1**, where `Test-Json
+-Schema` is not available (it needs PowerShell 7+). Rather than add a dependency
+or require a newer shell from every developer who receives the kit, the verifier
+uses a tiny, dependency-free dialect."* Implemented in
+`.github/scripts/shared/field-contract.ps1`.
+
+**3. The gate semantics are precise**, and they matter for reading every finding
+above:
+
+| Situation | Effect |
+|---|---|
+| `hardStop` input or produced output **present but invalid** | blocks, exit code 2 |
+| `advisory` / `conditional` input present but invalid | warning, does not block |
+| contract file itself missing or corrupt | loud `SchemaError`; never silently passes, never hard-blocks |
+
+*"This is the line between 'the file exists' and 'the file is actually usable by
+the next step'."*
+
+**4. The two grounding situations are the kit's own words for the pattern derived
+above.** Section `## Floor strength: ground it, do not guess it` names exactly the
+split found by inspection — deterministic producer (ground the floor in the
+writer's guaranteed fields) versus agent-authored with no sample (stay
+conservative). It even names the same three high-fan-out artifacts:
+`decisions.json`, `migration-plan.json`, `control-point-inventory.json`.
+
+**5. The `## Current registry` table is the kit's own summary of all nine
+contracts**, and it matches the tally assembled independently in this document
+row for row. Worth reading as the authoritative version.
+
+**6. Three principles worth carrying into Squad verbatim:**
+
+> A field contract MUST pass on a **legitimately initialized** artifact.
+
+> A contract that is too strict is worse than no contract, **because it blocks
+> valid runs and trains developers to ignore the gate.**
+
+> Never invent fields that no producer emits.
+
+That middle one is the best articulation in either kit of why over-strict gates
+fail — and it reframes the conservative floors below as a deliberate anti-pattern
+defence rather than laziness.
+
+---
+
+## ⚠ SOFTENED: the "hollow gate" findings are less damning than stated — but the fix still stands
+
+Two sections below characterise `control-point-inventory.json` and
+`per-route-behavior-plan.json` as effectively unvalidated. The README supplies
+context that makes the kit's choice defensible, and one fact that materially
+changes the picture:
+
+**Schemas are only one of two layers, by design.** Section `## Shape vs. truth`:
+
+> A field contract proves an artifact is well **formed**. It cannot prove the
+> artifact is **true** against the rest of the workspace — a catalog entry can be
+> perfectly valid JSON yet name a test file that was never created. That second
+> failure mode (**hallucinated-but-believable content**) is caught by the
+> **reconciliation engine** at `Invoke-StepReconciliation.ps1`.
+
+- **Schema** = does the file have the right shape and required fields?
+- **Reconciliation** = does the file's content agree with the source tree and the
+  other artifacts?
+
+So a thin `control-point-inventory.json` is not meant to be caught by the schema;
+it is meant to be caught by reconciliation. **The honest restatement of the
+earlier finding is therefore:** those artifacts are unprotected *at the schema
+layer*, and whether they are protected at all depends on whether a reconciliation
+rule exists for them.
+
+**And here is the part that keeps the finding alive:** the README states that
+**reconciliation rules are registered per step, and the *first* rule runs at Step
+17** — the executable-testcase-catalog / test-file-exists rule. That is the only
+rule described. If Step 17 carries the first rule, then Steps 8-14 — every step
+that `hardStop`s on `control-point-inventory.json`, and Steps 11-12 which tick off
+`per-route-behavior-plan.json` — run with **neither** a meaningful schema floor
+**nor** a reconciliation rule.
+
+Revised recommendation, more precise than before: **add reconciliation rules for
+`control-point-inventory.json` and `per-route-behavior-plan.json` at their first
+consuming steps (8 and 11).** The engine, the registration pattern, and the
+developer-guiding remediation format all already exist — the Step 17 rule is the
+template. That is a better fix than tightening the schemas, and it is the one the
+kit's own architecture points to.
 
 ---
 
