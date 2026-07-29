@@ -861,16 +861,296 @@ Verify these step-specific artifacts exist:
 
 ## Issue List (10-20 items)
 
-<!-- ============================================================
-     TRANSCRIPTION GAP — source lines 864-1154 NOT YET PHOTOGRAPHED
-     Headings known to sit inside this gap, read from the VS Code
-     sticky-scroll breadcrumb in the photos of the surrounding text:
-       1008  # REPORT OUTPUT (MANDATORY)
-       1107  ## Step 2: Create Persistent Report File (MANDATORY)
-       1121  ### Report File Template
-     Everything between line 864 and line 1154 is missing, including
-     the body of "## Issue List (10-20 items)" above.
-     ============================================================ -->
+```markdown
+## Found: 15 issues
+
+| # | Sev | Cat | File:Line | Issue | Effort |
+|---|-----|-----|-----------|-------|--------|
+| 1 | P1 | Security | UserController.cs:45 | Missing [Authorize] | 2m |
+| 2 | P1 | Fusion | DataService.cs:12 | Using ILogger not IFusionLogger | 5m |
+| 3 | P1 | Async | CalcService.cs:89 | Using .Result (async anti-pattern) | 10m |
+| 4 | P1 | OCP | Program.cs | Missing health checks | 15m |
+| 5 | P2 | Angular | grid.component.ts:23 | Missing OnPush | 3m |
+| 6 | P2 | Fusion | app.module.ts | Using MatTable not Fusion grid | 30m |
+| 7 | P2 | Test | - | No Playwright tests | 60m |
+| 8 | P2 | 12-Factor | appsettings.json:8 | Hardcoded connection string | 5m |
+| 9 | P3 | Code | TransformerService.cs | 650 lines, needs split | 45m |
+| 10 | P3 | xUnit | - | Missing contract tests | 30m |
+...
+
+**Score: 72/100** <MOJIBAKE: emoji> NO-GO
+
+**Pick fixes:** "Fix #1, #2, #3" or "Fix all P1" or "Fix #1-8"
+```
+
+---
+
+## Near Perfection (< 5 issues)
+
+```markdown
+<MOJIBAKE: emoji> **Near Perfect!** Only 3 minor issues.
+
+| # | Sev | Issue |
+|---|-----|-------|
+| 1 | P4 | Typo in comment line 45 |
+| 2 | P4 | Unused import |
+| 3 | P3 | Could add more Playwright tests |
+
+**Score: 96/100** <MOJIBAKE: emoji> GO
+
+Optional polish: "Fix #1, #2" or ship as-is.
+```
+
+---
+
+## Severity Guide
+
+| Sev | Meaning | Examples |
+|-----|---------|----------|
+| P1 | Blocker | Security gaps, async anti-patterns, missing Fusion, no health checks |
+| P2 | Important | Missing tests, Fusion UI not used, Angular patterns |
+| P3 | Nice to have | Large files, more tests, refactoring |
+| P4 | Polish | Comments, formatting, minor cleanup |
+
+---
+
+## Remediation ROI Recommendation
+
+After listing issues, ALWAYS include a **"Biggest ROI Fix"** section that maps issues to the step that would fix them most efficiently:
+
+```markdown
+## <MOJIBAKE: emoji> Biggest ROI Recommendation
+
+Based on the issues found, here's where to focus for maximum impact:
+
+| Priority | Run This | Fixes Issues | Est. Time | ROI Score |
+|----------|----------|--------------|-----------|-----------|
+| 1<MOJIBAKE: emoji> | Step 9 (Backend Hardening) | #1, #4, #8 | 30m | <MOJIBAKE: emoji x5> |
+| 2<MOJIBAKE: emoji> | Step 11 (Frontend Migration) | #5, #6 | 45m | <MOJIBAKE: emoji x4> |
+| 3<MOJIBAKE: emoji> | Step 7 (Upgrade) | #3 | 15m | <MOJIBAKE: emoji x3> |
+
+**My recommendation: Run Step 9 first** - fixes 3 P1 security issues in ~30 minutes.
+```
+
+### Issue-to-Step Mapping Reference
+
+| Issue Type | Root Step | Why |
+|------------|-----------|-----|
+| **Async anti-patterns** (.Result, .Wait) | Step 7 | Upgrade lane enforces modern async |
+| **DI violations** (new HttpClient, static state) | Step 8 | Formation lane enforces DI patterns |
+| **Missing [Authorize]** | Step 9 | Hardening lane enforces security |
+| **Missing health checks** | Step 9 | Hardening lane adds OCP endpoints |
+| **No secrets in code** | Step 9 | Hardening lane externalizes config |
+| **IFusionLogger not used** | Step 9 | Hardening lane aligns Fusion packages |
+| **Missing Playwright tests** | Step 10 | Foundation creates POM/Gherkin scaffold |
+| **Missing aria-label** | Step 11 | Migration adds accessibility per component |
+| **Missing data-testid** | Step 11 | Migration adds testability per component |
+| **Angular patterns** (signals, standalone) | Step 11 | Migration enforces Angular 20+ patterns |
+| **Auth flow issues** | Step 12 | Platform integration wires auth |
+| **Shell/layout drift** | Step 13 | Shell stabilization fixes layout |
+| **Wrong UI primitives** | Step 15 | Fusion UI integration swaps components |
+| **Test coverage gaps** | Step 17 | Rewire verifies all test coverage |
+| **Dead code, TODOs** | Step 18 | Cleanup removes debris |
+| **Backend test coverage < 80%** | Step 8 | Formation creates test structure |
+
+### ROI Calculation
+
+```
+ROI Score = (P1 Issues Fixed <MOJIBAKE: emoji> 5) + (P2 Issues Fixed <MOJIBAKE: emoji> 3) + (P3 Issues Fixed <MOJIBAKE: emoji> 1)
+            ----------------------------------------------------------------
+                             Estimated Time in Minutes
+```
+
+**Always recommend the step with the highest ROI Score first.**
+
+### Example Recommendation Output
+
+If Step 24 finds:
+- 2 P1 async anti-patterns (Step 7)
+- 3 P1 missing [Authorize] (Step 9)
+- 1 P1 missing health checks (Step 9)
+- 5 P2 missing aria-labels (Step 11)
+- 3 P2 missing data-testids (Step 11)
+
+**Recommendation:**
+```
+<MOJIBAKE: emoji> Biggest ROI: Run **Step 9 Backend Hardening** first
+   - Fixes 4 P1 issues (security + health) in ~30 min
+   - ROI Score: (4<MOJIBAKE: emoji>5)/30 = 0.67
+
+Then run **Step 11 Frontend Migration** remediation pass
+   - Fixes 8 P2 accessibility issues in ~45 min
+   - ROI Score: (8<MOJIBAKE: emoji>3)/45 = 0.53
+
+Lowest priority: **Step 7 Upgrade** remediation
+   - Fixes 2 P1 async issues in ~20 min
+   - ROI Score: (2<MOJIBAKE: emoji>5)/20 = 0.50
+```
+
+---
+
+## Category Weights
+
+| Cat | Weight | Key Checks |
+|-----|--------|------------|
+| Parity | 20% | Route count, characterization tests, same behavior |
+| Functionality | 18% | No TODO, tests pass, wiring complete |
+| Fusion/Dominion | 15% | IFusionLogger, @fusion packages, 12-Factor |
+| Code Quality | 12% | No async anti-patterns, nullable, SOLID |
+| Security | 12% | [Authorize], no secrets, OWASP |
+| Testing | 10% | xUnit, Playwright, Angular tests |
+| Architecture | 5% | Clean structure, no circular deps |
+| OCP/DevOps | 5% | Health checks, pipeline, container |
+| Production | 3% | No debug code, docs, logging |
+
+---
+
+# REPORT OUTPUT (MANDATORY)
+
+## Step 1: Generate Comprehensive Chat Report
+
+After analysis, output a **full comprehensive report in chat** with these sections in order:
+
+```markdown
+# <MOJIBAKE: emoji> Technical Review Report - [AppName]
+**Generated**: [Date/Time]
+**Reviewer**: Step 24 Technical Review
+**Status**: [GO <MOJIBAKE: emoji> / NO-GO <MOJIBAKE: emoji> / CLOSE <MOJIBAKE: emoji>]
+
+---
+
+## Executive Summary
+
+| Metric | Value |
+|--------|-------|
+| **Overall Score** | [X]/100 |
+| **Decision** | [GO/NO-GO/CLOSE] |
+| **Total Issues** | [X] (P1: [X], P2: [X], P3: [X], P4: [X]) |
+| **Est. Remediation Time** | [X] hours |
+| **Biggest ROI Step** | Step [X] - [Name] |
+
+---
+
+## Category Breakdown
+
+| Category | Weight | Score | Issues | Status |
+|----------|--------|-------|--------|--------|
+| Parity | 20% | [X]/20 | [X] | [<MOJIBAKE: emoji>/<MOJIBAKE: emoji>/<MOJIBAKE: emoji>] |
+| Functionality | 18% | [X]/18 | [X] | [<MOJIBAKE: emoji>/<MOJIBAKE: emoji>/<MOJIBAKE: emoji>] |
+| Fusion/Dominion | 15% | [X]/15 | [X] | [<MOJIBAKE: emoji>/<MOJIBAKE: emoji>/<MOJIBAKE: emoji>] |
+| Code Quality | 12% | [X]/12 | [X] | [<MOJIBAKE: emoji>/<MOJIBAKE: emoji>/<MOJIBAKE: emoji>] |
+| Security | 12% | [X]/12 | [X] | [<MOJIBAKE: emoji>/<MOJIBAKE: emoji>/<MOJIBAKE: emoji>] |
+| Testing | 10% | [X]/10 | [X] | [<MOJIBAKE: emoji>/<MOJIBAKE: emoji>/<MOJIBAKE: emoji>] |
+| Architecture | 5% | [X]/5 | [X] | [<MOJIBAKE: emoji>/<MOJIBAKE: emoji>/<MOJIBAKE: emoji>] |
+| OCP/DevOps | 5% | [X]/5 | [X] | [<MOJIBAKE: emoji>/<MOJIBAKE: emoji>/<MOJIBAKE: emoji>] |
+| Production | 3% | [X]/3 | [X] | [<MOJIBAKE: emoji>/<MOJIBAKE: emoji>/<MOJIBAKE: emoji>] |
+
+---
+
+## Issue List
+
+| # | Sev | Category | File:Line | Issue | Effort | Fix Step |
+|---|-----|----------|-----------|-------|--------|----------|
+| 1 | P1 | Security | file.cs:45 | Description | 5m | Step 10 |
+| 2 | P2 | Angular | comp.ts:12 | Description | 10m | Step 12 |
+...
+
+---
+
+## <MOJIBAKE: emoji> Remediation ROI Recommendation
+
+| Priority | Run This Step | Fixes Issues | Est. Time | ROI Score |
+|----------|---------------|--------------|-----------|-----------|
+| 1<MOJIBAKE: emoji> | Step [X] ([Name]) | #1, #4, #8 | [X]m | <MOJIBAKE: emoji x5> |
+| 2<MOJIBAKE: emoji> | Step [X] ([Name]) | #2, #5 | [X]m | <MOJIBAKE: emoji x4> |
+| 3<MOJIBAKE: emoji> | Step [X] ([Name]) | #3 | [X]m | <MOJIBAKE: emoji x3> |
+
+**My recommendation**: Run **Step [X]** first because [reason].
+
+---
+
+## Accessibility Coverage
+
+| Metric | Count | Target | Status |
+|--------|-------|--------|--------|
+| Elements with `aria-label` | [X] | 100% | [<MOJIBAKE: emoji>/<MOJIBAKE: emoji>] |
+| Elements with `data-testid` | [X] | 100% | [<MOJIBAKE: emoji>/<MOJIBAKE: emoji>] |
+| Interactive elements total | [X] | - | - |
+| Coverage % | [X]% | 100% | [<MOJIBAKE: emoji>/<MOJIBAKE: emoji>] |
+
+---
+
+## Test Coverage
+
+| Suite | Files | Pass | Fail | Coverage |
+|-------|-------|------|------|----------|
+| Backend Unit | [X] | [X] | [X] | [X]% |
+| Backend Integration | [X] | [X] | [X] | [X]% |
+| Frontend Playwright | [X] | [X] | [X] | [X]% |
+| Angular Unit | [X] | [X] | [X] | [X]% |
+
+---
+
+## What's Next
+
+**If NO-GO**: Fix issues in priority order, then rerun Step 23.
+**If CLOSE**: Fix P1s only, then rerun Step 23.
+**If GO**: Proceed to Step 23/23 sign-off.
+
+---
+
+**Pick fixes**: "Fix #1, #5, #12" or "Fix all P1" or "Fix #1-8"
+```
+
+---
+
+## Step 2: Create Persistent Report File (MANDATORY)
+
+After displaying the chat report, **ALWAYS create a markdown file** at:
+
+```
+.modernization/ignition-artifacts/technical-review-report.md
+```
+
+The file MUST contain:
+1. **Full report** (same content as chat)
+2. **Raw scan data** (PowerShell output)
+3. **Timestamp** for freshness tracking
+4. **Previous run comparison** (if prior report exists)
+
+### Report File Template
+
+Create this file with exact content:
+
+```markdown
+# Technical Review Report
+
+> **Generated**: [ISO timestamp]
+> **App**: [AppName]
+> **Score**: [X]/100 [GO/NO-GO/CLOSE]
+> **Previous Score**: [X]/100 (if exists) | [<MOJIBAKE: emoji>/<MOJIBAKE: emoji>/=] [X] points
+
+---
+
+## Summary Dashboard
+
+```
++----------------------------------------------------+
+<MOJIBAKE: box-drawing>  TECHNICAL REVIEW SCORECARD                    <MOJIBAKE: box-drawing>
++----------------------------------------------------+
+<MOJIBAKE: box-drawing>  Overall Score:   [<MOJIBAKE: emoji progress bar>] [X]/100   <MOJIBAKE: box-drawing>
+<MOJIBAKE: box-drawing>  Decision:        [GO <MOJIBAKE: emoji> / NO-GO <MOJIBAKE: emoji> / CLOSE <MOJIBAKE: emoji>]   <MOJIBAKE: box-drawing>
+<MOJIBAKE: box-drawing>  Issues Found:    [X] total (P1:[X] P2:[X] P3:[X] P4:[X])   <MOJIBAKE: box-drawing>
+<MOJIBAKE: box-drawing>  Est. Fix Time:   [X] hours                      <MOJIBAKE: box-drawing>
+<MOJIBAKE: box-drawing>  Best ROI Step:   Step [X] - [Name]              <MOJIBAKE: box-drawing>
++----------------------------------------------------+
+```
+
+## Category Scores
+
+[Full category breakdown table]
+
+## All Issues (Detailed)
 
 [Full issue list with file paths, line numbers, code snippets]
 
@@ -965,4 +1245,3 @@ When user says "recheck" or runs Step 23 again:
 4. **Include raw data** - in collapsed details block
 5. **Track deltas** - compare to previous run if exists
 
-[END OF FILE — source line 1251 is the last line]

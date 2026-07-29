@@ -33,7 +33,7 @@ references, not values).
 | `prompts/21-P3-figma-review.prompt.md` | P3 Review, Step 21 | transcribed from 2 photos |
 | `prompts/22-P3-final-acceptance-criteria-review.prompt.md` | P3 Review, Step 22 | transcribed from 2 photos |
 | `prompts/23-P3-final-readiness-review.prompt.md` | P3 Review, Step 23 | transcribed from 2 photos |
-| `prompts/24-P3-technical-review.prompt.md` | P3 Review, Step 24 | transcribed from 22 photos (5 were a re-shot of an already-captured range) — **INCOMPLETE: source lines 864-1154 not yet photographed**, see gap marker in the file |
+| `prompts/24-P3-technical-review.prompt.md` | P3 Review, Step 24 | transcribed from 27 photos (5 were a re-shot of an already-captured range); complete — 16 heading line numbers spot-verified against the source |
 
 ### Agents
 
@@ -306,6 +306,24 @@ rubric** rather than a gated procedure.
 - **Recheck Mode** — a second run reads the previous report, re-scans, and reports
   Resolved / Remaining / New Issues plus an updated recommendation. No other step has a
   re-entrant mode.
+- **Issue-to-Step Mapping Reference** — a 16-row table mapping each defect class to the
+  numbered step that owns the fix, with a one-line rationale per row. This is the single
+  most useful anti-drift artifact found anywhere in the kit: it converts "here is a defect"
+  into "re-run step N", which is exactly the routing a hackathon participant needs.
+  Its step numbers are **correct** under current numbering (7, 8, 9, 10, 11, 12, 13, 15,
+  17, 18) — notably the only place in prompt 24 where they are.
+- **ROI Calculation** — an explicit prioritization formula:
+  `ROI Score = (P1 fixed × 5 + P2 fixed × 3 + P3 fixed × 1) / estimated minutes`,
+  with the rule "always recommend the step with the highest ROI Score first." Remediation
+  ordering is therefore deterministic rather than model judgement.
+- **Severity ladder P1-P4** with worked definitions (P1 Blocker: security gaps, async
+  anti-patterns, missing Fusion, no health checks → P4 Polish: comments, formatting).
+- **Two worked example outputs** — a 15-issue "72/100 NO-GO" case and a 3-issue
+  "96/100 GO" case — so the model has calibration anchors for the score, not just a rubric.
+- **Accessibility Coverage is a reported metric**, targeting **100%** of interactive
+  elements carrying both `aria-label` and `data-testid`.
+- **`**Pick fixes**` interaction contract** — the report ends by inviting a natural-language
+  fix selection ("Fix #1, #5, #12" / "Fix all P1" / "Fix #1-8").
 
 ## ⚠ Findings in prompt 24
 
@@ -331,18 +349,33 @@ unavoidable deduction at Step 24. This needs a human decision — either Step 17
 forbidding `.feature` files, or Step 24's §6 and checklist are rewritten to score
 Playwright-without-Gherkin. A linter cannot resolve it.
 
-**2. Prompt 24 refers to itself as Step 23 — twice.**
+**2. Prompt 24 refers to itself as Step 23 — five times, and one of them dates the file.**
 
 ```
+**If NO-GO**: Fix issues in priority order, then rerun Step 23.
+**If CLOSE**: Fix P1s only, then rerun Step 23.
+**If GO**: Proceed to Step 23/23 sign-off.
 *This report can be referenced before rerunning Step 23 to track progress.*
 When user says "recheck" or runs Step 23 again:
 ```
 
-This is a **-1** self-reference, a different signature from the +2 drift elsewhere, and it
-is operationally live: Recheck Mode instructs the agent to re-run "Step 23", which is
-*Final Readiness Review*, not the technical review. Combined with finding 3 below, the
-coherent reading is that this file was formerly Step 23 and was renumbered to 24 with the
-title and frontmatter updated but internal self-references left behind.
+These are **-1** self-references, a different signature from the +2 drift elsewhere, and
+they are operationally live: both the What's-Next block and Recheck Mode instruct the agent
+to re-run "Step 23", which is *Final Readiness Review* — a different prompt, a different
+agent, and a different artifact. A NO-GO verdict therefore routes the developer to the
+wrong step.
+
+**`Proceed to Step 23/23 sign-off` is the most informative line in the file.** `23/23` is
+an "N of N" progress indicator, so **the pipeline had exactly 23 steps when this prompt was
+written, and this prompt was the last of them.** That dates the file and explains the
+self-references: it was Step 23 of 23, a step was later added ahead of it, and the title
+and frontmatter were updated while every internal reference was left behind.
+
+Note this runs *opposite* to the +2 drift in the frontend block (where old numbers are
+higher than new) and to the +1 drift in this same file's Step Verification Matrix. At least
+two independent renumberings, in opposite directions, are visible — which is why the linter
+must compare against the **declared** step number of each file rather than assume a single
+global offset.
 
 **3. A second, distinct +1 drift confined to the Step Verification Matrix's Discovery rows.**
 The matrix reads `3 | Rename complete`, `4 | Legacy analysis`, `6 | Solution design` —
@@ -383,17 +416,48 @@ formation spans 7-9; Step 5 is solution design. Similar loose ranges appear as
 `Frontend Architecture (Steps 10-14)`, `OCP Cloud Checklist (Steps 18, 23)`,
 `Production Checklist (Steps 18, 20, 23)`, `xUnit Backend Checklist (Steps 7-9, 17)`.
 
+**9. Nested triple-backtick fences will truncate the report template.**
+The Report File Template opens a fence at source line 1125:
+
+```
+1125  ```markdown          <- outer fence opens
+1137  ```                  <- ASCII scorecard fence — CLOSES the outer block
+1147  ```                  <- intended to close the scorecard, actually REOPENS
+```
+
+Because both fences are three backticks, the outer ```markdown block terminates at 1137
+rather than at its intended end. Any model or renderer parsing this prompt sees the
+Summary Dashboard onward as *outside* the template. The fix is to make the outer fence
+four backticks (or use `~~~` for the inner one). This is a live parsing defect in the
+mandatory report schema, not a cosmetic issue.
+
+**10. Gherkin is required in a third independent place — and attributed to Step 10.**
+The Issue-to-Step Mapping Reference routes missing Playwright tests to Step 10 with the
+rationale **"Foundation creates POM/Gherkin scaffold."** So Step 24 now asserts Gherkin
+in §6, in the Playwright Checklist, *and* as a Step 10 deliverable — against Steps 12 and
+17, which forbid `.feature` files outright. Whatever decision is made about finding 1 has
+to be applied in three places in this file plus Step 10's description of its own scaffold.
+
+**11. The category weights are stated three times in one file.**
+Once in the nine scored section headers (`## 1. Parity (20%)` …), once in the
+`## Category Weights` table at line 992, and once in the `## Category Breakdown` report
+template at line 1034. Three copies of the same numbers is three chances to drift; one
+should be the source and the others should be generated or removed.
+
 ## Transcription uncertainties (prompt 24)
 
-- **INCOMPLETE.** Source lines **864-1154** were never photographed. The installed file
-  carries an explicit `TRANSCRIPTION GAP` HTML comment at that position. The gap swallows
-  the body of `## Issue List (10-20 items)` and three headings known from the VS Code
-  sticky-scroll breadcrumb: `# REPORT OUTPUT (MANDATORY)` (1008),
-  `## Step 2: Create Persistent Report File (MANDATORY)` (1107), and
-  `### Report File Template` (1121). This is the mandatory report schema every Step 24 run
-  emits — it must be captured before the kit audit can be considered complete.
+- **Complete.** Line alignment was spot-verified against the source at 16 headings —
+  860, 862, 864, 906, 917, 992, 1008, 1050, 1094, 1107, 1121, 1135, 1157, 1182, 1196,
+  1240 — all matching. Transcribed content ends at 1247; the source shows blank lines
+  through 1251.
 - Lines 571-863 were photographed twice; the second batch was diffed against the first
   transcription and matched line-for-line with zero corrections.
+- **Source line 879 is transcribed as `...` (an ellipsis marking omitted table rows), not
+  as a closing code fence.** At photo resolution the two are indistinguishable, but the
+  reading is forced by fence balance: line 864 opens ```` ```markdown ```` and line 884
+  closes it, and the same `...` convention appears unambiguously at line 1056 in the
+  Issue List template. It is also consistent with the block's own heading
+  ("Found: 15 issues" above a 10-row table).
 - Emoji throughout are mojibake in the source itself (UTF-8 read as Windows-1252) and are
   recorded as `<MOJIBAKE: emoji>` placeholders. The mojibake marker inside the Emoji
   Integrity Check's own `-match` pattern was replaced with `<MOJIBAKE MARKER>` rather than
