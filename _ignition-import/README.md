@@ -39,6 +39,7 @@ references, not values).
 
 | File | Role | Status |
 |---|---|---|
+| `instructions/copilot.instructions.md` | **Ignition-native** — task-discoverable operational supplement (`name: appmod-ignition-operations`); repo maintenance, rerun behavior, engineering standards, naming law | transcribed from 5 photos — complete (source lines 1-272, blank to 273); 39 line numbers spot-verified |
 | `instructions/AppMod-Process.instructions.md` | **Ignition-native** — the human-readable 3-phase / 24-step authority; the narrative counterpart to the artifact contract | transcribed from 6 photos — complete (source lines 1-265, blank to 266); 29 line numbers spot-verified |
 | `instructions/appmod-phase-agent-contract.instructions.md` | **Ignition-native** — shared critical rules + chat contract for the three numbered phase coordinators | transcribed from 4 photos — complete (source lines 1-174 plus 3 trailing blanks, blank to 178); 16 line numbers spot-verified |
 | `instructions/AppMod-Artifact-Contract.json` | **Ignition-native** — the per-step artifact input/output contract that drives the shared verifier | **PARTIAL** — see `_wip/AppMod-Artifact-Contract-partial.md`; vertically complete (lines 1-345, all 24 steps) but long lines are still cut off at the right screen edge (word wrap was off) |
@@ -308,6 +309,237 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## ⚠ CORRECTED: `constitution.md` IS referenced from inside the kit
+
+I have said several times across this import that nothing transcribed references
+`.github/constitution.md`, and used that to argue it was the highest-value
+unknown. That was wrong. `copilot.instructions.md` line 188 references it
+directly, in the Change-capture rule:
+
+> If the user says something that should be recorded into
+> **prompts/instructions/agents/constitution**, call it out explicitly and ask:
+> "Add it? (y/n)".
+
+So `constitution` is named as one of four durable homes for user-supplied rules,
+alongside prompts, instructions, and agents. That makes it a live, writable
+policy surface — not a vestigial file. It does not change the current priority
+order (`AppMod-Step-Contract.json` is still first, because it is load-bearing
+for routing *today*), but it does mean `constitution.md` is worth capturing for
+a concrete reason rather than as a shot in the dark.
+
+Also now confirmed rather than inferred: `.github/copilot-instructions.md` (root,
+hyphenated) is real and distinct from `.github/instructions/copilot.instructions.md`
+(dotted). This file names the root one explicitly as *"the concise always-on
+repository entrypoint"* and ranks it above itself in precedence. The manifest's
+earlier inference from a partially-cut-off directory listing was correct.
+
+---
+
+## ⚠ HIGH: the toolkit-protection boundary is ranked LAST in the only global precedence list
+
+`copilot.instructions.md` lines 16-22 give the kit's only top-level, five-level
+precedence order:
+
+| Rank | Source |
+|---|---|
+| 1 | The current user request and active AppMod-Ignition guidance in the workspace |
+| 2 | `.github/copilot-instructions.md` — concise always-on repository guidance |
+| 3 | `.github/instructions/AppMod-Process.instructions.md` **and** `.github/instructions/AppMod-Step-Contract.json` — process sequence and route authority |
+| 4 | This file — detailed AppMod-Ignition operational guidance |
+| 5 | **Targeted language, security, and path-scoped instruction files for the files they cover** |
+
+`agent-toolkit-protection.instructions.md` is a path-scoped instruction file
+(`applyTo: ".github/agents/*.agent.md"`). Under this list it sits at rank 5 —
+**below** ordinary operational guidance, and below "the current user request" at
+rank 1.
+
+That is the wrong shape for a boundary rule. `agent-toolkit-protection` is the
+file that says only `Ultimate-Ignition-edit` may mutate toolkit assets and
+enumerates the allowed write zones. A precedence list that puts it last means a
+user request at rank 1 nominally outranks it — which is exactly the situation a
+write boundary exists to prevent. Compare how the kit handles its *other*
+precedence rules: `appmod-phase-agent-contract` explicitly declares it beats the
+personality baseline, and `agent-process-conformance` has "narrower wins". Only
+this list is global, and only this list inverts the security ordering.
+
+Note also what is **absent** from the list entirely: `agent-toolkit-protection`,
+`appmod-phase-agent-contract`, and `appmod-agent-personality-baseline` are never
+named. They fall into the unnamed rank-5 bucket by inference.
+
+**Recommended fix:** promote boundary/security instruction files to their own
+rank above the user request, or state explicitly that write boundaries are not
+subject to this ordering. This is a cheap edit with a large blast radius, and it
+is the kind of thing that will bite during a hackathon when someone says "just
+edit the agent file for me."
+
+---
+
+## ✅ RESOLVED (again, and properly): Gherkin means comments, not `.feature` files
+
+Last turn I said the `.feature`-file question needed reopening because
+`tests.gherkinCoverage` made Gherkin coverage a standing Phase 2 metric.
+`copilot.instructions.md` settles it, because it is the only file that gives the
+actual required shape:
+
+> Generated or updated tests must be **Gherkin-style with explicit comments and
+> metadata**.
+> Required test **header comments**: `CaseId`, `Scenario`, `Description`,
+> `Input`, `Expected`
+> Required test **body flow comments**: `Given`, `When`, `Then`
+
+Those are comment tags inside ordinary test files. No `.feature` file, no step
+definitions, no Cucumber runner. That matches `appmod-testing-and-gates`
+exactly, and it matches the canonical test workspace having no `features/` or
+`steps/` directory.
+
+Final tally: three sources specify Gherkin-*style comments*
+(`copilot.instructions.md` — with the exact tag list, `appmod-testing-and-gates`,
+and the absence of any feature-file scaffolding); two use feature-file language
+(prompt 24, and `tests.gherkinCoverage`'s "features with a feature file"); two
+steps forbid feature files outright (12 and 17).
+
+**Verdict: comments win.** The two outliers are wording defects, not a competing
+design. Concrete fixes: reword `tests.gherkinCoverage` to "count of user-facing
+features with a Gherkin-tagged test vs total features", and rewrite prompt 24's
+§6 and Playwright Checklist as previously recommended.
+
+---
+
+## ⚠ HIGH: three different step-status vocabularies, all written to the same JSON
+
+`step-workflow-state.json` is machine-read — the next-step runner, the portal,
+and the verifier all consume it. Three Ignition-native files disagree about what
+may be written into it:
+
+| Source | Terminal statuses |
+|---|---|
+| `copilot.instructions.md` line 77 | `Completed`, `Blocked`, `Failed` (starting from `InProgress`) |
+| `appmod-phase-agent-contract` rule 21 | `Completed`, `Blocked`, `Partial` |
+| `AppMod-Process.instructions.md` line 48 | `Pass`, `Partial`, `Blocked`, `Fail` |
+| `AppMod-Process.instructions.md` line 201 (Review lane) | `Pass`, `Blocked`, `Fail` |
+
+The collisions:
+
+- **`Completed` vs `Pass`** — same concept, two spellings.
+- **`Failed` vs `Fail`** — same concept, two spellings, differing by one letter.
+  This is the worst of the three, because a string comparison silently misses.
+- **`Partial`** is required by the phase-agent contract and by
+  `AppMod-Process`, but is **not** in `copilot.instructions.md`'s terminal set —
+  which says "Do not stop with the saved step status still `InProgress`. End the
+  step as `Completed`, `Blocked`, or `Failed`." An agent following that file has
+  nowhere to put a `Partial`.
+
+`AppMod-Process` line 48 even makes distinctness a rule — *"Keep `Pass`,
+`Partial`, `Blocked`, and `Fail` distinct"* — while using a vocabulary the other
+two files do not share. A one-line enum in
+`.github/contracts/schemas/step-workflow-state.schema.json` would settle this;
+that schema already exists and is referenced by the artifact contract.
+
+---
+
+## Structural facts added by `copilot.instructions.md`
+
+272 lines. Frontmatter is `name: appmod-ignition-operations` + `description`,
+with **no `applyTo`** — the file calls itself *"task-discoverable"*, so like
+`AppMod-Process.instructions.md` it is not auto-attached. That is now two of the
+kit's most substantive instruction files relying on being pulled in by name.
+
+Despite the filename, this is not a Copilot-conventions file — it is the
+operational rulebook: rerun behavior, artifact hygiene, engineering standards,
+ownership boundaries, feed policy, naming law, and modernization patterns.
+
+**Autonomous remediation contract** — the step lifecycle in full. On start,
+immediately write `InProgress` and maintain six live fields: `startedAt`,
+`heartbeatAt`, `percentComplete`, `estimatedMinutesRemaining`,
+`estimatedCompletionAt`, `currentActivity`. Five explicit escalation triggers
+(destructive/hard-to-reverse; needs user intent or product judgment; depends on
+credentials or external systems; would cross into a different numbered step;
+first remediation disproved the hypothesis). *"The portal is a derived view and
+must not override that saved state."*
+
+**Naming law** — the clearest statement of project naming in the kit:
+
+- Golden Rule: never mix naming styles inside the same layer.
+- .NET/C# projects: PascalCase for solutions, projects, folders, namespaces, `.csproj`.
+- Angular client root: `src/<AppName>.Web.Client` and `<AppName>.Web.Client.esproj`.
+- Inside that client root, Angular-appropriate kebab-case continues to apply.
+- Cross-layer references preserve each layer's native style — no shared casing scheme.
+
+This is the first sighting of `<AppName>.Web.Client` / `.esproj`. The artifact
+contract names `src/<AppName>.Library` and `src/<AppName>.Web.Api` but never the
+client project.
+
+**Modernization priority order** (six ranks): security/auth → breaking or
+deprecated runtime patterns → Fusion wiring and hosting/config → logging →
+Angular/frontend patterns → style-only cleanup.
+
+**Database runtime configuration default** — OpenShift/Kubernetes split SQL
+environment variables composed once at startup into `ConnectionStrings`. The
+variable *names* are `SqlServer__Server`, `SqlServer__Database`,
+`SqlServer__Username`, `SqlServer__Password`, `SqlServer__Encrypt`,
+`SqlServer__TrustServerCertificate`. (Names only — no values appear in the
+source, and none are recorded here.)
+
+**Auth stance matches the majority, not the outlier.** Lines 258-260: *"Okta is
+the required final authentication model. Legacy auth may be retained temporarily
+only to preserve parity during modernization, but it must not be treated as the
+final target state."* No `AddJwtBearer` hand-rolled stack is described. That
+makes it **five-to-one** against `fusion-auth-standards.md`, strengthening the
+earlier recommendation to rewrite that single file.
+
+**Two new artifact locations**, both inside already-allowed write zones:
+`.modernization/ignition-artifacts/status/<AppName>/STATUS_REPORT.md` (plus an
+`_artifacts/` subfolder for short-lived logs) and
+`.modernization/portal/data/parity/parity.json`.
+
+**New toolkit roots named:** `.vscode/` and `starter-deploy/` join `.github/`
+and `.modernization/` in the "do not encode the validation app's specifics"
+rule.
+
+**New instruction file referenced:** `.github/instructions/tests-commenting.instructions.md`,
+required for every file under `tests/`.
+
+---
+
+## ⚠ Findings in `copilot.instructions.md`
+
+**1. The rerun-approval rule is stated three times in one file.** Lines 33, 65,
+and 72 each say, in slightly different words, that rerunning a completed
+numbered step needs explicit approval, that a direct button click/slash
+command/named-step request counts as that approval, and that you must warn the
+rerun can change recorded status. Three copies is exactly what
+`agent-process-conformance` forbids ("Do not copy the same generic step-state
+boilerplate…"), and the copies have already begun to diverge: line 33 says "do
+not ask twice", line 65 adds "and you should still warn", line 72 frames it as
+"implicit housekeeping". Collapse to one.
+
+**2. `.modernization/portal/data/parity/parity.json` forks the portal data root.**
+Everywhere else portal JSON lives under `.modernization/portal/data/json/`. This
+one file sits in a sibling `parity/` directory. It is inside the allowed write
+zone so it is not a permissions problem, but it is a fourth root-shaped
+inconsistency and the parity artifacts are already the most forked family in the
+kit (see the `generated/` finding below).
+
+**3. `Partial` has no home in this file's status model.** See the vocabulary
+finding above.
+
+**4. Line 55 is good and should be generalized.** *"Do not assume `rg` or
+ripgrep is installed in the current shell. Check availability first."* This is
+the only tool-availability check in any transcribed file, and the kit depends on
+at least eight PowerShell scripts whose existence is never checked. Worth
+lifting into a general rule — it pairs directly with the pre-flight
+script-existence check recommended earlier.
+
+**5. Rank 1 of the precedence list is "the current user request."** Combined
+with finding above, and with the personality baseline's "Never ask for
+confirmation to continue routine execution", the kit's default posture is
+strongly biased toward doing what it is told. That is fine for velocity and bad
+for a company-wide hackathon where the person giving instructions may not know
+the kit's invariants. The Evidence Contract in `appmod-phase-agent-contract` is
+the main counterweight and it only binds three agents.
+
+---
 
 ## ⚠ PARTIAL CORRECTION to the artifact-root finding below
 
@@ -1179,6 +1411,23 @@ and no stale maintainer notes. Against the eleven transcribed agents:
 `OpX-Fusion-Reviewer` (no handoffs, so no next-step contract), and
 `OpX-csharp-janitor` (three YAML errors) would all fail. **Running this file's own seven checks
 across `.github/agents/` is a concrete, cheap pre-hackathon task.**
+
+## Transcription uncertainties (`copilot.instructions.md`)
+
+None of substance. Word wrap was on for all five photos, so no text was lost off
+the right edge; 39 heading and rule line numbers were spot-verified and the file
+closes at 272 (editor shows 273). Two notes:
+
+1. **Environment-variable names only.** The database-configuration section names
+   six variables (`SqlServer__Server` … `SqlServer__TrustServerCertificate`).
+   These are names appearing in the source, not values — no credential,
+   hostname, or tenant identifier appears anywhere in this file, and none has
+   been recorded.
+2. **`.esproj`** in the naming law is read as the Visual Studio JavaScript
+   project extension (`<AppName>.Web.Client.esproj`). The photo is legible and
+   the extension is a real one, so this is not a guess, but it is the only
+   unfamiliar file extension in the file and worth a glance on any future
+   re-shoot.
 
 ## Transcription uncertainties (`AppMod-Process.instructions.md`, `appmod-phase-agent-contract.instructions.md`, `AppMod-Artifact-Contract.json` part 2)
 
