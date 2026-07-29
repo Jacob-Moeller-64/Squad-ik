@@ -96,6 +96,7 @@ references, not values).
 
 | File | Contents |
 |---|---|
+| `manifests/ignition-kit-file-tree.md` | **★ Full repo file tree** — transcribed from 5 photos of a generated tree view, plus a full reconciliation of what this import has and has not covered |
 | `manifests/github-instructions-listing.md` | Full `.github/instructions/` listing (25 entries), `.github/templates/` (2), and the `.github/` top level — transcribed from 1 directory-tree photo |
 
 ### Skills
@@ -598,6 +599,112 @@ so it sits at rank 3 — above every prompt, agent, and skill, which is the corr
 place for a write boundary. The earlier reading (that it ranked below "the current
 user request") came from `copilot.instructions.md`'s mis-scoped list, not from
 the governing document.
+
+---
+
+## ★★★ THE KIT ALREADY SHIPS A STEP-NUMBER-DRIFT AUDITOR
+
+The file tree reveals `.github/scripts/maintenance/` containing exactly two
+scripts:
+
+- **`audit-step-number-drift`**
+- `audit-modernization-pollution`
+
+Every numbering finding accumulated across this document — the `+2` survivors, the
+half-applied ranges, the stale cross-references — may already be **detectable by a
+script that ships with the kit**. Combined with `step-registry.json` (the designed
+fix) and the repo-wide mandate to use `step:<stepId>` tokens, the picture is now:
+the kit has the fix, the identity registry, *and* the auditor. What it appears to
+lack is evidence anyone has run the auditor recently.
+
+`audit-modernization-pollution` is presumably the enforcement arm of the
+"do not encode the current validation app's routes/controllers/entities into
+reusable toolkit assets" rule that `copilot.instructions.md`, `kit-update`, and
+`AGENTS.md` all state.
+
+**These two scripts are now the highest-value unread files in the kit.** They may
+make the linter recommendation in this document unnecessary — or reveal why it
+was needed.
+
+---
+
+## ★★ Full file tree transcribed — coverage reconciliation
+
+`manifests/ignition-kit-file-tree.md` holds the tree plus a full gap analysis.
+Headline coverage:
+
+| Area | On disk | Covered by this import |
+|---|---|---|
+| `.github/instructions/` | 23 | 21 complete, 2 partial/pending |
+| `.github/agents/` | 18 | 11 |
+| `.github/skills/` | 21 folders | 12 |
+| `.github/prompts/` numbered | 24 | 24 ✅ |
+| `.github/prompts/` subfolders | ~32 more | 0 |
+| `.github/contracts/schemas/` | 9 + README | 0 |
+| `.github/templates/` | 2 | 2 ✅ |
+| `.github/scripts/` | ~100+ | 0 |
+| `.squad/` | large | 0 |
+
+**Resolutions the tree provides:**
+
+1. **The 18-agent discrepancy is now confirmed in both directions.** `.github/agents/`
+   holds exactly 18 files. Against the Definitive Agent List:
+   - on disk, not on the list: `OpX-Frontend-Angular-Transform`, `squad.agent.md`
+   - on the list, not on disk: `modernize-dotnet`, `Microsoft-Researcher`
+
+   So `agent-toolkit-protection.instructions.md` needs **two removals and two
+   additions**. This retires a question that has been open since that file was
+   transcribed.
+2. **`screenshot-capture/` and `test-quality-standards/` are real** — both were
+   flagged as "named but never photographed". `screenshot-capture/` ships a SKILL
+   plus 3 capture scripts.
+3. **Two skills nothing transcribed ever mentioned:** `ignition-kit-maintenance/`
+   (SKILL + **9** references) and `legacy-local-run/` (SKILL + references +
+   scripts). The first is load-bearing —
+   `powershell-script-maintenance.instructions.md` and `kit-update` both defer to it.
+4. **`src/` ships as `Starter.Library` / `Starter.Web.Api` / `Starter.Web.Client`**,
+   confirming exactly what Step 2 renames, and `Starter.Web.Client.esproj`
+   confirms the `.esproj` read from the naming law.
+5. **`LegacyCode/` ships containing only `test.txt`** — an empty slot, as Step 1
+   implies.
+6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
+   `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## ⚠ The tree and the later photos disagree — two different snapshots
+
+The tree does **not** list `discovery-runner.instructions.md`, `step-registry.json`,
+or `tools/appmod/` — yet all three were photographed directly, and
+`copilot-instructions.md` references `tools/appmod/` constantly. Meanwhile the
+tree *does* show `AGENTS.md`, `.squad/`, and `squad.agent.md`.
+
+So the tree is almost certainly a **snapshot from a different point in the merge**
+than the individual files. It is not evidence those files are missing — they exist;
+I transcribed them from photographs of the real thing.
+
+What this does mean: **`manifests/ignition-kit-file-tree.md` should be read as a
+point-in-time inventory, not a current manifest.** Worth confirming which snapshot
+is live before using it to drive any cleanup.
+
+---
+
+## ⚠ `.squad/` in that repo is a much larger distribution than the one here
+
+The tree's `.squad/` carries `casting/`, `fact-checker/`, `identity/`, `memory/`,
+`rai/`, 11 `squad-*.yml` GitHub Actions workflows, 30+ templates, and **50+
+template skills** (agent-conduct, git-workflow, humanizer, model-selection,
+`ralph-*`, reflect, secret-handling). Its agent roster includes `Rai`, `ralph`,
+`scribe`, `docs`, `fact-checker`, and `security` alongside lead/frontend/backend/
+reviewer/tester.
+
+That is a substantially bigger Squad than the one in this workspace, and it
+explains the `D-001..D-016` decision count. The six unknown decisions
+(D-011..D-016) most likely belong to that larger distribution.
+
+Also worth noting: `OpXUtil/notes/sql-param-type-drift` exists — the provenance
+for the `AddWithValue`/`SqlDbType` section in `dotnet.instructions.md`. That
+section was written from a real incident, and the note is still on disk.
 
 ---
 
