@@ -89,6 +89,7 @@ references, not values).
 
 | File | Role | Status |
 |---|---|---|
+| `contracts/schemas/fusion-control-point-inventory.schema.json` | **Ignition-native** — field contract for the Step 5 protected control-point inventory | transcribed from 1 photo — complete (source lines 1-14 + trailing blank); **validates as JSON** |
 | `contracts/schemas/executable-testcase-catalog.schema.json` | **Ignition-native** — `opx-field-contract/v1` field contract for the Step 6 executable testcase catalog | transcribed from 1 photo — complete (source lines 1-14); **validates as JSON** |
 
 ### Templates
@@ -675,6 +676,63 @@ Headline coverage:
    implies.
 6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
    `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## ⚠⚠ HIGHEST-SEVERITY FINDING YET: nine `hardStop` gates guard a file nothing validates
+
+`fusion-control-point-inventory.schema.json` covers
+`control-point-inventory.json`. Its `authoringNote` is blunt:
+
+> **CONSERVATIVE FLOOR.** Agent-authored at Step 5 with **NO deterministic
+> producer and NO committed sample**. **No script reads any specific field from
+> this file — every consumer is presence-based** — so there is no consumer-proven
+> field to require. The floor only asserts a non-empty object … TIGHTEN ONLY after
+> observing a real produced `control-point-inventory.json`.
+
+And `groundedBy[]` names the only script that touches it:
+
+> `.github/scripts/QA/qa-refresh-portal.ps1` (consumes this **PRESENCE-only via
+> `Test-Path`**; **no deterministic field access found in any script**)
+
+Now cross-reference `AppMod-Artifact-Contract.json`, transcribed earlier in this
+import. `control-point-inventory.json` is a **`hardStop` required input for nine
+steps: 8, 9, 10, 11, 12, 13, 14, 18, and 19.** More than a third of the pipeline
+refuses to start without it.
+
+**What that combination means in practice:**
+
+- The file is produced by an agent writing prose-derived JSON at Step 5. No script
+  generates it, and no committed sample exists to compare against.
+- The only validation anywhere in the kit is "is it a non-empty object."
+- The only script consumer checks `Test-Path` — i.e. *does the file exist*.
+- Therefore an agent that writes `{"note":"tbd"}` at Step 5 satisfies **all nine
+  `hardStop` gates**, and every downstream step that claims to consume "control
+  points" proceeds on content nothing has checked.
+
+This is the exact failure mode `discovery-runner.instructions.md` warned about in
+different words — *"presence-only checks cannot tell a 14-service inventory from
+the ~40 services that actually exist"* — but here it is structural rather than
+incidental, and it sits under the single most-depended-on artifact in the
+pipeline.
+
+**It is also the strongest possible argument for the two-layer verification model
+the kit already designed.** Layer 1 (presence) is all this artifact has. Layer 2
+(independent AI completeness review against real ground truth) is the only thing
+that could catch a thin control-point inventory — and the runner applies Layer 2
+only to Discovery Steps 1-6 today. Steps 8-19 consume this file with Layer 1 alone.
+
+**Concrete fixes, cheapest first:**
+
+1. **Commit a real sample.** The note says the blocker is "NO committed sample."
+   One good `control-point-inventory.json` from a completed run unblocks
+   tightening the schema — the note even names the target
+   (`controlPoints[]` → `required` + `minItems`).
+2. **Extend the reviewer completeness gate past Step 6.** Steps 8-14 consume this
+   file; that is where a thin inventory does damage.
+3. **Give it a `groundedBy` script consumer.** As long as no script reads a field,
+   no field can ever be proven required — the note is explicit that this is what
+   keeps the floor low.
 
 ---
 

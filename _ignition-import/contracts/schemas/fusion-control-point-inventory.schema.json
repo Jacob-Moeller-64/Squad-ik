@@ -1,0 +1,15 @@
+{
+  "dialect": "opx-field-contract/v1",
+  "contractId": "fusion-control-point-inventory",
+  "title": "Protected starter control-point inventory",
+  "appliesTo": ".modernization/ignition-artifacts/modernize/fusion-restructure/control-point-inventory.json",
+  "rootPath": "control-point-inventory",
+  "groundedBy": [
+    ".github/prompts/05-P1-modernization-solution-design.prompt.md (Step 5 authors the protected control-point decisions)",
+    ".github/scripts/QA/qa-refresh-portal.ps1 (consumes this PRESENCE-only via Test-Path; no deterministic field access found in any script)"
+  ],
+  "authoringNote": "CONSERVATIVE FLOOR. Agent-authored at Step 5 with NO deterministic producer and NO committed sample. No script reads any specific field from this file - every consumer is presence-based - so there is no consumer-proven field to require. The floor only asserts a non-empty object, which catches empty {}, [], and truncated or hallucinated-to-non-object content. TIGHTEN ONLY after observing a real produced control-point-inventory.json: the protected-control-points collection (e.g. a controlPoints[] array) is the prime candidate to promote to required + minItems once its shape is confirmed from a real sample.",
+  "type": "object",
+  "notEmpty": true
+}
+
