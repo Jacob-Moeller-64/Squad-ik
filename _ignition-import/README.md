@@ -94,6 +94,7 @@ pattern-match against.
 | File | Role | Status |
 |---|---|---|
 | `starter/Starter.Library/Entities/MyEntity.cs` | reference domain entity | transcribed from 1 photo — complete (source lines 1-28) |
+| `starter/Starter.Library/Services/PublicTextService.cs` | ✅ reference service done **right** — XML docs, async + `CancellationToken`, stateless | transcribed from 1 photo — complete (source lines 1-22); 9 anchors verified |
 | `starter/Starter.Library/Services/MyService.cs` | ⚠ reference service — **scores HIGH against the kit's own compliance rubric** | transcribed from 1 photo — complete (source lines 1-43); 10 anchors verified |
 | `starter/Starter.Library/Options/MyOptions.cs` | reference options class | transcribed from 1 photo — complete (source lines 1-8) |
 | `starter/Starter.Library/Extensions/FusionApplicationBuilderExtensions.cs` | **protected starter control point** — library DI/options composition seam | transcribed from 1 photo — complete (source lines 1-39); 11 anchors verified |
@@ -697,6 +698,72 @@ Headline coverage:
    implies.
 6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
    `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## ✅ MAJOR CORRECTION: the starter *does* have a properly documented reference — and it sits next to the bad one
+
+`PublicTextService.cs` lives in the same folder as `MyService.cs` and is
+**materially better on every axis the kit cares about**. This substantially
+retracts the "the starter does not follow its own commenting standard" thread
+running below.
+
+```csharp
+/// <summary>
+/// Provides sample text for an anonymous API endpoint.
+/// </summary>
+public interface IPublicTextService
+{
+    /// <summary>
+    /// Gets the sample text payload.
+    /// </summary>
+    Task<string> GetTextAsync(CancellationToken cancellationToken = default);
+}
+```
+
+Point by point against the kit's own rules:
+
+| Rule (source) | `PublicTextService.cs` | `MyService.cs` |
+|---|---|---|
+| Documented for a junior reader (`AGENTS.md`) | ✅ XML `<summary>` on interface, method, and class; `/// <inheritdoc />` on the impl | ✗ no comments |
+| *"Prefer async/await following TAP"* (`dotnet.instructions.md`) | ✅ `Task<string>` | ✗ synchronous |
+| *"Use `CancellationToken`"* | ✅ `CancellationToken cancellationToken = default` | ✗ absent |
+| *"Name async methods with the `Async` suffix"* | ✅ `GetTextAsync` | n/a |
+| Factor VI — stateless processes (`dominion-requirements`) | ✅ no instance state | ✗ **HIGH** — mutable `Dictionary` in a singleton |
+| `sealed` on the implementation | ✅ | ✅ |
+
+**So the accurate finding is not "the starter is undocumented."** It is:
+
+> **The starter contains two adjacent reference services demonstrating opposite
+> standards, with nothing marking which one to copy.**
+
+That is a sharper and more actionable problem than the one recorded below.
+`MyService.cs` is the larger, more feature-complete file (CRUD, filtering,
+overloads) and is therefore the more likely template for a team building their
+first real service — and it is the one that violates the rubric. The correct,
+fully-compliant example is the smaller, less obviously reusable one.
+
+**Revised recommendation, cheaper than before:** rather than writing new headers
+from scratch, **make `MyService.cs` look like `PublicTextService.cs`** — add the
+XML docs, make the interface async with `CancellationToken`, and either use
+`ConcurrentDictionary` or add the header saying the in-memory store is an
+intentional placeholder. The template for all of that already exists twenty lines
+away in the same folder.
+
+**Amendments to earlier sections, applied honestly:**
+
+- "No starter file transcribed so far carries the mandated file header" — still
+  literally true (these are type-level XML docs, not a file banner), but the
+  *intent* of the rule is plainly met here. I am withdrawing this as a finding; it
+  was over-read.
+- The "starter has no comments" claim is now fully retracted. Two of five starter
+  files carry comments; one carries proper XML documentation throughout.
+
+**What does survive unchanged:** the two-public-types-per-file issue, which this
+file also has (`IPublicTextService` + `DefaultPublicTextService`, in
+`PublicTextService.cs` which matches neither name) — third instance. And the
+`MyService.cs` HIGH compliance finding, which this file makes *worse* by proving
+the kit knows how to do it correctly.
 
 ---
 
