@@ -44,6 +44,7 @@ references, not values).
 | `skills/appmod-frontend-angular/SKILL.md` | frontend — legacy Angular → `src/Client` parity move | transcribed from 1 photo — complete (source lines 1-35, blank to 36); 10 line numbers spot-verified |
 | `skills/appmod-fusion-target/SKILL.md` | fusion — shared target: structure, Okta/OIDC, Scalar, component swap | transcribed from 1 photo — complete (source lines 1-32, blank to 33); 13 line numbers spot-verified |
 | `skills/appmod-modernization-process/SKILL.md` | modernization — the phased wave sequence and parity gates | transcribed from 1 photo — complete (source lines 1-40, blank to 41); 17 line numbers spot-verified |
+| `skills/appmod-testing-and-gates/SKILL.md` | testing — characterization tests, gate scripts, frozen scorecard | transcribed from 1 photo — complete (source lines 1-42, blank to 43); 14 line numbers spot-verified |
 
 > **The `appmod-*` skills are Squad-side, not Ignition-native — CONFIRMED.** All five live in the
 > Ignition Kit's `.github/skills/` tree, but they are artifacts of *this conversion project*:
@@ -262,6 +263,82 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## Structural facts added by skill `appmod-testing-and-gates`
+
+The sixth and last `appmod-*` skill, and the one that removes any remaining doubt about
+provenance: it describes **this repository's own gate architecture**, under an older root path.
+
+- **"Gates are scripts, not opinions: a step is done only when its gate script exits `0`."**
+  Near-verbatim the rule in Squad-ik's `CLAUDE.md` ("Gates are scripts, not opinions. A pipeline
+  step is done when its gate exits 0").
+- **Exit-code contract**: `0` pass / `1` usage / `2` fail.
+- **Seven gates named**, with their semantics:
+  `validate-artifacts <name>|all` (a missing schema **FAILS**, never degrades to a syntax check),
+  `verify-goldens <url>` (TYPE-STRICT compare — `true != 1`, `int != float` — normalized fields
+  masked, do NOT follow redirects), `visual-diff <url> [--capture]` (re-baseline only with
+  `--capture` **plus a logged decision**), `check-structure [--phase backend|full]`
+  (`full` also asserts the legacy app is gone), `check-pins` (fail while any pin is a
+  placeholder), `check-auth-removed`, `run-scorecard <before|after>`.
+- **`run-scorecard` after-mode enforces four conditions**: no critical/high CVEs, coverage
+  threshold, total >= target, and **NO dimension below its before score**.
+- **Characterization tests are evidence (D-001)** — pin CURRENT behavior, bugs included, aimed
+  at the riskiest logic, before modernization; changeable only with a logged
+  intentional-behavior-change entry.
+- **A pending scorecard dimension scores `0`, not a pass.** "no evidence" is not "fine".
+- **Test readability contract**: `CaseId` / `Scenario` / `Description` / `Input` / `Expected`
+  headers with `Given` / `When` / `Then` bodies.
+
+## ⚠ Findings for skill `appmod-testing-and-gates`
+
+**1. `check-auth-removed` is documented but does not exist in this repository.**
+Checked directly: `.squad/gates/` contains `check-consistency`, `check-pins`, `check-structure`,
+`run-scorecard`, `validate-artifacts`, `verify-goldens`, `visual-diff` — each as a `.sh`/`.ps1`
+pair. **There is no `check-auth-removed`**, and the string appears nowhere in the repo outside
+`_ignition-import/`.
+
+That matters because it is the enforcement mechanism for a mandatory policy. D-004 states the
+legacy auth path removal is "mandatory, never skipped", and `appmod-fusion-target` says the
+removal is "gated by `check-auth-removed`". **The gate that makes D-004 non-optional is
+missing**, so today nothing fails when a legacy auth path survives into the final state. Either
+the gate needs writing or D-004's enforcement claim needs amending.
+
+**2. Six of seven gate names match `.squad/gates/` exactly; the seventh is unaccounted for in
+the other direction.** `check-consistency` exists in `.squad/gates/` but is not documented in
+this skill. So the skill and the implementation have drifted apart in both directions — one
+documented-but-missing, one implemented-but-undocumented.
+
+**3. Every path in the `appmod-*` skills uses an older root and would be wrong if copied
+forward.** The mapping is consistent and mechanical:
+
+| Skill path | This repository |
+|---|---|
+| `tools/appmod/gates/` | `.squad/gates/` |
+| `tools/appmod/scorecard/engine/engine.py` | `.squad/scorecard/engine/engine.py` (verified present) |
+| `tools/appmod/scorecard/VERSION` | `.squad/scorecard/VERSION` |
+| `tools/appmod/verify-kit.ps1` | `verify-kit.ps1` (repo root) |
+| `tools/appmod/artifacts/` | (referenced by `appmod-compliance-review`; no match found) |
+
+The architecture is identical — stdlib-Python gate logic behind `.sh`/`.ps1` launcher pairs,
+a scorecard engine with a `VERSION`, a `verify-kit` self-test. Only the root was renamed
+`tools/appmod/` → `.squad/`, with `verify-kit` promoted to the repo root. **These skills predate
+that rename**, which independently dates them relative to the current kit.
+
+**4. "Gherkin-style" here means test *naming*, not `.feature` files.** Worth stating explicitly
+because of the unresolved Ignition conflict (Step 24 requires `.feature` files; Steps 12 and 17
+forbid them). This skill asks for Gherkin-shaped headers and `Given`/`When`/`Then` bodies inside
+ordinary test files — which is the option that satisfies both sides of that conflict, and is
+therefore a candidate resolution for it.
+
+## Transcription uncertainties (skill `appmod-testing-and-gates`)
+
+- Line alignment verified at 14 anchors — 11, 13, 15, 18, 20, 21, 22, 28, 29, 31, 33, 37, 39, 42
+  — all matching. Content ends at 42; the editor shows line 43 blank.
+- The gate bullets (lines 22-28) are nested one level under line 21 and hard-wrap; indentation
+  is reproduced as photographed.
+- A "Configure Tools…" UI affordance appears between `source:` and `tools:` in the photo; that
+  is editor chrome, not file content, and is not transcribed.
+- No mojibake in this file.
 
 ## Structural facts added by skills `appmod-frontend-angular`, `appmod-fusion-target`, `appmod-modernization-process`
 
