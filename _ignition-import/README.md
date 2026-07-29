@@ -94,6 +94,7 @@ pattern-match against.
 | File | Role | Status |
 |---|---|---|
 | `starter/Starter.Library/Entities/MyEntity.cs` | reference domain entity | transcribed from 1 photo — complete (source lines 1-28) |
+| `starter/Starter.Library/Services/MyService.cs` | ⚠ reference service — **scores HIGH against the kit's own compliance rubric** | transcribed from 1 photo — complete (source lines 1-43); 10 anchors verified |
 | `starter/Starter.Library/Options/MyOptions.cs` | reference options class | transcribed from 1 photo — complete (source lines 1-8) |
 | `starter/Starter.Library/Extensions/FusionApplicationBuilderExtensions.cs` | **protected starter control point** — library DI/options composition seam | transcribed from 1 photo — complete (source lines 1-39); 11 anchors verified |
 
@@ -696,6 +697,94 @@ Headline coverage:
    implies.
 6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
    `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## ⚠⚠ The starter's reference service is a HIGH violation under the kit's own rubric
+
+`MyService.cs` defines `DefaultMyService`, registered by the protected composition
+seam as a **singleton**:
+
+```csharp
+// FusionApplicationBuilderExtensions.cs, line 21
+fusionApplicationBuilder.Services.AddSingleton<IMyService, DefaultMyService>();
+```
+
+…and that singleton holds mutable instance state:
+
+```csharp
+// MyService.cs, line 16
+private readonly Dictionary<Guid, MyEntity> _repo = [];
+```
+
+`dominion-requirements/SKILL.md` — the kit's own compliance rubric — lists this
+exact shape as a Factor VI (stateless processes) violation, at lines 192-193:
+
+> ```csharp
+> // BAD - Instance state in singleton
+> public class CacheService { private Dictionary<string, object> _cache = new(); }
+> ```
+
+…and grades it in its severity table at line 1285:
+
+> | Instance state in singleton | **HIGH** |
+
+Under the scoring formula in `COMPLIANCE-ANALYSIS-REPORT.template.md` and
+`AppMod-Acceptance-Criteria.md` (`Score = 100 - (CRITICAL × 10) - (HIGH × 5) -
+(MEDIUM × 2)`), **the starter ships with a −5 already on the board** for the
+baseline review at Step 4 — before a team writes a line of their own code.
+
+**To be fair to the design:** this is obviously a demo stub. An in-memory
+`Dictionary` lets the starter build and run with no database, which is the right
+call for a kit that must clone-and-go. The code itself is otherwise good — C# 12
+collection expression `[]`, `TryGetValue` over double-lookup,
+`StringComparison.OrdinalIgnoreCase`, and correct null handling
+(`p.Description?.Contains(...) ?? false`).
+
+**But three consequences follow, and none of them are hypothetical:**
+
+1. **The compliance scanner will flag it.** Step 4's baseline review runs the
+   `dominion-requirements` rubric across the workspace. Unless `src/` is excluded
+   from the scan scope, every team starts at 95/100 with a HIGH finding they did
+   not create, and has to work out that it is the kit's own placeholder.
+2. **It is also a concurrency bug in waiting.** A singleton in ASP.NET Core serves
+   concurrent requests; `Dictionary<K,V>` is not thread-safe for writes.
+   `SaveEntity`/`DeleteEntity` from two simultaneous requests can corrupt it or
+   throw. `ConcurrentDictionary` would fix that with a one-word change and would
+   *still* be a Factor VI violation — worth doing anyway.
+3. **Teams pattern-match the starter.** `copilot.instructions.md` says to *"use
+   the starter projects in `src/` as the working reference."* A team wiring their
+   first real service will copy this shape — singleton, sync, in-memory — into
+   something that should be scoped and async against a database.
+
+**Cheapest fix, and it costs nothing architecturally:** a file header comment
+saying *"Placeholder in-memory implementation so the starter runs without a
+database. Not a reference pattern — replace with a scoped, async, persistence-backed
+service. Known Factor VI (stateless processes) violation, intentional."* That
+converts a silent trap into a documented one, and it is exactly the file-header
+the kit already mandates and this file (like the other three starter files) omits.
+
+---
+
+## ⚠ Two public types in one file — second instance, and this time the filename matches neither
+
+`MyService.cs` declares `IMyService` (line 5) and `DefaultMyService` (line 14).
+`dotnet.instructions.md` (which `applyTo`s `**/*.cs`) says:
+
+> - **File names should match the primary type defined within.**
+> - Non-trivial types should be in their own files.
+
+Here the filename matches **neither type** — there is no `MyService` in the file.
+That is a step worse than `FusionApplicationBuilderExtensions.cs`, where at least
+the primary type matched.
+
+Running tally of the kit's own artifacts failing the kit's own rules: **six**
+(triple rerun rule, `kit-update` formatting defects, `constitution.md` duplicate
+line, missing starter file headers ×4, two-public-types ×2, and now the HIGH
+compliance finding above). The pattern is consistent enough to be worth one
+deliberate pass: **run the kit's own gates and compliance review against the kit's
+own repo.** `audit-modernization-pollution` and `compliance-scan` already exist;
+nothing in the import suggests they have been pointed inward.
 
 ---
 
