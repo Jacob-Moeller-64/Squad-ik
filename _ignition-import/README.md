@@ -52,6 +52,7 @@ references, not values).
 | `skills/browser-source-decomposition/SKILL.md` | **Ignition-native** — classifies the legacy browser source shape and picks the decomposition contract | transcribed from 2 photos — complete (source lines 1-102, blank to 103); 22 line numbers spot-verified |
 | `skills/diagnose/SKILL.md` | **Ignition-native, meta** — audits an AI workflow across 5 quality dimensions | transcribed from 2 photos — complete (source lines 1-106); 27 line numbers spot-verified |
 | `skills/dominion-requirements/AppMod-Acceptance-Criteria.md` | **Ignition-native** — the canonical Dominion acceptance-criteria rubric | transcribed from 2 photos — complete (source lines 1-100); 22 line numbers spot-verified |
+| `skills/dominion-requirements/SKILL.md` | **Ignition-native** — the full Dominion rubric with WHY/WHAT/HOW (largest file in the kit) | transcribed from 25 photos — complete (source lines 1-1398, blank to 1399); 100+ line numbers spot-verified |
 
 `architecture-structure/` is a **multi-file skill**, now fully transcribed: `SKILL.md` (470 lines),
 `Architecture-Structure.md` (215), `REMAINING-POINTS.md` (108).
@@ -274,6 +275,118 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
 
+## Structural facts added by `dominion-requirements/SKILL.md`
+
+**1,398 lines — the largest file in the kit**, ahead of `architecture-structure/SKILL.md` (470)
+and prompt 06 (567). It is the WHY/WHAT/HOW expansion of the Dominion rubric, and it is the
+only file in the kit carrying a `version:` field.
+
+- **`version: "2.0"`** — the first and only versioned artifact anywhere in the kit. Nothing
+  else (prompt, agent, or skill) declares a version. This is the natural pin target for a
+  multi-participant run and the pattern the rest of the kit should copy.
+- **Per-requirement DET/AI tagging, and many requirements are both**, e.g. Factor III:
+  "DET for hardcoded strings … AI for judging whether a value should be externalized vs. is
+  acceptable as a constant." Finer-grained than the two-bucket split in the criteria file.
+- **The rubric declares its own boundaries**: "We check **6 of the 12** factors that are
+  detectable from code review", then names the six excluded (I, V, VII, VIII, X, XII) with the
+  reason. Arithmetic verified: 6 checked (II, III, IV, VI, IX, XI) + 6 excluded = 12.
+- **A `What Qualifies as Config` table** (Externalize vs Can Hardcode) — connection strings,
+  API endpoints, credentials, feature flags, timeouts, batch sizes vs internal routes, math
+  constants, HTTP status codes, enum values. This is what stops "magic numbers" generating noise.
+- **Dominion Logging Standards — 7 Log Types Required**: Performance, Debug, Trace, Error,
+  Warning, Info, Audit. A company-specific standard that appears nowhere else in the kit.
+- **Nine numbered sections**, ending with a `# 9. Severity Classification Guide` that contains
+  a four-question **Decision Matrix**, per-severity tables with concrete examples, a
+  **Category-Specific Reference** (7 tables mapping ~70 named violations to severities), and
+  **Edge Cases**.
+- **Edge Cases is the most operationally useful part** and has no equivalent anywhere else:
+  - *Upgrade*: multiple MEDIUM in one file → consider HIGH for the file; pattern repeated across
+    codebase → upgrade one level; security-critical code path → upgrade one level.
+  - *Downgrade*: test-code-only → may downgrade; generated code → may skip or LOW; compensating
+    control → may downgrade; legacy being replaced soon → document but may downgrade.
+  - *What's NOT a Violation*: five explicit false-positive exclusions.
+- **A `## Finding Format` JSON schema**: `line`, `severity`, `category`, `rule`, `message`,
+  `code`, `recommendation`.
+- **Passing Criteria**: `Score >= 80`, `CRITICAL = 0`, `Test Coverage >= 80%` — matching
+  `appmod-compliance-review`'s deploy gates exactly (that skill adds a fourth, "review complete").
+- **The auth guidance names the anti-pattern to avoid**: keep auth in the approved
+  starter/Fusion control points "instead of introducing a parallel generic `AddJwtBearer` stack."
+- Deliverables are scored: README.md (Prerequisites / Getting started / Build / Running tests /
+  Debugging guide) and pipeline config (`azure-pipelines.yml`, `pipeline.yaml`, or GitHub Actions
+  workflow files).
+
+## ⚠ Findings in `dominion-requirements/SKILL.md`
+
+**1. The Category-Specific Reference matches the criteria file exactly — the thresholds are a
+detect-vs-score pair, not drift.** Verified row by row:
+
+| Metric | `SKILL.md` DET trigger | `SKILL.md` Category Reference | `AppMod-Acceptance-Criteria.md` |
+|---|---|---|---|
+| Class lines | > 300 | 300-500 MEDIUM · 500+ HIGH | 300-500 Medium · > 500 High |
+| Interface methods | > 7 | 8-15 MEDIUM · 15+ HIGH | 8-15 Medium · > 15 High |
+| Constructor params | > 5 | 5-7 MEDIUM · 8+ HIGH | 5-7 Medium · > 7 High |
+
+All three agree. **One off-by-one**: the constructor-params DET scan triggers at `>5` (i.e. 6+),
+but 5 is already MEDIUM in both severity tables — so a 5-parameter constructor is scoreable yet
+undetectable. One-character fix.
+
+**2. Prompt 24's worked example is one severity band low, now confirmed against three sources.**
+Prompt 24 lists `TransformerService.cs | 650 lines, needs split` as **P3**. This file says
+`God class (500+ lines) | **HIGH**` and the criteria file says `> 500 lines is High`. With
+P1-P4 mapping 1:1 onto CRITICAL/HIGH/MEDIUM/LOW, a 650-line class is **P2**. Worked examples
+anchor model scoring harder than prose, so this should be fixed in prompt 24.
+
+**3. The Angular section contradicts itself within 30 lines.**
+Heading: `## Modern Angular Patterns (21+)`. The code inside it is commented
+`// Signal-based inputs (Angular 20)` and `// Signal-based outputs (Angular 20)`. So the kit now
+states **four** Angular targets — 19+ (`Ultimate-AppMod-Ignition`), 20 (prompt 02, even-major
+policy), 20+ (prompt 24), 21+ (this heading) — and this file disagrees with itself. Because
+"Angular" is a scored judgment area, a reviewer applying the 21+ heading to an app scaffolded on
+Angular 20 per prompt 02 will flag it. **19 and 21 are both odd majors**, contradicting prompt
+02's stated even-major baseline.
+
+**4. `Test coverage < 80%` is scored MEDIUM (-2) but is also a hard pass gate.**
+Passing Criteria requires `Test Coverage >= 80%`; the Testing Violations table scores falling
+short at **MEDIUM**. So an app can lose only 2 points for a condition that independently blocks
+passing. Not wrong, but the two mechanisms should be reconciled or the gate stated as
+non-scoring.
+
+**5. Two redundant rows in SOLID Violations.** `God class (500+ lines) | **HIGH**` and
+`Very large class (800+ lines) | **HIGH**` carry the same severity, so the 800+ row changes
+nothing. Either 800+ should escalate (it does not — CRITICAL is security-only) or the row should
+be merged.
+
+**6. "Environment checks" appear as both a MEDIUM violation and a non-violation.**
+Line 1213: `Environment check in code | if (env == "Production") | Config should vary, not code`
+→ MEDIUM. Line 1398: `Environment checks for feature flags -> OK (but config is better)`.
+Reconcilable by purpose, but a model scanning for `if (env ==` has no way to tell which case it
+is looking at without reading intent — and nothing tells it to.
+
+**7. Token cost: this single file is 1,398 lines.** With `AppMod-Acceptance-Criteria.md` (100),
+the `dominion-requirements` skill is ~1,500 lines. It is referenced by `OpX-csharp-expert`,
+prompt 04, prompt 22 and `appmod-compliance-review` — i.e. loaded on most review passes. Together
+with `architecture-structure` (~800) that is ~2,300 lines of rubric before any application code
+is read. Sections 1-7 (the WHY/WHAT/HOW teaching material) and section 9 (the classification
+tables) are separable: a reviewer scoring findings needs section 9 and the criteria file, not the
+worked C# examples.
+
+## Transcription uncertainties (`dominion-requirements/SKILL.md`)
+
+- Line alignment verified at 100+ anchors across all 25 photos, including 5, 40, 48, 78, 132,
+  171, 217, 266, 306, 320, 324, 398, 443, 479, 523, 579, 583, 619, 654, 690, 711, 715, 749, 775,
+  779, 817, 849, 879, 952, 977, 1007, 1034, 1058, 1081, 1097, 1121, 1140, 1196, 1255, 1274, 1294,
+  1311, 1328, 1343, 1354, 1365, 1377, 1392, 1398 — all matching. Content ends at 1398.
+- **Source line 914 shows a stray `What a` immediately before the `// Signal-based outputs
+  (Angular 20)` comment.** Transcribed as the comment alone, since the surrounding TypeScript
+  makes the prefix syntactically impossible and it reads as editor ghost-text rather than file
+  content. Worth confirming against the real file.
+- All emoji (the DET/AI review-method markers and the `[BAD]` cross marks in code comments) are
+  mojibake in the source and are recorded as `<MOJIBAKE: emoji>` placeholders.
+- `>=` in the Passing Criteria is rendered as `≥` in the source; transcribed as `>=` for
+  ASCII-safety. The `x` in the score formula is a literal lowercase `x`, not `*` or `×`.
+- Example credentials in BAD blocks (`"P@ssw0rd"`, `"sk-123..."`, `?apiKey=secret123`,
+  `Password=secret`) are illustrative placeholders in the source, not real values.
+
 ## Structural facts added by `dominion-requirements/AppMod-Acceptance-Criteria.md`
 
 **The Dominion rubric itself** — the document every compliance score in the kit ultimately
@@ -324,6 +437,16 @@ opinion on them is discarded." The rubric and its implementation agree, and the 
 deliberate. The scoring formula matches to the digit as well.
 
 **2. There are now three severity ladders, and the canonical one has only three levels.**
+
+> **CORRECTED by `dominion-requirements/SKILL.md`.** The claim that the canonical rubric has
+> only three levels was based on this criteria file alone. `SKILL.md` — the same skill,
+> `version: "2.0"` — defines a **four**-level table including `LOW | Style, documentation gap |
+> 0 | NICE TO FIX`, plus a full `## LOW (0 points)` section with ten worked examples. So:
+> `appmod-compliance-review`'s `LOW 0` is correct and faithfully derived, and prompt 24's
+> `P1-P4` maps **1:1** onto CRITICAL/HIGH/MEDIUM/LOW rather than being an orphan ladder.
+> **The real defect is that the two dominion files disagree with each other**: the scoreable
+> checklist omits LOW entirely while the guidance file defines it, so a LOW finding has a
+> definition but nowhere to land. The table below is kept as written for the record.
 
 | Source | Levels |
 |---|---|
