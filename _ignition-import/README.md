@@ -41,6 +41,7 @@ references, not values).
 |---|---|---|
 | `agents/OpX-AppMod-P1-Discovery.agent.md` | Phase 1 Discovery coordinator (Steps 1-6) | transcribed from 2 photos — complete (source lines 1-102, blank to 113) |
 | `agents/OpX-AppMod-P2-Modernize.agent.md` | Phase 2 Modernize coordinator (Steps 7-18) | transcribed from 3 photos — complete (source lines 1-136, blank to 140) |
+| `agents/OpX-AppMod-P3-Review.agent.md` | Phase 3 Review coordinator (Steps 19-24) | transcribed from 2 photos — complete (source lines 1-82, blank to 83) |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -147,6 +148,91 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by agent `OpX-AppMod-P3-Review`
+
+Third and shortest agent (82 lines vs 136 and 102). With all three phase coordinators in
+hand, the set can be compared as a whole.
+
+- **Every numbered step number in this file is correct.** The six handoff labels carry
+  their step numbers as keycap emoji (19-24) and all six match their prompt filenames.
+  After the +2 drift in P2 and prompt 24's five Step-23 self-references, this is the first
+  file in the kit with zero numbering defects.
+- **All six numbered review handoffs are `send: false`** — the exact inverse of P1 and P2,
+  where every numbered step is `send: true`. Only the two QA helpers auto-send. This reads
+  as deliberate: review gates require a human to pull the trigger, implementation steps do
+  not. Worth confirming, because if it *is* deliberate it is a good pattern and should be
+  stated somewhere rather than left implicit in three files.
+- **Review steps fan out to three different specialist agents**, so the coordinator is a
+  router rather than an executor: Step 19 → `OpX-Fusion-Reviewer`, Steps 20/21/23 → itself,
+  Steps 22/24 → `OpX-Code-Reviewer`.
+- **Step 20 is named the "technical falsification gate"** — it must run before visual,
+  acceptance and readiness review continue. That gives Phase 3 an explicit fail-fast
+  ordering rather than six equal-weight reviews.
+- **Step 24 absorbed the optional helper lanes**: "the final technical quality and
+  remediation gate, including bounded cleanup and code-violation fixes that were previously
+  handled through optional helper lanes." This matches P2's statement that
+  `Optional Run Cleanup` and `Optional Fix Code Violations` hand ownership to Step 24, and
+  explains why prompt 24 both fixes and reports.
+- **Sign-off framing**: "Treat final review outputs as sign-off evidence, not as exploratory
+  analysis or a substitute for missing Phase 2 implementation work." Phase 3 cannot be used
+  to finish Phase 2's job.
+
+## ⚠ Findings in `OpX-AppMod-P3-Review.agent.md`
+
+**1. Capability gap, and it is the worst of the three: no `edit`, and no `browser` either.**
+Declared tools are exactly eight: `read/readFile`, `search/codebase`, `vscode/runCommand`,
+`execute/runInTerminal`, `execute/getTerminalOutput`, `read/terminalLastCommand`,
+`read/terminalSelection`, `agent`. But:
+
+- Steps 19-24 must **write** durable JSON artifacts (`figma-review.json`,
+  `final-review.json`, `deployment-readiness-review.json`, `FINAL-COMPLIANCE-REPORT.json`)
+  and update `step-response-ledger.json` and `step-workflow-state.json`. No `edit` tool.
+- **Step 21 is a browser-led visual review gate.** Prompt 21 declares `browser` and
+  `figma/*` in its own frontmatter and requires screenshot evidence per route. The
+  coordinator agent that runs it declares no browser tool at all.
+
+Combined with the same finding in P1 Discovery, **two of the three phase coordinators
+cannot write files, and the one that owns the screenshot gate cannot open a browser.**
+Only P2 declares `edit`. This is now the highest-priority defect class in the kit — it is
+not a numbering nit, it is agents lacking the capability to do their stated job.
+
+**2. `QA Portal Full Refresh` hands Phase 3 control to the Phase 2 coordinator.**
+
+```yaml
+  - label: "<emoji> QA Portal Full Refresh"
+    agent: OpX-AppMod-P2-Modernize      # <- in the Phase 3 agent
+```
+
+In P1 this handoff points at `OpX-AppMod-P1-Discovery`; in P2 at
+`OpX-AppMod-P2-Modernize`. P3's copy also points at `OpX-AppMod-P2-Modernize` — it was
+copied from the P2 file and the `agent:` line was not updated. A developer refreshing the
+QA portal during final review is silently switched to the Phase 2 coordinator, which is
+the agent whose own rules say Phase 2 is execution-only.
+
+**3. Still no Write Boundary section.** Only `OpX-AppMod-P1-Discovery` has one. Two of
+three coordinators say nothing about protected toolkit roots. (For P3 the practical risk is
+lower, since it has no `edit` — but that is finding 1, not a mitigation.)
+
+**4. Two rules are stated twice inside this one file.**
+Line 68 and line 78 are both "return the full shared chat contract response shape for
+numbered-step replies, including short completion follow-ups" (the second prefixed
+"Always"). Line 63 and line 82 both say "Treat final review outputs as sign-off evidence,
+not as exploratory analysis" — the second is a truncated copy that drops the "or a
+substitute for missing Phase 2 implementation work" clause. The entire `Phase-Specific
+Notes` section is that one duplicated bullet. Duplicated rules that differ slightly are how
+contradictions start.
+
+## Transcription uncertainties (agent `OpX-AppMod-P3-Review`)
+
+- Same as P1 and P2: **no opening `---` frontmatter delimiter** — line 1 is
+  `name: OpX-AppMod-P3-Review`, closing `---` at line 46. All three agent files show this,
+  so it is a consistent convention in this kit rather than a one-file slip.
+- Handoff labels contain both a leading pictographic emoji and a two-digit keycap sequence
+  (e.g. `1️⃣9️⃣`); both are mojibake in the photo and are recorded as
+  `<MOJIBAKE: emoji>` / `<MOJIBAKE: keycap NN>` placeholders. The keycap digits were
+  legible enough to confirm every step number.
+- File content ends at line 82; the editor shows line 83 blank.
 
 ## Structural facts added by agent `OpX-AppMod-P2-Modernize`
 
