@@ -57,6 +57,7 @@ references, not values).
 | `skills/fusion-g1-to-g2-modernization/references/fusion-g1-recognition.md` | **Ignition-native** — portable Fusion G1 (Knockout/RequireJS/Durandal) recognition reference | transcribed from 13 photos — complete (source lines 1-744, blank to 745); 62 line numbers spot-verified |
 | `skills/fusion-g1-to-g2-modernization/references/g1-to-g2-modernization-playbook.md` | **Ignition-native** — per-slice G1→G2 conversion checklist | transcribed from 2 photos — complete (source lines 1-86); 13 line numbers spot-verified |
 | `skills/fusion-g1-to-g2-modernization/references/knockout-modernization-cheatsheet.md` | **Ignition-native** — Knockout concepts and migration tips | transcribed from 1 photo — complete (source lines 1-59, blank to 60); 11 line numbers spot-verified |
+| `skills/fusion-ui-component-upgrade/SKILL.md` | **Ignition-native** — route-level Fusion primitive adoption (Steps 15-16 lane) | transcribed from 5 photos — complete (source lines 1-239, blank to 244); 28 line numbers spot-verified |
 
 `architecture-structure/` is a **multi-file skill**, now fully transcribed: `SKILL.md` (470 lines),
 `Architecture-Structure.md` (215), `REMAINING-POINTS.md` (108).
@@ -278,6 +279,88 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## Structural facts added by `fusion-ui-component-upgrade/SKILL.md`
+
+The method behind `OpX-fusion-ui-component-upgrade.agent.md` — 239 lines, the deliberate
+primitive-adoption phase that runs after the frontend move, platform integration, and shell
+stabilization are already done.
+
+- **A tight scope fence.** Five explicit exclusions: the initial `LegacyCode/` → `src/` move,
+  client bootstrap (`main.ts` / `app.config.ts` / `fusion.config*.ts`) and auth ownership,
+  protected API transport and bearer-token wiring, shell stabilization and CSS rescue, and broad
+  design/Figma polish. Plus six trigger phrases for when it *does* apply.
+- **A seven-step slice model with validation wired into the loop**: choose one route → classify
+  by primitive family → read the local Fusion contract before editing → smallest route-local
+  change → **immediately run the client build** → repair only the same slice if it fails →
+  update artifacts *only after* the build passes. "Do not batch unrelated routes into one edit
+  cycle."
+- **Deterministic task selection, no operator prompt**: "Do not ask the operator to choose the
+  next route when `ui-fusion-map.json` is current." Six-step derivation from `completedTaskIds`,
+  `taskGraph`, `automationPhases`, and `dependencies` — plus "Do not hardcode task IDs from prior
+  runs or app-specific examples."
+- **Within-route risk ordering** (lower-risk first): read-heavy grid → route-local filters and
+  actions → inline/dialog editors → high-risk selection/bulk/split-workspace → layout and panel
+  cleanup last.
+- **Seven primitive-family rules with named components**: `FusionDataGridBasicComponent`,
+  `FusionTextboxComponent`, `FusionDropdownComponent`, `FusionNumberComponent`,
+  `FusionCheckboxComponent`, `FusionDatePickerComponent`, `FusionSuggestionTextboxComponent`,
+  `FusionAutocompleteComponent`, `FusionButtonToggleGroupComponent`. The suggestion-vs-autocomplete
+  distinction is stated precisely: suggestion for "free typing with suggestion assistance",
+  autocomplete "only when the route is better expressed as a structured lookup choice".
+- **Two npm verification scripts not seen elsewhere**: `npm run verify:fusion-ui` (refreshes the
+  component-level swap report from current source) and `npm run verify:fusion-ui:complete`
+  (closure check).
+- **A green build is explicitly not sufficient**: "If a route throws a browser-console error
+  during this smoke, do not mark the UI slice complete even if `npm run build` is green." Any
+  route still using a temporary bridge family is a *mandatory* runtime smoke candidate.
+- **A shell-drift escape hatch**: if a route's page title, mode toggle row, top action bar, or
+  first filter band is hidden by fixed-header overlap or shell spacing drift, **stop** and route
+  the work back through `Stabilize Frontend In Fusion Shell` rather than continuing.
+- **An eight-point Done Definition**, including "no unrelated route was changed as part of the
+  slice" and closure that "explicitly records any remaining temporary bridges instead of silently
+  counting them as done".
+- Names a new source root for API confirmation:
+  `Framework/src/node/angular/projects/ngx-fusion/**`.
+
+## ⚠ Findings in `fusion-ui-component-upgrade/SKILL.md`
+
+**1. The skill and its own agent disagree about which step they are — and the skill disagrees
+with itself.**
+`OpX-fusion-ui-component-upgrade.agent.md` is on **current** numbering throughout ("Runs the
+Step 15 Fusion UI Integration and Step 16 Next Fusion UI Upgrade Slice lane", "the step-14 UI
+inventory"). This SKILL.md mixes both:
+
+| Line | Text | Verdict |
+|---|---|---|
+| 16 | "executing restructure **Step 17**, `Apply Fusion UI Integration`" | **stale** (+2) — Fusion UI Integration is Step 15 |
+| 89 | "report that **step-15** work is exhausted and the restructure workflow should move to **Step 17**" | **correct** |
+| 218 | "record that **step-17** work is exhausted and **Step 19** is the next workflow gate" | **stale** (+2) |
+| 239 | "**step-15** closure uses `npm run verify:fusion-ui:complete`" | **correct** |
+
+Lines 89 and 218 describe **the same condition** — no eligible tasks remain — with step numbers
+two apart. So the file contradicts itself about both its own step number and its successor, and
+the agent that loads it is on the other numbering again. This is the same per-line update pattern
+seen in prompt 21 and `OpX-AppMod-P2-Modernize`, and here it is unusually consequential: an agent
+reading line 218 will hand off to Step 19 (Final Fusion Restructure Review) and skip Steps 17 and
+18 entirely.
+
+**2. The `description` frontmatter repeats the stale Step 17 reference**, so the wrong number is
+also what a skill-picker surfaces.
+
+**3. A PowerShell-only validation baseline in an otherwise portable skill.**
+`Push-Location 'src/<AppName>.Web.Client'; npm run build; Pop-Location` — `Push-Location`/`Pop-Location`
+are PowerShell cmdlets. Every other validation instruction in the file is a bare `npm run …`.
+Minor, but it is the fourth file in the kit to assume PowerShell without saying so.
+
+## Transcription uncertainties (`fusion-ui-component-upgrade/SKILL.md`)
+
+- Line alignment verified at 28 anchors — 6, 12, 16, 31, 43, 67, 78, 89, 93, 99, 115, 129, 135,
+  137, 144, 150, 156, 161, 166, 171, 177, 195, 205, 218, 220, 229, 239 — all matching. Content
+  ends at 239; the editor shows blank lines through 244.
+- The `description` is a quoted YAML string spanning four editor rows; reconstructed from wrap
+  positions.
+- No mojibake in this file.
 
 ## Structural facts added by the two remaining `fusion-g1-to-g2-modernization` references
 
