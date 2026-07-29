@@ -1,7 +1,17 @@
 # Ignition Kit import (photo transcriptions)
 
 Prompts from the OpX-Ignition-Kit, transcribed from screen photographs supplied by the
-kit owner (work-machine transfer restrictions prevent direct file transfer). Content is
+kit owner (work-machine transfer restrictions prevent direct file transfer).
+
+> **⚠ IMPORTANT SCOPE NOTE (added late in the import).** The repository being
+> photographed is **not a pristine Ignition Kit** — it is the owner's
+> **already-merged Squad + Ignition workspace**. `.github/copilot-instructions.md`
+> opens by calling it *"this Squad-based App Modernization repo"* and describes
+> `.squad/`, `tools/appmod/`, and `AGENTS.md` as first-class parts of it. Files in
+> this import labelled "Ignition-native" were labelled from internal evidence and
+> most are; but the labels are inferences, not provenance records. Check whether a
+> file references `.squad/` or `tools/appmod/` before assuming it is original
+> Ignition. See the framing section below. Content is
 reconstructed faithfully; per-file transcription uncertainties are listed below.
 No credentials appear in these files (env-var *names* like SONATYPE_USERNAME are
 references, not values).
@@ -70,6 +80,7 @@ references, not values).
 
 | File | Role | Status |
 |---|---|---|
+| `copilot-instructions.md` | **★★★ MERGED Squad+Ignition** — the auto-attached repo-wide entrypoint; actual path is `.github/copilot-instructions.md` | transcribed from 3 photos — complete (source lines 1-94); 10 anchors verified |
 | `Copilot-Customization-Cheat-Sheet.md` | **Ignition-native** — maintainer reference for which customization primitive to use; actual path is `.github/Copilot-Customization-Cheat-Sheet.md` | transcribed from 3 photos — complete (source lines 1-150); 15 anchors verified |
 | `constitution.md` | **Ignition-native** — ★ the durable governance source; actual path is **`.github/constitution.md`**, not the repo root | transcribed from 3 photos — complete (source lines 1-146); 14 section anchors verified |
 
@@ -586,6 +597,171 @@ so it sits at rank 3 — above every prompt, agent, and skill, which is the corr
 place for a write boundary. The earlier reading (that it ranked below "the current
 user request") came from `copilot.instructions.md`'s mis-scoped list, not from
 the governing document.
+
+---
+
+## ★★★ MAJOR REFRAMING: the photographed repo is the MERGED Squad + Ignition workspace
+
+`.github/copilot-instructions.md` — the file the Constitution and the cheat sheet
+both name as the auto-attached entrypoint — opens like this:
+
+> Purpose: This is the repository-wide custom instructions file for **this
+> Squad-based App Modernization repo.**
+
+It then describes, as first-class parts of the repo:
+
+- `.squad/` — *"the authoritative team definition: roster (`team.md`), routing
+  (`routing.md`), standing decisions (`decisions.md`, **D-001..D-016**), and
+  agent charters"*
+- `.github/agents/squad.agent.md` — *"the Copilot coordinator entry point
+  (`/agent squad` in an active session, or `copilot --agent squad` to launch one)"*
+- `tools/appmod/` — *"the deterministic gate scripts and the frozen scorecard
+  engine that prove a step is actually done - never self-declared"*
+- `AGENTS.md` at the repo root — *"the thin, always-on engineering-conventions
+  file every Squad agent loads"*
+
+**This is not a pristine Ignition Kit.** The merge has already happened, and the
+merged design is documented. Several things follow:
+
+1. **My "Ignition-native" labels are inferences, not provenance.** They were
+   assigned from internal evidence (does the file reference `.squad/`?) and most
+   are probably right, but they were never authoritative. The index and the top of
+   this README now say so. The reliable test remains: a file that references
+   `.squad/` or `tools/appmod/` is Squad-side.
+2. **`discovery-runner.instructions.md` was not an outlier.** I flagged it as "your
+   own Squad bridge" and treated it as the exception. It is the *pattern* — this
+   file names it as the wiring for Discovery and says *"later phases follow the
+   same runner pattern."*
+3. **`.squad/decisions.md` has grown from D-001..D-010 to D-001..D-016.** Six
+   standing decisions exist that are not in the Squad repo this import lives in.
+   They are named only in aggregate here (*"the auth-strangler order, Fusion MCP as
+   sole structure authority, the frozen-scorecard rule, and more"*), so D-011
+   through D-016 are unknown. **This is now the top of the backlog** — they are
+   standing policy, and six of them are invisible to me.
+
+---
+
+## ★ The Process/Execution split, stated by the merged repo itself
+
+Section `## Process Model And Execution Layer` is the clearest statement of the
+integration design anywhere in either kit:
+
+> The modernization **PROCESS** is the original Ignition Kit design: the 24
+> numbered prompts, the machine-artifact homes, and the per-step
+> producer/consumer contract … **Stay as close to that design as possible.**
+>
+> Squad is the **EXECUTION LAYER, not a replacement process.** Its value is token
+> efficiency: the coordinator runs the numbered steps in order, dispatches each to
+> a subagent scoped to only that step's contract inputs, keeps just summaries in
+> its own context, and **STOPS between steps for developer review.**
+
+And it declares exactly one intentional divergence, in a bullet literally titled
+*"Deliberate deviation from Ignition methodology"*: the compliance report is
+AI-only (review manifest for the file set, fixed template for shape, AI judgment
+for the review), replacing Ignition's deterministic `04-P1-generate-report.ps1`.
+*"The rest of each prompt runs as written."*
+
+One deliberate deviation, named and justified. That is the right shape for a
+merge, and it matches the Step 4 override already recorded in
+`discovery-runner.instructions.md`.
+
+**It also settles the status of the old agent roster:**
+
+> The pre-Squad `.github/agents/*.agent.md` roster (everything except
+> `squad.agent.md`) is **historical** - Squad agents execute the prompts instead.
+
+That reframes eleven agent files transcribed early in this import. They are not
+the live execution surface; `squad.agent.md` is. The `Ultimate-Ignition-edit` /
+`Ultimate-AppMod-Ignition` identical-twin risk recorded earlier is therefore
+**lower than stated** — those agents are historical. Worth confirming they are
+actually unreachable rather than merely described as historical, since a file in
+`.github/agents/` is still invocable.
+
+---
+
+## ✅ The `stepId` migration is enforced at the repo-wide level
+
+Two of the four hits for `step-registry.json` in this file are *mandates*, not
+descriptions:
+
+> Use `step:<stepId>` tokens (e.g., `step:26b4e1`) in all cross-references between
+> prompts, instructions, agents, and scripts **instead of hard-coding step numbers
+> or names.**
+
+> When adding a cross-reference to a numbered step in any toolkit file, look up the
+> step in `.github/instructions/step-registry.json` and use its `stepId` token.
+> **If the step does not yet have a registered ID, add one before writing the
+> reference** (generate with `[System.Convert]::ToHexString(...)` and verify
+> uniqueness against the registry).
+
+So the fix for the +2 drift is not only designed — it is mandated in the
+always-on instruction file, with the ID generator inline. Every surviving bare
+`Step <N>` cross-reference recorded in this document is a violation of a rule the
+repo already states. That makes the linter recommendation concrete: **flag bare
+step references against `step-registry.json`.**
+
+---
+
+## Structural facts added by `copilot-instructions.md`
+
+94 lines. Short by design — the Constitution and the cheat sheet both say this
+file must stay concise.
+
+**The artifact-home split is explained, and it is deliberate:**
+
+> `.modernization/ignition-artifacts/` is **human-facing evidence and planning**,
+> `tools/appmod/artifacts/` is **deterministic tool input/output**.
+
+That is the missing rationale behind the artifact roots catalogued throughout this
+README. It also names `tools/appmod/artifacts/` as the home for score inputs —
+`security-scan.json`, `dependency-eol.json`, `coverage.cobertura.xml`,
+`endpoint-inventory.json` goldens — none of which appear in
+`AppMod-Artifact-Contract.json`, consistent with them being tool I/O rather than
+step artifacts.
+
+**New assets named here and nowhere else in the import:**
+`AGENTS.md` (repo root), `tools/appmod/pins.json`,
+`tools/appmod/scorecard/rubric.md`, `tools/appmod/scorecard/VERSION`,
+`tools/appmod/verify-kit.ps1`, `tools/appmod/gates/lib/tests/run_tests.py`,
+`.github/skills/appmod-modernization-process/SKILL.md`,
+`tools/appmod/gates/compliance-scan.*`.
+
+**D-008 is quoted directly:** the frozen scoring rubric is *"read-only to
+executing agents, changes require a `tools/appmod/scorecard/VERSION` bump"* —
+identical to the Squad rule.
+
+**VS Code tasks named:** `src: start api + client`, `legacy: run app`, and
+`workspace: start legacy + src (hard rule)`.
+
+**npm dependency-drift order is fixed:** `npm run update`, then
+`npm run install`, then `npm run start`.
+
+---
+
+## ⚠ Findings in `copilot-instructions.md`
+
+**1. A repo hook exists — which partly contradicts the cheat sheet.** Line 90:
+*"If the repo hook blocks a change because of mojibake or encoding issues, fix the
+file encoding and restage."* The cheat sheet grades Copilot hooks as
+`Not evident`. These are probably different things (a **git** pre-commit hook vs a
+**Copilot lifecycle** hook), and both statements can be true — but the kit has
+demonstrated it is willing to enforce at commit time, which strengthens the case
+for the Copilot stop-hook recommended above.
+
+**2. It still omits the Constitution from its own precedence list.** This file has
+no precedence section at all — the five-level list recorded earlier lives in
+`.github/instructions/copilot.instructions.md` (the dotted file), not here. So the
+two similarly-named files split the job: this one carries repo facts, the dotted
+one carries operational rules and the mis-scoped precedence list. Worth noting
+that the Constitution instructs *this* file to *"point back to this file instead
+of duplicating it"* — and it does not reference `constitution.md` even once.
+A one-line pointer would close the loop the Constitution describes.
+
+**3. `AGENTS.md` is cited four times and has never been photographed.** It is
+described as *"the thin, always-on engineering-conventions file **every** Squad
+agent loads"* and as *"the detailed engineering standard"* for nine named
+concerns. An always-on file loaded by every agent, cited four times, is a
+significant gap.
 
 ---
 
