@@ -39,6 +39,7 @@ references, not values).
 
 | File | Role | Status |
 |---|---|---|
+| `instructions/kit-update.instructions.md` | **Ignition-native** — guardrails for editing the kit *itself* (toolkit-maintenance, not app modernization) | transcribed from 4 photos — complete (source lines 1-178, blank to 180); 18 anchors verified |
 | `instructions/step-registry.json` | **Ignition-native** — ★ the stable step-identity registry; the kit's designed fix for numbering drift | transcribed from 4 photos — complete (source lines 1-205); **validates as JSON**, all 24 steps present |
 | `instructions/step-confidence-contract.instructions.md` | **Ignition-native** — minimum confidence shape every numbered prompt must honor | transcribed from 2 photos — complete (source lines 1-63, blank to 64); 9 anchors verified |
 | `instructions/qa-portal-reporting.instructions.md` | **Ignition-native** — the canonical portal-is-manual-only rule (referenced by 3 other files) | transcribed from 1 photo — complete (source lines 1-35 + 1 trailing blank, blank to 37) |
@@ -319,6 +320,46 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## ★ `step-registry.json` transcribed in full — the fix is real, and it is complete
+
+The registry is captured verbatim (205 lines, **validates as JSON**, all 24 steps).
+It confirms the design end-to-end and adds the pieces `discovery-runner` only
+summarized.
+
+`resolutionConvention` — five named rules, verbatim:
+
+| Key | Rule |
+|---|---|
+| `tokenFormat` | `step:<stepId>` |
+| `inMarkdown` | Write cross-references as `step:<stepId>`. Copilot resolves these to the human label before producing any output. |
+| `inScripts` | Pass `-StepId '<stepId>'` instead of `-Step <n>` for scripts updated to support this registry. **Scripts not yet migrated still use `-Step <n>`; migrate them as each step's prompt is updated.** |
+| `inOutput` | Always translate a stepId to its human label. **Never surface raw stepId tokens to a user.** |
+| `addingNewStep` | Generate a new 6-char lowercase hex ID with `[System.Convert]::ToHexString([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(3)).ToLower()`. Verify it does not already appear in this file before commit. |
+
+Each of the 24 entries carries `stepId`, `step`, `label`, `phase`,
+`promptPath`, `scriptPrefix`. The full ID table:
+
+| Step | ID | Step | ID | Step | ID |
+|---|---|---|---|---|---|
+| 1 | `7be409` | 9 | `2dbd04` | 17 | `0576c8` |
+| 2 | `1fc2ba` | 10 | `a417e0` | 18 | `be24f9` |
+| 3 | `26b4e1` | 11 | `6cd2a2` | 19 | `22f169` |
+| 4 | `261769` | 12 | `24a83e` | 20 | `cec9a1` |
+| 5 | `d847e7` | 13 | `278613` | 21 | `e30c80` |
+| 6 | `6c50db` | 14 | `f746b9` | 22 | `57c6af` |
+| 7 | `476ced` | 15 | `2d136c` | 23 | `9710dc` |
+| 8 | `300dfa` | 16 | `fe0270` | 24 | `9bd419` |
+
+**Every `promptPath` and `scriptPrefix` in the registry is correct** — no +2
+drift anywhere in this file. It is the one place in the kit whose step
+identities are entirely trustworthy, which is exactly what a registry is for.
+
+That makes it the natural authority for the linter: any bare `Step <N>`
+cross-reference in a prompt/instruction/agent can be validated against this
+table, and any `promptPath` mismatch is a hard error.
+
+---
 
 ## ★★★ THE DRIFT PROBLEM IS ALREADY SOLVED — the fix is `step-registry.json`, and the migration is just unfinished
 
