@@ -58,6 +58,7 @@ references, not values).
 | `skills/fusion-g1-to-g2-modernization/references/g1-to-g2-modernization-playbook.md` | **Ignition-native** — per-slice G1→G2 conversion checklist | transcribed from 2 photos — complete (source lines 1-86); 13 line numbers spot-verified |
 | `skills/fusion-g1-to-g2-modernization/references/knockout-modernization-cheatsheet.md` | **Ignition-native** — Knockout concepts and migration tips | transcribed from 1 photo — complete (source lines 1-59, blank to 60); 11 line numbers spot-verified |
 | `skills/fusion-ui-component-upgrade/SKILL.md` | **Ignition-native** — route-level Fusion primitive adoption (Steps 15-16 lane) | transcribed from 5 photos — complete (source lines 1-239, blank to 244); 28 line numbers spot-verified |
+| `skills/runtime-parity-checkpoint/SKILL.md` | **Ignition-native** — boot-observe-assert runtime proof against the running app | transcribed from 3 photos — complete (source lines 1-91); 23 line numbers spot-verified |
 
 `architecture-structure/` is a **multi-file skill**, now fully transcribed: `SKILL.md` (470 lines),
 `Architecture-Structure.md` (215), `REMAINING-POINTS.md` (108).
@@ -279,6 +280,91 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## Structural facts added by `runtime-parity-checkpoint/SKILL.md`
+
+**The strongest anti-false-pass doctrine in the kit.** 91 lines, reusable across steps, and the
+only skill that exists purely to stop a step being marked done on evidence that never observed
+the running app.
+
+- **Ten named failure modes that static scans cannot see**, each with the reason a normal check
+  passes anyway:
+  *configured but not rendering* · *present but hidden* · *rendered but collapsed* (fewer or more
+  generic columns than legacy) · *present but inert* (handler is an empty body / `TODO` /
+  permanently `disabled`) · *filter wired but ineffective* (row set identical before and after) ·
+  *sibling lists return identical data* · *mutate fires a modal but no API call follows* (the
+  "placeholder-modal pattern") · *same label, different control type* (legacy dropdown re-created
+  as free-text) · *verified by proxy, not by render* · *deferred instead of driven* on
+  parameterized detail routes.
+- **A hard rule against status proxies**, stated as its own section:
+  > a clean client build, a parity-scanner `majorGaps=0`, an SPA route returning HTTP 200, or a
+  > `curl`/unauthenticated probe returning `401`/`404`/`500` … are necessary but never sufficient
+  > and must never be recorded as a `pass` on their own.
+
+  An unauthenticated `401` "proves only that the route is **registered and protected**". Every
+  data-binding verdict must come from an **authenticated session** observing **real rows in the
+  DOM** while the backend log is watched. If that is impossible, record `blocked`/`unverified`
+  and keep the step open — "do not write `pass` from assumption."
+- **`effectClass`-typed behavioral assertions** read from `interaction-wiring-inventory.json`:
+  `filter` (assert `rowsChanged`), `distinct-data` (assert no two sibling sections share a first
+  row), `mutate` (assert a real POST/PUT/DELETE/PATCH is observed on the network tab or backend
+  log — explicitly *without* submitting destructive operations, using preflight/OPTIONS or the
+  incoming-request log entry).
+- **Both sides of the request are watched**: integrated browser as primary (console errors, failed
+  requests, DOM presence *and visibility*), backend log stream as secondary (unhandled exceptions
+  and 500s the browser only sees as an opaque error).
+- **A guard-redirect audit**: any `canActivate` denial redirect pointing at an undeclared route
+  causes "a silent fallthrough to the wildcard route — typically the app home — which hides the
+  access-denied condition entirely."
+- **A detailed evidence schema** (`runtime-parity-checkpoint.json`) with per-route entries, eight
+  roll-up parities, and `waivers[]` requiring `{ item, reason, owningStep }`. `overall` is `pass`
+  only when every parity passes, every filter shows `rowsChanged: true`, every mutate shows
+  `networkCallObserved: true`, and error counts are zero or explicitly waived.
+- **Two new scripts**: `.github/skills/runtime-parity-checkpoint/scripts/Start-SrcRuntime.ps1`
+  (starts API + client with combined stdout/stderr to a timestamped log, writes
+  `runtime-endpoints.json`) and `Stop-SrcRuntime.ps1`. Second skill with a `scripts/` subfolder.
+- **A named VS Code task**: `src: start api + client`.
+- It supplies the honest-pending vocabulary other steps use — e.g. Step 12's
+  `liveDataRenderStatus: UnverifiedPendingAuth`.
+
+## ⚠ Findings in `runtime-parity-checkpoint/SKILL.md`
+
+**1. The Procedure has two step 5s.** Source lines 67 and 68 both begin `5.` — "Drive
+parameterized and detail routes with a real record" and "Guard redirect target audit" — followed
+by `6.` and `7.`. So the numbered procedure runs 1, 2, 3, 4, 5, 5, 6, 7. An agent asked to "run
+step 5" has two different jobs to choose from.
+
+**2. A literal `\u2014` escape sequence leaked into the prose.** Source line 82 reads
+"…carried-forward prior observation is invalid `\u2014` set that route…". A JSON-escaped em dash
+was written into markdown and never decoded. Preserved verbatim in the transcription.
+
+**3. Three different artifact roots in one file.**
+`.modernization/fusion-restructure/…` (inventory and the checkpoint output — short form, no
+`ignition-artifacts/modernize/` prefix), `.modernization/legacy-analysis/interaction-wiring-inventory.json`
+(**a root not seen in any other file**), and `.modernization/artifacts/runtime-logs/`. Elsewhere
+the interaction-wiring inventory lives under `.modernization/ignition-artifacts/discovery/`. This
+is now the widest artifact-root spread found in a single file.
+
+**4. App-specific leakage — fifth instance.** "five Spec Book types: Foundation, Pole Calc, Rehab,
+Transmission, Antenna" is real domain data from one utility application, used as the worked
+example for sibling-list distinctness. The rule is general; the example is not.
+
+**5. Nothing transcribed so far references this skill.** No prompt and no agent names
+`runtime-parity-checkpoint`, yet it describes itself as "the standard way to secure a visible
+checkpoint" and is written to be invoked by any step that changes `src/`. If skills load only by
+explicit reference rather than by convention, the kit's strongest verification gate is never
+reached. Third possible orphan after `appmod-backend-dotnet` and `diagnose`.
+
+## Transcription uncertainties (`runtime-parity-checkpoint/SKILL.md`)
+
+- Line alignment verified at 23 anchors — 5, 7, 9, 11, 13, 24, 26, 33, 35, 37, 46, 48, 59, 61,
+  67, 68, 72, 74, 81, 83, 88, 90, 91 — all matching. Content ends at 91.
+- The file is heavily hard-wrapped with very long logical lines; the `routesChecked` schema (line
+  77) and the `overall` rule (line 81) each span many editor rows and were reconstructed from
+  wrap positions.
+- Em dashes are genuine `—` characters throughout **except** the one literal `\u2014` at line 82,
+  preserved as-is.
+- No mojibake in this file.
 
 ## Structural facts added by `fusion-ui-component-upgrade/SKILL.md`
 
