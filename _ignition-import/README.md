@@ -70,6 +70,7 @@ references, not values).
 
 | File | Role | Status |
 |---|---|---|
+| `templates/COMPLIANCE-ANALYSIS-REPORT.template.md` | **Ignition-native** — ★ the fixed-category compliance report emitted at Steps 4 and 22 | transcribed from 4 photos — complete (source lines 1-181, blank to 182); 19 anchors verified |
 | `templates/AMBIGUOUS-PLACEMENT-REPORT-TEMPLATE.md` | **Ignition-native** — durable review artifact for a legacy surface that does not map cleanly into the approved target structure | transcribed from 2 photos — complete (source lines 1-81); 14 anchors verified |
 
 ### Manifests
@@ -330,6 +331,87 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## ★ `COMPLIANCE-ANALYSIS-REPORT.template.md` — the kit's own frozen-scorecard equivalent
+
+181 lines, no frontmatter (correct for a template). This is the artifact behind
+the Step 4 baseline review and the Step 22 final review, and it contains the
+strongest anti-drift mechanism found anywhere in the kit outside
+`step-registry.json`.
+
+**The Requirements Checklist is a FIXED category set.** Its own preamble, verbatim:
+
+> This table is the FIXED category set - identical for every application that
+> runs through the kit.
+> Rows are never added, removed, renamed, or reordered by a review; only
+> Status/Findings/Notes vary.
+> `UNKNOWN` means "not yet judged" (a worksheet placeholder), never "not
+> applicable".
+
+That is functionally identical to Squad's **D-008 frozen scorecard** rule, arrived
+at independently. The `UNKNOWN` clarification is the sharp part: it closes the
+single most common way a compliance review quietly shrinks — reclassifying an
+awkward category as "not applicable" instead of judging it. For a company-wide
+hackathon where every team emits one of these, a fixed row set is what makes the
+reports comparable at all.
+
+**The 21 fixed rows**, in order: 12-factor overall; 12-factor externalized
+config; backing services; logs as event stream; stateless processes; SOLID
+overall; single responsibility; open/closed; liskov substitution; interface
+segregation; dependency inversion; OAuth 2.0 OIDC or SAML authentication;
+policy-based authorization (no Roles / `User.IsInRole`); stateless API / no
+static mutable state; RESTful API endpoints; JSON responses; API Docs
+(Scalar/OpenAPI) config-driven and disabled in production; Logging: 7 types +
+event-stream (stdout/stderr); all I/O operations async; test coverage >= 80%;
+packages approved.
+
+**The scoring formula matches `AppMod-Acceptance-Criteria.md` exactly:**
+`Score = 100 - (CRITICAL x 10) - (HIGH x 5) - (MEDIUM x 2)`, and the template
+makes the arithmetic show its work by rendering both the formula and the
+substituted values. Two files, one formula, no drift — worth noting given how
+many other pairs in this kit disagree.
+
+**Four deployment gates**, one more than previously recorded:
+
+| Gate | Required |
+|---|---|
+| Compliance Score | `>= 80` |
+| CRITICAL Issues | `0` |
+| Test Coverage | `>= 80%` |
+| **Review complete** | **`100% files + every category judged`** |
+
+The fourth gate is new to this import and is the one that gives the fixed-row
+rule teeth: a review that leaves categories at `UNKNOWN` fails the gate rather
+than passing with a thinner table.
+
+**Scan Completeness is a first-class section**, requiring repo/commit, the scan
+inventory file, total files in scope, total files scanned, and a completeness
+percentage — with an explicit honesty escape hatch:
+
+> If you cannot compute counts deterministically, set them to `UNKNOWN` and point
+> to the inventory file and the exact scope/excludes used.
+
+This is the same instinct as the `discovery-runner` two-layer verification
+finding (a presence check cannot tell a 14-service inventory from the ~40 that
+exist): make the *coverage* of the review auditable, not just its verdict.
+
+**Baseline vs post-modernization is one template, not two.** The Progress
+Comparison section is marked "Required for post-modernization reports only", with
+explicit instructions for baseline runs (set `{{BASELINE_*}}` to this report's
+values, `{{CURRENT_*}}` and all `{{*_CHANGE}}` to `N/A`). That is why the
+artifact contract has Step 4 and Step 22 producing differently-named outputs from
+the same shape.
+
+**Placeholder convention:** `{{UPPER_SNAKE}}`, roughly 90 distinct tokens. Note
+this differs from the `<AppName>` angle-bracket convention used everywhere else in
+the kit — templates use `{{...}}`, guidance files use `<...>`. Worth encoding in
+the linter so it does not flag either as wrong.
+
+**One small defect:** `{{EXCLUDED_PATHS}}` is emitted twice — once in the header
+block (line 8) and again as the entire Appendix (line 181). Harmless, but a
+renderer will duplicate the content.
+
+---
 
 ## Structural facts added by `templates/AMBIGUOUS-PLACEMENT-REPORT-TEMPLATE.md`
 
