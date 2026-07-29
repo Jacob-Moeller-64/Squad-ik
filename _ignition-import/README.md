@@ -50,6 +50,7 @@ references, not values).
 | `skills/architecture-structure/REMAINING-POINTS.md` | **Ignition-native** — the five formation decisions still intentionally open | transcribed from 2 photos — complete (source lines 1-108, blank to 109); 31 line numbers spot-verified |
 | `skills/architecture-structure/SKILL.md` | **Ignition-native** — the modernization-formation move contract (largest file in the kit) | transcribed from 9 photos — complete (source lines 1-470, blank to 472); 24 line numbers spot-verified |
 | `skills/browser-source-decomposition/SKILL.md` | **Ignition-native** — classifies the legacy browser source shape and picks the decomposition contract | transcribed from 2 photos — complete (source lines 1-102, blank to 103); 22 line numbers spot-verified |
+| `skills/diagnose/SKILL.md` | **Ignition-native, meta** — audits an AI workflow across 5 quality dimensions | transcribed from 2 photos — complete (source lines 1-106); 27 line numbers spot-verified |
 
 `architecture-structure/` is a **multi-file skill**, now fully transcribed: `SKILL.md` (470 lines),
 `Architecture-Structure.md` (215), `REMAINING-POINTS.md` (108).
@@ -271,6 +272,93 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## Structural facts added by `diagnose/SKILL.md`
+
+**A meta-skill.** The first transcribed file that has nothing to do with .NET, Fusion, or
+modernization: it audits *AI workflows themselves*. 106 lines.
+
+- **Five scored dimensions, 1-5 each, 25 total**: Prompt Quality, Context Efficiency, Tool
+  Health, Architecture Fitness, Safety & Reliability.
+- **A scoring guide with an action per band**: 5 production-excellent (no action) → 4 polish
+  prompt clarity or output schema → 3 add error handling or reduce complexity → 2 immediate
+  attention, add retries/guards → 1 rebuild from scratch.
+- **An ASCII dashboard report format** with per-dimension bars, an overall score, three CRITICAL
+  FINDINGS ranked by severity, and three RECOMMENDED ACTIONS mapped one-to-one to those findings.
+- **Concrete numeric thresholds**, which is what makes it usable rather than vibes:
+  **"Tool count (3-7 ideal, 13+ problematic)"**.
+- **Two calibration rules that stop it producing noise** — both worth copying:
+  - *Scope attribution*: "Distinguish project-configured tools (custom scripts, project MCP
+    servers) from agent-level tools (built-in IDE tools, global MCP servers). **Only flag tool
+    overhead for tools the project can actually control.**"
+  - *Contextual output filtering*: "data between a user's own frontend and backend is lower risk
+    than data exposed to external services."
+- **Context Efficiency names attention-gradient awareness explicitly** — "critical info at
+  start/end" — alongside context budget allocation, window utilization, state management, and
+  memory strategy.
+- **Cost appears twice**: `Cost awareness (budgeted vs. unbounded)` under Architecture Fitness and
+  `Cost controls (ceilings set vs. unbounded)` under Safety & Reliability.
+- **Evaluation strategy is scored**: "golden tests vs. 'it seems to work'".
+
+## ⚠ Findings for `diagnose/SKILL.md`
+
+**1. The kit fails its own Tool Health rubric, and the numbers are not close.**
+This skill sets 3-7 tools as ideal and **13+ as problematic**. Counting declared tools across the
+eleven transcribed agents:
+
+| Agent | Declared tools | Verdict by this rubric |
+|---|---:|---|
+| `Ultimate-Ignition-edit` | 26 | 2× the problematic threshold |
+| `Ultimate-AppMod-Ignition` | 26 | 2× the problematic threshold |
+| `OpX-AppMod-P2-Modernize` | 24 | problematic |
+| `OpX-AppMod-P1-Discovery` | 18 | problematic |
+| `OpX-AppMod-P3-Review` | 8 | above ideal |
+| `OpX-fusion-ui-component-upgrade` | 7 | ideal |
+| `OpX-dotnet-upgrade` | 7 | ideal |
+| `OpX-csharp-janitor` | 7 | ideal |
+| `OpX-csharp-expert` | 7 | ideal |
+| `OpX-Fusion-Reviewer` | 6 | ideal |
+| `OpX-Frontend-Angular-Transform` | 6 | ideal |
+
+The split is clean and informative: **every specialist sits inside the ideal band; every
+coordinator and both orchestrators blow past the problematic threshold.** And the skill's own
+scope-attribution caveat does not excuse it — these are `.github/agents/*.agent.md` tool lists,
+which are exactly the "project-configured" surface the project controls.
+
+`OpX-AppMod-P2-Modernize` is the worst case in kind rather than count: nine of its 24 entries are
+fine-grained forms already covered by coarse grants it also declares (`edit`, `vscode`, `browser`,
+`agent`), so a third of its tool surface is decorative.
+
+**2. The kit ships its own audit tool and, on the evidence so far, has never been pointed at
+itself.** Running `diagnose` against the Ignition Kit before the hackathon is close to free and
+would surface, in the kit's own vocabulary:
+- *Tool Health* — the table above.
+- *Context Efficiency* — `architecture-structure` loads ~800 lines eagerly before any app code is
+  read (see that skill's findings).
+- *Safety & Reliability / cost controls* — the "continue / proceed / resume / keep going"
+  autonomy rule in `architecture-structure/SKILL.md` has **no ceiling**, which is precisely
+  `Cost controls (ceilings set vs. unbounded)` scoring low.
+- *Architecture Fitness / observability* — this one should score well: decisions are logged, the
+  handoff protocol is structured, and step ownership is explicit.
+
+**3. Nothing transcribed so far references this skill.**
+No agent and no prompt names `diagnose`. Same situation as `appmod-backend-dotnet`. Either skills
+are discovered by convention from `.github/skills/**`, or this is a second orphan — and unlike the
+others, `diagnose` is generic enough that it would be useful invoked directly by a developer.
+
+## Transcription uncertainties (`diagnose/SKILL.md`)
+
+- Line alignment verified at 27 anchors — 4, 6, 8, 10, 14, 20, 24, 30, 34, 39, 41, 45, 51, 55, 61,
+  63, 65, 73, 76, 81, 85, 87, 89, 97, 99, 101, 106 — all matching. Content ends at 106.
+- **The dashboard's bar glyphs are approximate.** The photo shows filled and unfilled blocks whose
+  exact characters are not resolvable; transcribed as `█`/`░`, and the column padding inside the
+  box is reconstructed rather than measured. The scores themselves (4/5, 3/5, 2/5, 4/5, 2/5,
+  15/25) are legible and exact.
+- The box-drawing frame is transcribed as UTF-8 box characters (`┌ ─ ┐ │ ├ ┤ └ ┘`); at photo
+  resolution a pure-ASCII original (`+---+`, `|`) cannot be fully excluded.
+- Hyphens in prose (e.g. "5 quality dimensions - prompt quality") are transcribed as plain hyphens;
+  some may be en/em dashes in the source.
+- No mojibake in this file.
 
 ## Structural facts added by `browser-source-decomposition/SKILL.md`
 
