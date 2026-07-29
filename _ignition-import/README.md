@@ -49,6 +49,7 @@ references, not values).
 
 | `skills/architecture-structure/REMAINING-POINTS.md` | **Ignition-native** — the five formation decisions still intentionally open | transcribed from 2 photos — complete (source lines 1-108, blank to 109); 31 line numbers spot-verified |
 | `skills/architecture-structure/SKILL.md` | **Ignition-native** — the modernization-formation move contract (largest file in the kit) | transcribed from 9 photos — complete (source lines 1-470, blank to 472); 24 line numbers spot-verified |
+| `skills/browser-source-decomposition/SKILL.md` | **Ignition-native** — classifies the legacy browser source shape and picks the decomposition contract | transcribed from 2 photos — complete (source lines 1-102, blank to 103); 22 line numbers spot-verified |
 
 `architecture-structure/` is a **multi-file skill**, now fully transcribed: `SKILL.md` (470 lines),
 `Architecture-Structure.md` (215), `REMAINING-POINTS.md` (108).
@@ -270,6 +271,99 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## Structural facts added by `browser-source-decomposition/SKILL.md`
+
+The router that decides *how* a legacy browser surface maps to the target client. 102 lines,
+Ignition-native (no `source:`/`confidence:` frontmatter).
+
+- **An eleventh skill: `/.github/skills/fusion-g1-to-g2-modernization/SKILL.md`**, loaded whenever
+  Fusion G1 recognition signals appear.
+- **Two more unnumbered prompts**, bringing `.github/prompts/P2-Modernize/` to four known files:
+  `mvc-to-browser-client.prompt.md`, `angular-to-browser-client.prompt.md`, `cleanup.prompt.md`,
+  `fix-violations.prompt.md`.
+- **Exactly two decomposition contracts, and a hard rule against inventing a third**: "Do not
+  invent a new stack-specific frontend lane beyond the approved MVC-to-browser-client path,
+  Angular-to-browser-client path, or an explicit validate-only or proof-only posture."
+- **A seven-row Source-Shape Decision Matrix** covering server-rendered, browser-led SPA,
+  Fusion G1, mixed/hybrid, static document flow, already-modern shell, and browser-not-applicable
+  — each with recognition signals, required contract posture, and a note.
+- **Fusion G1 is finally defined by its recognition signals**: Knockout, RequireJS or AMD,
+  Durandal patterns, legacy `<fusion-*>` controls, Fusion G1 services. It classifies as a
+  browser-led SPA path "with stricter translation and verification rules".
+- **The classification never routes on file extension**: "Choose based on route ownership and
+  where behavior actually lives, not on file extension alone", and for ambiguous cases "choose
+  the primary path by runtime ownership".
+- **Mixed/hybrid apps get both contracts, not a custom lane** — run whichever contract prompts
+  cover the active families, "then reconcile them into one returned-data summary instead of
+  creating a custom third lane".
+- **A ten-field returned-data contract**: `browserSurfaceApplicability`, `browserSourceFamilies`,
+  `primaryDecompositionPath`, `secondaryDecompositionPaths`, `requiredContracts`,
+  `contractRefreshActions`, `approvedBrowserRoot`, `validateOnlyReason`,
+  `unsupportedSecondaryEdges`, `exactNextStep`.
+- **`NotApplicable` still owes proof, not silence**: "return a lightweight proof decision instead
+  of pretending browser decomposition still owns hidden work" — and the matrix note repeats it:
+  "still return lightweight proof, not silence."
+- **An already-modern shell is preserved, not regenerated**: "Preserve current shell structure and
+  close the highest-value scaffold gaps instead of regenerating from scratch."
+- Uses the **long** artifact root (`.modernization/ignition-artifacts/modernize/fusion-restructure/`)
+  — a vote against the short form used in `architecture-structure/SKILL.md` and prompt 21.
+
+## ⚠ Findings in `browser-source-decomposition/SKILL.md`
+
+**1. The entire file is on the old numbering — uniformly — and the wrong numbers are all valid
+current step numbers.**
+
+Unlike `OpX-AppMod-P2-Modernize` (mixed, some lines correct) or the archived Angular agent (prose
+stale, handoffs correct), **every step reference in this file is +2**:
+
+| File says | Actually is |
+|---|---|
+| "the current **Step 5** legacy-system-analysis evidence" | Step 3 — Legacy System Analysis |
+| "the current **Step 7** modernization solution design and migration plan" | Step 5 — Modernization Solution Design |
+| "Confirm `browserSurfaceApplicability` from **Step 7**" | Step 5 (owns `decisions.json`) |
+| "**Step 12** owns source classification … styling foundation, shell formation" | Step 10 — Frontend Foundation & Scaffold |
+| "**Step 13** owns route-family and shared-client migration" | Step 11 — Frontend Migration |
+| "**Step 13** through **Step 15** browser lanes" | Steps 11 through 13 |
+
+**This is the most dangerous drift instance found so far, and the reason is subtle.** Every other
+stale reference has been either obviously wrong or harmlessly vague. Here, "Step 12" and "Step 13"
+are *real, current, adjacent steps with different jobs*:
+
+- An agent reads "Step 12 owns source classification and shell formation" and attaches browser
+  decomposition to **Step 12 = Frontend Platform Integration** (auth, HTTP wiring, config).
+- It reads "Step 13 owns route-family migration" and attaches feature migration to
+  **Step 13 = Frontend Shell Stabilization**.
+- Meanwhile the actual owners — Step 10 (Foundation & Scaffold) and Step 11 (Frontend Migration) —
+  get no decomposition guidance at all.
+
+Nothing errors. The Step Ownership Guardrail at the end of the file, whose entire purpose is to
+stop work landing in the wrong step, is itself pointing at the wrong steps. **A whole-file `-2`
+is the correct fix**, and it is safe here precisely because the file is internally consistent.
+
+**2. One line does not fit the +2 reading.**
+Matrix row 7: "Steps **10 through 13** still return lightweight proof, not silence." Under a
+uniform +2 that maps to current Steps 8-11 — but Steps 8 and 9 are backend formation and backend
+integration hardening, which have no browser proof to return. Under current numbering, 10-13 is
+exactly the frontend block and reads correctly. So this single line appears to already be on the
+new numbering while the rest of the file is on the old, which is the same per-line update pattern
+seen in prompt 21 and `OpX-AppMod-P2-Modernize`. **Do not blind-shift this line with the others.**
+
+**3. Ninth vote in the artifact-root ledger.**
+This file uses `.modernization/ignition-artifacts/modernize/fusion-restructure/decisions.json` and
+`control-point-inventory.json`. `architecture-structure/SKILL.md` and prompt 21 use the short
+`.modernization/fusion-restructure/…` form for the same artifacts. The long form now leads, but
+both forms appear in Ignition-native files, so this is a real fork rather than one file's typo.
+
+## Transcription uncertainties (`browser-source-decomposition/SKILL.md`)
+
+- Line alignment verified at 22 anchors — 4, 6, 8, 12, 16, 23, 27, 29, 40, 42, 52, 56, 63, 65, 67,
+  73, 75, 83, 87, 98, 100, 102 — all matching. Content ends at 102; the editor shows line 103
+  blank.
+- The Source-Shape Decision Matrix is a seven-row markdown table whose cells wrap heavily across
+  editor rows; cell boundaries were reconstructed from the `|` positions and verified against the
+  gutter numbering (one source line per row).
+- No mojibake in this file.
 
 ## Structural facts added by `architecture-structure/SKILL.md`
 
