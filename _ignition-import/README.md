@@ -94,6 +94,7 @@ pattern-match against.
 | File | Role | Status |
 |---|---|---|
 | `starter/Starter.Library/Entities/MyEntity.cs` | reference domain entity | transcribed from 1 photo — complete (source lines 1-28) |
+| `starter/Starter.Library/Starter.Library.csproj` | ★ build settings + the first real Fusion package versions seen in the import | transcribed from 1 photo — complete (source lines 1-21); **validates as XML** |
 | `starter/Starter.Library/Services/PublicTextService.cs` | ✅ reference service done **right** — XML docs, async + `CancellationToken`, stateless | transcribed from 1 photo — complete (source lines 1-22); 9 anchors verified |
 | `starter/Starter.Library/Services/MyService.cs` | ⚠ reference service — **scores HIGH against the kit's own compliance rubric** | transcribed from 1 photo — complete (source lines 1-43); 10 anchors verified |
 | `starter/Starter.Library/Options/MyOptions.cs` | reference options class | transcribed from 1 photo — complete (source lines 1-8) |
@@ -698,6 +699,95 @@ Headline coverage:
    implies.
 6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
    `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## ★ First hard facts about the build: .NET 10, `latest-all` analyzers, warnings-as-errors
+
+`Starter.Library.csproj` is the first project file transcribed and it pins down
+several things this import had only inferred:
+
+| Setting | Value | What it confirms |
+|---|---|---|
+| `TargetFramework` | **`net10.0`** | the "highest **even** .NET major" rule resolves to 10 |
+| `ImplicitUsings` | `enable` | why `MyEntity.cs` has no `using System;` |
+| `Nullable` | `enable` | why `string? Description` is the idiom |
+| `AnalysisLevel` | **`latest-all`** | *every* .NET analyzer rule is on |
+| `TreatWarningsAsErrors` | **`True`** | …and every one of them fails the build |
+| `Company` | `Dominion Energy` | inherited by every modernized app |
+| `Version` | `1.0.0` | |
+
+**First real Fusion package versions in the entire import:**
+
+- `Fusion.Fx.App.Abstractions` **2026.3.5**
+- `Fusion.Fx.Caching.Memory` **2026.3.5**
+- `Microsoft.Extensions.Configuration.Json` **9.0.0**
+- `OpenTelemetry.Api` **1.15.3**
+
+The Fusion versioning scheme is calendar-based (`2026.3.5`), which matters for the
+*"use the latest production version available in Sonatype feeds"* rule — a
+CalVer package cannot be compared to a pinned example by semver intuition, so
+"latest" has to be resolved from the feed, exactly as `fusion-mcp-restructure`
+instructs.
+
+Also worth noting: `OpenTelemetry.Api` is a direct dependency of the **Library**
+project, which is the concrete backing for `dotnet.instructions.md`'s *"Prefer
+OpenTelemetry where available."*
+
+---
+
+## ⚠ `latest-all` + `TreatWarningsAsErrors` is the most likely hackathon stall
+
+This combination turns **every** .NET analyzer suggestion — including the
+opinionated style and design rules that `latest-all` enables — into a build
+failure. Then `dotnet.instructions.md` closes the escape hatches:
+
+> - Ensure suggestions satisfy **ALL** .NET analyzers.
+> - **Avoid suppressing warnings or errors**; prefer fixing the underlying issue.
+> - Avoid `#nullable disable` unless absolutely necessary.
+
+For the starter itself this is fine — it is 100 lines of clean, purpose-written
+code. **The risk is Step 8**, where legacy code moves into `src/<AppName>.Library`.
+Real legacy .NET Framework code ported into a `net10.0` project with
+`latest-all` + warnings-as-errors + `Nullable=enable` will produce a very large
+wall of build errors (CA-series design rules, nullability warnings on every
+un-annotated reference type, IDE style rules), and the standing guidance says do
+not suppress them.
+
+This is not a defect — it is a deliberate quality bar, and a defensible one. But
+it is a **predictable, high-volume failure mode at a known step**, and I found no
+transcribed file that prepares a team for it or gives a sanctioned staging path.
+Worth one of:
+
+- a documented, time-boxed suppression policy for the Step 7/8 move window
+  (e.g. `<AnalysisLevel>latest-recommended</AnalysisLevel>` until the move
+  closes, then restore) — with the relaxation itself recorded as a gate-visible
+  decision so it cannot be forgotten;
+- or an explicit note in the Step 8 prompt that a large analyzer backlog is
+  expected and how to work it down;
+- or confirmation that `Directory.Build.props` (present at the repo root,
+  untranscribed) already relaxes this for moved code.
+
+**`Directory.Build.props` is now worth photographing** — it sits at the repo root
+and can override every one of these properties solution-wide, so it may already
+answer this.
+
+---
+
+## ⚠ A framework package one major version behind the target framework
+
+`TargetFramework` is `net10.0` but `Microsoft.Extensions.Configuration.Json` is
+pinned at **`9.0.0`**. That package works fine on net10.0 (it targets
+netstandard2.0 / net8.0+), so nothing is broken — but a Microsoft framework
+package sitting one major behind its host framework is the textbook signature of
+a pin that was not carried forward during a TFM bump.
+
+This is exactly what `tools/appmod/gates/check-pins` and `tools/appmod/pins.json`
+exist to catch, and what `OpX-dotnet-upgrade.agent.md`'s **single-version package
+invariant** is about. I cannot verify it from photographs — `pins.json` is not
+transcribed and may deliberately pin 9.0.0. **Running `check-pins` against the
+kit's own starter would settle it in seconds**, and it belongs on the same
+"point the kit's gates at the kit" pass recommended earlier.
 
 ---
 
