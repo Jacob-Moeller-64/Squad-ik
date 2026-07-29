@@ -51,6 +51,7 @@ references, not values).
 | `skills/architecture-structure/SKILL.md` | **Ignition-native** — the modernization-formation move contract (largest file in the kit) | transcribed from 9 photos — complete (source lines 1-470, blank to 472); 24 line numbers spot-verified |
 | `skills/browser-source-decomposition/SKILL.md` | **Ignition-native** — classifies the legacy browser source shape and picks the decomposition contract | transcribed from 2 photos — complete (source lines 1-102, blank to 103); 22 line numbers spot-verified |
 | `skills/diagnose/SKILL.md` | **Ignition-native, meta** — audits an AI workflow across 5 quality dimensions | transcribed from 2 photos — complete (source lines 1-106); 27 line numbers spot-verified |
+| `skills/dominion-requirements/AppMod-Acceptance-Criteria.md` | **Ignition-native** — the canonical Dominion acceptance-criteria rubric | transcribed from 2 photos — complete (source lines 1-100); 22 line numbers spot-verified |
 
 `architecture-structure/` is a **multi-file skill**, now fully transcribed: `SKILL.md` (470 lines),
 `Architecture-Structure.md` (215), `REMAINING-POINTS.md` (108).
@@ -272,6 +273,104 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## Structural facts added by `dominion-requirements/AppMod-Acceptance-Criteria.md`
+
+**The Dominion rubric itself** — the document every compliance score in the kit ultimately
+resolves to. Referenced by `OpX-csharp-expert`, prompt 04, prompt 22 and
+`appmod-compliance-review`; this is the first time its contents are visible. 100 lines, no
+frontmatter (Ignition-native).
+
+- **A two-tier review model, stated structurally**: `## Deterministic Patterns` (findable by
+  scan) versus `## Judgment-Based Review Areas` (require reasoning). That split is exactly what
+  `appmod-compliance-review` operationalises when it says "the reviewer owns the JUDGMENT; the
+  tool owns the MATH".
+- **27 deterministic patterns across three severities**: 5 Critical, 10 High, 12 Medium — each
+  one a concrete, greppable pattern rather than a principle.
+  - *Critical* is entirely security: hardcoded secrets, interpolated SQL, tokens in
+    localStorage/sessionStorage, unsanitized `innerHTML`, sensitive data in logs.
+  - *High* mixes platform and correctness: Forms/Windows-role auth instead of OAuth/OIDC +
+    policy authorization, `.Result`/`.Wait()`/`GetAwaiter().GetResult()`, `async void` outside
+    true event handlers, direct instantiation of services or `HttpClient`, service locator,
+    hardcoded connection strings, mutable static or ASP.NET session state, file-based logging as
+    application state, `NotImplementedException` in active paths, direct DOM/jQuery in Angular.
+  - *Medium* is hygiene and framework discipline, including `Missing ChangeDetectionStrategy.OnPush`,
+    `Observable subscriptions without cleanup`, `Verb-based API routes`, and
+    `Swagger enabled outside development-only guards`.
+- **Five judgment areas** — SOLID (all five principles named), Security, Twelve-Factor, API
+  Design, Angular.
+- **File-Level Heuristics give hard numbers**, which is what makes "too big" reviewable:
+  | Metric | High | Medium |
+  |---|---|---|
+  | Class line count | > 500 | 300-500 |
+  | Constructor parameters | > 7 | 5-7 |
+  | Interface methods | > 15 | 8-15 |
+- **A `## Non-Violations` section** — four things a reviewer must *not* flag: `new` for DTOs or
+  collections, `static readonly` and `const`, `IMemoryCache` for performance caching, and `new`
+  inside test setup. Very few rubrics bother to enumerate their own false positives; this is the
+  single cheapest defence against a review that cries wolf. It is also internally consistent —
+  *mutable* static state is High, `static readonly` is explicitly fine.
+- **The scoring formula**: `Score = 100 - (Critical x 10) - (High x 5) - (Medium x 2)`.
+
+## ⚠ Findings for `dominion-requirements/AppMod-Acceptance-Criteria.md`
+
+**1. It corroborates `appmod-compliance-review` precisely — including the two tool-owned rows.**
+That skill listed twelve dominion categories: 12-Factor, SOLID, OAuth/OIDC, policy authorization,
+stateless, RESTful, JSON, API-docs gating, logging, async, coverage, packages. All ten judgment
+categories map cleanly onto this file. **`coverage` and `packages` are the only two absent** —
+and `appmod-compliance-review` explains why: "Two rows are tool-owned and computed
+deterministically — `Test coverage >= 80%` and `Packages approved`. Do not write them; your
+opinion on them is discarded." The rubric and its implementation agree, and the omission is
+deliberate. The scoring formula matches to the digit as well.
+
+**2. There are now three severity ladders, and the canonical one has only three levels.**
+
+| Source | Levels |
+|---|---|
+| **Dominion (this file, canonical)** | Critical / High / Medium — **3** |
+| `appmod-compliance-review` | CRITICAL / HIGH / MEDIUM / **LOW 0** — 4 |
+| prompt 24 | P1 / P2 / P3 / P4 — 4 |
+| `OpX-csharp-expert` | CRITICAL / HIGH / MEDIUM — 3 (matches Dominion) |
+
+`LOW` and `P4` have no home in the canonical rubric. `appmod-compliance-review` at least scores
+LOW at 0, so it is inert. Prompt 24's P4 ("Polish — comments, formatting, minor cleanup") has no
+Dominion equivalent at all, and prompt 24 never states a P-to-severity mapping. This supersedes
+the earlier "two severity vocabularies" note under `OpX-csharp-expert`.
+
+**3. Prompt 24's own worked example mis-scores against this rubric.**
+Prompt 24's issue-list example contains:
+```
+| 9 | P3 | Code | TransformerService.cs | 650 lines, needs split | 45m |
+```
+This file's File-Level Heuristics say a class over 500 lines is **High**. Under any sane P-mapping
+(P1=Critical, P2=High), a 650-line class is P2 — not P3. So the calibration example that Step 24
+gives the model to anchor on is two severity bands off the canonical rubric for the one finding
+where the rubric gives an exact number. Worth fixing in prompt 24, since worked examples
+anchor scoring more strongly than prose does.
+
+**4. The formula has no floor here; the clamp is added downstream.**
+`Score = 100 - (Critical x 10) - (High x 5) - (Medium x 2)` can go deeply negative —
+`appmod-compliance-review`'s own worked example (2 Critical, 142 High) computes to **-630**.
+That skill adds `score = max(0, 100 - weighted)`. The clamp is therefore an implementation
+decision, not part of the canonical rubric. Worth pushing into this file so every consumer
+clamps the same way.
+
+**5. Nothing here covers parity, functionality, or accessibility — by design, and worth
+remembering.** Prompt 24 scores nine categories weighted to 100, of which Parity (20%),
+Functionality (18%) and part of Testing sit entirely outside Dominion. Dominion is a *code
+compliance* rubric, not a *modernization success* rubric. Conflating the two would let an app
+score well on Dominion while having lost half its routes.
+
+## Transcription uncertainties (`dominion-requirements/AppMod-Acceptance-Criteria.md`)
+
+- Line alignment verified at 22 anchors — 1, 3, 5, 11, 13, 15, 21, 23, 34, 36, 49, 51, 59, 66, 74,
+  79, 85, 87, 91, 93, 98, 100 — all matching. Content ends at line 100.
+- The scoring line uses a plain `x` for multiplication (`Critical x 10`), not `*` or `×`;
+  transcribed as photographed.
+- Method and property names in the bullets are unquoted prose in the source (e.g. `async void`,
+  `.Result`, `innerHTML` appear without backticks); preserved as plain text rather than
+  code-formatted.
+- No mojibake in this file.
 
 ## Structural facts added by `diagnose/SKILL.md`
 
@@ -1829,6 +1928,13 @@ walks back the mission's commitment to fix MEDIUM. A model reading the mission s
 a model reading the checklist get two different jobs.
 
 **3. Two severity vocabularies exist in the kit with no mapping between them.**
+
+> **SUPERSEDED by `dominion-requirements/AppMod-Acceptance-Criteria.md`.** There are **three**
+> ladders, and the canonical Dominion rubric has only three levels (Critical / High / Medium).
+> This agent matches Dominion exactly; `appmod-compliance-review` adds an inert `LOW 0`; prompt
+> 24's `P1-P4` adds a `P4` with no Dominion equivalent and never states a P-to-severity mapping.
+> See the findings under the Dominion rubric.
+
 This agent works in `CRITICAL / HIGH / MEDIUM`. Prompt 24 — the step that *invokes* violation
 remediation — scores in `P1 / P2 / P3 / P4`. Nothing translates one to the other, so a P1
 finding handed to this agent has no defined severity here, and this agent's `CRITICAL Fixed`
