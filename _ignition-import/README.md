@@ -40,6 +40,7 @@ references, not values).
 | File | Role | Status |
 |---|---|---|
 | `agents/OpX-AppMod-P1-Discovery.agent.md` | Phase 1 Discovery coordinator (Steps 1-6) | transcribed from 2 photos — complete (source lines 1-102, blank to 113) |
+| `agents/OpX-AppMod-P2-Modernize.agent.md` | Phase 2 Modernize coordinator (Steps 7-18) | transcribed from 3 photos — complete (source lines 1-136, blank to 140) |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -146,6 +147,114 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by agent `OpX-AppMod-P2-Modernize`
+
+Second agent transcribed. Same file shape as P1 Discovery, but the differences between the
+two are more informative than either file alone.
+
+- **`tools` is a YAML block list here, not the inline array P1 Discovery uses** — same
+  field, two different syntaxes across two files in the same directory.
+- **P2 has `edit`; P1 Discovery has no editing tool at all** (see the finding below).
+  P2 also declares coarse-grained `vscode`, `browser`, `agent` entries *alongside* their
+  fine-grained forms (`vscode/runCommand`, `browser/readPage`, `agent/runSubagent`) —
+  redundant, and it means the broad grants are what actually apply.
+- **15 handoffs**: a `Refresh Discovery Planning Gate` recovery route, the twelve numbered
+  Steps 7-18, `QA Portal Full Refresh`, and `QA Test Hub`.
+- **`Refresh Discovery Planning Gate` is the only handoff in either agent with `send: false`**,
+  and the only one that dispatches *backwards across a phase boundary* — to
+  `OpX-AppMod-P1-Discovery` running prompt 06. Not auto-sending a cross-phase rollback is
+  the right call; it makes re-opening Discovery a deliberate human act.
+- **A hard backend-before-frontend gate**: "Treat Step 7 through Step 9 as the required
+  backend gate before Step 10 through Step 18. Do not route frontend formation or
+  migration until backend upgrade, backend formation in `src/`, and backend integration
+  hardening are truthfully complete or the blocker is explicit."
+- **Phase 2 is declared execution-only**: "implement against Discovery-owned inventories,
+  plans, and catalogs; do not derive new legacy scenarios in this phase." This is the
+  counterpart to P1's ownership-reclamation rule and it names the exact upstream owner for
+  each missing-input class — Step 3/4 for baseline or inventory evidence, Step 5/6 for
+  planning or QA-design derivation.
+- **Generic browser-source decomposition**: MVC/Razor decomposition prompt for
+  server-rendered sources, Angular/browser-client decomposition prompt for SPA sources,
+  and mixed/hybrid/already-modern surfaces treated as validation or consolidation cases —
+  explicitly "instead of inventing a second frontend lane."
+- **Two more instruction surfaces named**:
+  `/.github/instructions/fusion-mcp-restructure.instructions.md` and
+  `/.github/skills/fusion-feature-standards/SKILL.md`, both required before "inventing
+  custom platform code" for Fusion-owned platform, startup, auth, HTTP, or UI decisions.
+- **Named optional lanes**: `Optional Run Cleanup`, `Optional Fix Code Violations`,
+  `QA Portal Full Refresh`, plus a "retired browser-specialist slice-loop lane" that must
+  not be revived as a second frontend execution surface.
+- **Step 24 is referenced correctly twice** ("Step 24 owns cleanup once review reaches the
+  technical gate", "Step 24 owns violation remediation…"). Independent corroboration that
+  prompt 24 — which calls itself Step 23 five times — is the stale file, not this one.
+
+## ⚠ Findings in `OpX-AppMod-P2-Modernize.agent.md`
+
+**1. Smoking-gun drift pair: the same three artifacts cited with a +2 difference, in the
+same file.**
+
+> Line 113: "If **Step 6, Step 7**, or `Modernization Quality Design` artifacts are missing,
+> stale, or contradictory, route back to Discovery…"
+
+> Line 131: "`Refresh Discovery Planning Gate` is the recovery route when **Step 4, Step 5**,
+> or `Modernization Quality Design` inputs are no longer trustworthy enough…"
+
+Both sentences name the same set — the baseline-acceptance artifact, the solution-design
+artifact, and the Quality Design pack — as the Discovery inputs Phase 2 depends on. Under
+current numbering those are Steps 4, 5 and 6, so **line 131 is correct and line 113 is +2**.
+This is the same adjacent-reference proof found in prompt 21, and it confirms the
+renumbering was applied per-line rather than per-file.
+
+Two more lines carry the +2 form: line 112 cites "the **Step 7** execution-contract and
+control-point decisions" (the target-state contract is Step 5's output — and prompt 22
+repeats this same "Step 7 target-state contract" phrasing, so the error is consistent
+across files), and line 116 drives the browser lane from "the current **Step 5 and Step 7**
+evidence" (legacy analysis is Step 3, solution design is Step 5). Meanwhile lines 114, 115,
+117, 118, 119, 131-136 are all correct under current numbering. Roughly a quarter of this
+file's step references are stale.
+
+**2. P1 Discovery declares no file-editing tool, yet its own text says it writes artifacts.**
+This is a cross-file finding, visible only now that a second agent exists for comparison.
+`OpX-AppMod-P2-Modernize` declares `edit`. `OpX-AppMod-P1-Discovery` declares no `edit`
+entry of any kind — yet its Write Boundary section states that
+"`.modernization/portal/**`, `.modernization/ignition-artifacts/**` … **are still writable
+by this agent as needed by the active step**", and Discovery steps 1-6 are required to
+produce inventory, baseline and planning artifacts. Either P1 is silently relying on
+`execute/runInTerminal` to write files — which would make its own "do NOT use `Set-Content`
+/`Out-File`/`Add-Content`" prohibition the *only* write path it has, aimed at the wrong
+target — or the `edit` grant was dropped by accident. This is a hard blocker for Phase 1,
+not a lint nit.
+
+**3. Phase 2 has no Write Boundary section at all.**
+P1 Discovery devotes 18 lines to protected toolkit roots and the all-mechanisms
+prohibition. P2 Modernize — the phase that actually rewrites the application, has `edit`,
+and runs twelve steps — has **no equivalent section**. The agent most able to damage
+`.github/**` is the one with no rule against it. Whatever the shared
+`appmod-phase-agent-contract.instructions.md` says, the asymmetry between the two files is
+itself the risk: a reader of either file draws opposite conclusions about what is protected.
+
+**4. `QA Test Hub` here *does* carry `send: true` — so P1's missing one is an oversight.**
+The same handoff in `OpX-AppMod-P1-Discovery` omits `send: true`; here it is present. The
+prompt text also differs between the two ("Open QA Hub and route through the current
+workflow catalog." vs "Open the QA Hub"). Two copies of one handoff, diverging in both
+fields. Resolves finding 3 in the P1 section: it is drift, not intent.
+
+**5. Coarse and fine tool grants are both declared.**
+`edit`, `todo`, `vscode`, `browser`, `agent` appear as bare entries *and* as
+`vscode/runCommand`, `browser/openBrowserPage`, `agent/runSubagent`, etc. The bare grants
+supersede, making nine of the fine-grained entries decorative — and making the file read as
+more restricted than it is.
+
+## Transcription uncertainties (agent `OpX-AppMod-P2-Modernize`)
+
+- Same as P1: **no opening `---` frontmatter delimiter** — line 1 is
+  `name: OpX-AppMod-P2-Modernize`, closing `---` at line 90. Transcribed as photographed.
+  Two agent files now show this, which makes a VS Code rendering artifact less likely and a
+  real convention (or a real defect) more likely.
+- Handoff label emoji are mojibake; recorded as `<MOJIBAKE: emoji>` placeholders.
+- Lines 112-121 and 131-136 wrap in the editor; reconstructed from wrap positions.
+- File content ends at line 136; the editor shows blank lines through 140.
 
 ## Structural facts added by agent `OpX-AppMod-P1-Discovery`
 
@@ -254,6 +363,11 @@ agents: ["*"]
 It is also the only handoff that dispatches to a *different* agent, so it may be
 deliberate (hand off without auto-sending). Flagged rather than corrected — needs a
 one-line answer from the kit owner.
+
+> **RESOLVED by `OpX-AppMod-P2-Modernize`**: the same `QA Test Hub` handoff in the P2 agent
+> *does* carry `send: true`, and its prompt text differs too ("Open the QA Hub" vs
+> "Open QA Hub and route through the current workflow catalog."). Two copies of one
+> handoff, diverging in both fields — so this is drift, not intent.
 
 ## Transcription uncertainties (agent `OpX-AppMod-P1-Discovery`)
 
