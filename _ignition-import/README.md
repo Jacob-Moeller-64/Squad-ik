@@ -46,6 +46,7 @@ references, not values).
 | `agents/OpX-csharp-janitor.agent.md` | .NET cleanup / quick-wins specialist (user-invocable) | transcribed from 5 photos — complete (source lines 1-275, blank to 277); 18 heading line numbers spot-verified. **Source file is currently broken — 3 YAML errors, see findings** |
 | `agents/OpX-dotnet-upgrade.agent.md` | .NET Framework → .NET 10 upgrade specialist (Step 7 lane) | transcribed from 6 photos — complete (source lines 1-287); 25 heading line numbers spot-verified |
 | `agents/OpX-Frontend-Angular-Transform.agent.md` | **Archived** compatibility redirect for the retired Angular specialist lane | transcribed from 1 photo — complete (source lines 1-50, blank to 51) |
+| `agents/OpX-Fusion-Reviewer.agent.md` | Fusion restructure reviewer (Step 19 lane) | transcribed from 2 photos — complete (source lines 1-90, blank to 92); 16 heading line numbers spot-verified |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -152,6 +153,82 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by agent `OpX-Fusion-Reviewer`
+
+The Step 19 review lane, and the first agent with a genuinely clean separation between
+*method* and *execution*. 90 lines, zero numbering defects, zero mojibake.
+
+- **A fourth frontmatter variant**: opens with `---`, but has **no `user-invocable`, no
+  `handoffs:`, and no `agents:` key** — only `name`, `description`, `tools`. It is the
+  minimal agent shape in the kit.
+- **Explicit skill/agent separation**, stated as a contract:
+  > - the **skill** owns the review method
+  > - this **agent** executes the review as a named restructure checkpoint
+  > - when the caller asks for fixes, only apply the skill's safe-remediation rules
+
+  This is the cleanest division of responsibility anywhere in the kit — the rubric lives in
+  `.github/skills/fusion-restructure-review/SKILL.md` and is versioned independently of the
+  lane that runs it.
+- **A documented evidence precedence order**, in the description: Fusion MCP docs first, then
+  the current starter shell, then `Original_Starter_kit` or `SimpleArchitectureExample` as
+  **reference-only comparators**. Two more named reference surfaces.
+- **Two more skills**: `.github/skills/fusion-restructure-review/SKILL.md` and
+  `.github/skills/architecture-structure/SKILL.md`. One more instructions file:
+  `.github/instructions/modernization-starter-boundaries.instructions.md`.
+- **Seven required inputs and nine optional ones**, all named explicitly — the most precise
+  input contract of any agent so far.
+- **A required platform-status report covering exactly the integrations that matter for the
+  hackathon**: Okta / auth, Scalar / OpenAPI, Fusion logging, Fusion config / appsettings,
+  startup / DI composition, protected HTTP transport. This is the single place in the kit
+  where "did Scalar and Okta actually land correctly?" is a mandatory reported field.
+- **Six named protected control points**: `Program.cs`, the API Fusion composition seam, the
+  Library Fusion composition seam, `main.ts`, `app.config.ts`, `fusion.config*.ts`. These are
+  the seams the whole starter-shell-preservation contract is defined against.
+- **A twelve-part output contract** ending in a three-way bridge disposition
+  (keep / retire / safe remediation candidates), plus an explicit instruction that a clean
+  review must *still* include the platform-status section rather than returning "no issues".
+- **Every artifact path uses the `.modernization/ignition-artifacts/modernize/fusion-restructure/`
+  root**, with no competing form anywhere in the file — a third vote for `ignition-artifacts`
+  in the two-roots conflict.
+
+## ⚠ Findings in `OpX-Fusion-Reviewer.agent.md`
+
+**1. It is told to apply fixes but has no `edit` tool.**
+Six tools: `read/readFile`, `search/codebase`, `execute/runInTerminal`,
+`execute/getTerminalOutput`, `read/terminalLastCommand`, `read/terminalSelection`. Yet the
+Review Method says *"when the caller asks for fixes, only apply the skill's safe-remediation
+rules"* and the output contract ends with **Safe remediation candidates**. Applying a
+remediation requires writing a file. This is the **fourth** agent with this defect
+(`OpX-AppMod-P1-Discovery`, `OpX-AppMod-P3-Review`, `OpX-dotnet-upgrade`'s missing question
+tool, and now this one) and the pattern is consistent enough to be worth a single sweep:
+**diff every agent's declared tools against the verbs in its own body.**
+
+**2. It is a dead end — the only agent with no handoffs at all.**
+`OpX-AppMod-P3-Review` dispatches Step 19 here, but this file declares no `handoffs:` block,
+so there is no "Back To Phase 3 Workflow" button and no route onward to Step 20. Every other
+agent transcribed so far offers at least one exit. A developer who enters the Step 19 review
+has no in-kit way back to the numbered flow; they have to re-select the coordinator manually.
+
+**3. Line 59 is unterminated.** The bullet ending "…instead of requiring a retired parallel
+Fusion-only state tracker" has no closing period, unlike every other bullet in the file.
+Cosmetic, but it is also the longest and most important rule in the section (it tells the
+agent to trust numbered-lane state over the retired Fusion-only tracker), so it reads as
+truncated rather than merely unpunctuated.
+
+**4. Another entry for the path-inconsistency ledger.**
+This agent reads
+`.modernization/ignition-artifacts/modernize/fusion-restructure/decisions.json`. Prompt 21
+(`21-P3-figma-review`) reads the same file as `.modernization/fusion-restructure/decisions.json`
+— no `ignition-artifacts/modernize/` prefix. Two different absolute paths for one artifact,
+in two files that run 40 minutes apart in the same phase.
+
+## Transcription uncertainties (agent `OpX-Fusion-Reviewer`)
+
+- Line alignment verified at 16 anchors — 11, 13, 17, 19, 27, 31, 39, 41, 50, 52, 61, 63, 65,
+  75, 82, 90 — all matching. Content ends at 90; the editor shows blank lines through 92.
+- Lines 3, 15 and 59 wrap in the editor; reconstructed from wrap positions.
+- No mojibake anywhere in this file; nothing was placeholder-substituted.
 
 ## Structural facts added by agent `OpX-Frontend-Angular-Transform`
 
