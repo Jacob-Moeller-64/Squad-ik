@@ -89,6 +89,7 @@ references, not values).
 
 | File | Role | Status |
 |---|---|---|
+| `contracts/schemas/step-workflow-state.schema.json` | **Ignition-native** — ★ by far the richest schema (nested objects, `arrayOf`, four `required[]` levels) — **and it does NOT pin a status enum** | transcribed from 2 photos — complete (source lines 1-66); **validates as JSON** |
 | `contracts/schemas/per-route-behavior-plan.schema.json` | **Ignition-native** — ⚠ the weakest floor in the family: **no `type` key at all**, only `notEmpty` | transcribed from 1 photo — complete (source lines 1-13); **validates as JSON** |
 | `contracts/schemas/modernization-solution-design.schema.json` | **Ignition-native** — `New-ControlPlaneSkeleton` family; `required: [reportId, title]` | transcribed from 1 photo — complete (source lines 1-19); **validates as JSON** |
 | `contracts/schemas/modernization-phase-assessment.schema.json` | **Ignition-native** — `New-ControlPlaneSkeleton` family; `required: [reportId, title]` | transcribed from 1 photo — complete (source lines 1-19); **validates as JSON** |
@@ -682,6 +683,94 @@ Headline coverage:
    implies.
 6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
    `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## ✅ ALL NINE `.github/contracts/schemas/` FILES TRANSCRIBED — and the status-enum question is settled
+
+`step-workflow-state.schema.json` completes the set. It is **by far the richest
+contract in the family** — 66 lines, three levels of nested objects, an `arrayOf`
+construct, and `required[]` arrays at four different depths. It is the only one
+that looks like a real schema rather than a floor.
+
+**But it does not pin a status enum.** The one field this import most wanted
+constrained is declared as:
+
+```json
+"status": { "type": "string", "notEmpty": true }
+```
+
+…at the top level, and the same at `lastExecutedStep.status`, and weaker still at
+`stepResponses.steps[].status` (`{ "type": "string" }`, no `notEmpty`).
+
+So **the four competing status vocabularies recorded earlier in this document are
+all schema-valid**:
+
+| Source | Terminal statuses | Passes this schema? |
+|---|---|---|
+| `copilot.instructions.md` | `Completed`, `Blocked`, `Failed` | ✅ |
+| `appmod-phase-agent-contract` | `Completed`, `Blocked`, `Partial` | ✅ |
+| `AppMod-Process` | `Pass`, `Partial`, `Blocked`, `Fail` | ✅ |
+| `discovery-runner` | `Pass`, `Partial`, `Blocked`, `Fail` | ✅ |
+
+Nothing anywhere in the kit rejects `Failed` where another file expects `Fail`, or
+`Completed` where another expects `Pass`. The recommendation stands and is now
+precisely located: **add an `enum` to `status` in
+`.github/contracts/schemas/step-workflow-state.schema.json`** (three places), and
+pick one vocabulary. This is a ~5-line edit to a file that already exists and is
+already wired into the verifier.
+
+**Why the floor is low here is at least principled**, unlike some of the others:
+
+> **Required floor only.** This contract MUST pass on a **freshly reset state
+> file**, where `updatedAt` and `latestFullResponse` are empty strings,
+> `lastExecutedStep.step` is `0`, and `stepResponses.steps` is an empty array.
+> Only fields that are non-empty **even at init** use `notEmpty` (`status`,
+> `lastExecutedStep.status`, `recommendedNextStep.label`).
+
+That is a genuinely careful piece of contract design — the floor is set by what
+`reset-step-zero-state.ps1` emits, so a reset workspace validates. An `enum` on
+`status` would not break that, because `status` is non-empty at init by design.
+
+**Five required top-level fields:** `status`, `updatedAt`, `lastExecutedStep`,
+`recommendedNextStep`, `stepResponses`. The nested shapes fill in several field
+names this import had only seen referenced in prose:
+
+- `lastExecutedStep`: `step` (number), `status`, `label`, `promptPath`, `ranAt`, `reason`
+- `recommendedNextStep`: `step` (number), `label`, `promptPath`
+- `stepResponses.steps[]`: `step` (number), `status`, `updatedAt`, `latestFullResponse`
+
+Note `promptPath` on both step objects — that is the natural place a
+`step:<stepId>` token would live once the registry migration finishes, and it is
+currently an unconstrained string.
+
+---
+
+## Final tally: what the nine `opx-field-contract/v1` schemas actually assert
+
+| Schema | Deterministic producer | Required fields | Floor |
+|---|---|---|---|
+| `step-workflow-state` | ✅ `reset-step-zero-state.ps1` | **5 + nested** | rich |
+| `modernization-execution-contract` | ✅ `New-ControlPlaneSkeleton` | 2 | identity |
+| `modernization-phase-assessment` | ✅ `New-ControlPlaneSkeleton` | 2 | identity |
+| `modernization-solution-design` | ✅ `New-ControlPlaneSkeleton` | 2 | identity |
+| `fusion-decisions` | ✗ | 0 (1 field typed) | presence |
+| `executable-testcase-catalog` | ✗ (2 divergent) | 0 | presence |
+| `fusion-control-point-inventory` | ✗ | 0 | presence |
+| `fusion-migration-plan` | ✗ | 0 | presence |
+| `per-route-behavior-plan` | ✗ | 0 | **`notEmpty` only** |
+
+**The correlation is perfect: every schema with a deterministic producer asserts
+required fields; every schema without one asserts none.** That is the single
+clearest actionable pattern in this entire import.
+
+Four of the five unprotected artifacts are Step 5/6 planning outputs that later
+steps `hardStop` on. The fix for all four is the same and the kit already owns the
+mechanism: **point `New-ControlPlaneSkeleton` at `decisions.json`,
+`migration-plan.json`, `control-point-inventory.json`, and
+`per-route-behavior-plan.json`**, then promote each schema's named candidate
+fields to `required`. Every one of those four `authoringNote`s already names its
+promotion target.
 
 ---
 

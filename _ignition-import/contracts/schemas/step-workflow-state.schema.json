@@ -1,0 +1,66 @@
+{
+  "dialect": "opx-field-contract/v1",
+  "contractId": "step-workflow-state",
+  "title": "Numbered-step workflow execution state",
+  "appliesTo": ".modernization/portal/data/json/step-workflow-state.json",
+  "rootPath": "step-workflow-state",
+  "groundedBy": [
+    ".github/scripts/step0/reset-step-zero-state.ps1 (initial/reset shape)",
+    ".github/scripts/step0/update-start-here-status.ps1 (runtime reader)",
+    ".github/instructions/AppMod-Step-Contract.json (readback contract fields)"
+  ],
+  "authoringNote": "Required floor only. This contract MUST pass on a freshly reset state file, where updatedAt and latestFullResponse are empty strings, lastExecutedStep.step is 0, and stepResponses.steps is an empty array. Only fields that are non-empty even at init use notEmpty (status, lastExecutedStep.status, recommendedNextStep.label).",
+  "type": "object",
+  "required": [
+    "status",
+    "updatedAt",
+    "lastExecutedStep",
+    "recommendedNextStep",
+    "stepResponses"
+  ],
+  "fields": {
+    "status": { "type": "string", "notEmpty": true },
+    "updatedAt": { "type": "string" },
+    "latestFullResponse": { "type": "string" },
+    "lastExecutedStep": {
+      "type": "object",
+      "required": ["step", "status"],
+      "fields": {
+        "step": { "type": "number" },
+        "status": { "type": "string", "notEmpty": true },
+        "label": { "type": "string" },
+        "promptPath": { "type": "string" },
+        "ranAt": { "type": "string" },
+        "reason": { "type": "string" }
+      }
+    },
+    "recommendedNextStep": {
+      "type": "object",
+      "required": ["step", "label"],
+      "fields": {
+        "step": { "type": "number" },
+        "label": { "type": "string", "notEmpty": true },
+        "promptPath": { "type": "string" }
+      }
+    },
+    "stepResponses": {
+      "type": "object",
+      "required": ["steps"],
+      "fields": {
+        "steps": {
+          "type": "array",
+          "arrayOf": {
+            "type": "object",
+            "required": ["step"],
+            "fields": {
+              "step": { "type": "number" },
+              "status": { "type": "string" },
+              "updatedAt": { "type": "string" },
+              "latestFullResponse": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
