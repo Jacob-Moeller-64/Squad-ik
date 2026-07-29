@@ -44,6 +44,8 @@ references, not values).
 | `agents/OpX-AppMod-P3-Review.agent.md` | Phase 3 Review coordinator (Steps 19-24) | transcribed from 2 photos — complete (source lines 1-82, blank to 83) |
 | `agents/OpX-csharp-expert.agent.md` | .NET coding-violations fixer (specialist, user-invocable) | transcribed from 8 photos — complete (source lines 1-437, blank to 439); 20 heading line numbers spot-verified |
 | `agents/OpX-csharp-janitor.agent.md` | .NET cleanup / quick-wins specialist (user-invocable) | transcribed from 5 photos — complete (source lines 1-275, blank to 277); 18 heading line numbers spot-verified. **Source file is currently broken — 3 YAML errors, see findings** |
+| `agents/OpX-dotnet-upgrade.agent.md` | .NET Framework → .NET 10 upgrade specialist (Step 7 lane) | transcribed from 6 photos — complete (source lines 1-287); 25 heading line numbers spot-verified |
+| `agents/OpX-Frontend-Angular-Transform.agent.md` | **Archived** compatibility redirect for the retired Angular specialist lane | transcribed from 1 photo — complete (source lines 1-50, blank to 51) |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -150,6 +152,160 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by agent `OpX-Frontend-Angular-Transform`
+
+An **archived, retired** agent still sitting in `.github/agents/`. 50 lines. Its entire job is
+to tell the caller it no longer has a job.
+
+- `description`: "Archived compatibility redirect for the retired Angular specialist lane.
+  Retained only for historical reference."
+- **No `user-invocable`, no `edit` tool** — six read/terminal tools only. Three handoffs, all
+  `send: false`.
+- **A twelfth named surface: `Ultimate-AppMod-Ignition`**, the target of two of its three
+  handoffs ("Back To Orchestrator", "Build & Run Modern App"). This appears to be the
+  top-level orchestrator identity, and it is distinct from `Ultimate-Ignition-edit` (the
+  toolkit-edit identity named in `OpX-AppMod-P1-Discovery`).
+- **Documents a real architectural decision**: there used to be an "Angular specialist
+  slice-loop" execution lane, and it was merged away into the numbered browser steps. Both
+  `OpX-AppMod-P2-Modernize` ("Do not revive the retired browser-specialist slice-loop lane as
+  a second frontend execution surface") and this file guard the same retirement from
+  opposite ends.
+- Mentions a **"manual Path A helper"** for planning-only MVC or Razor browser decomposition —
+  a surface not seen anywhere else so far.
+
+## ⚠ Findings in `OpX-Frontend-Angular-Transform.agent.md`
+
+**1. Its Core Rules are entirely on the old numbering — while its own handoffs are on the new
+one. Inside 30 lines.**
+
+| Core Rule says | Actual step | Offset |
+|---|---|---|
+| "Route shell and scaffold work to **Step 12**" | Step 10 (`10-P2-frontend-foundation-and-scaffold`) | +2 |
+| "Route browser migration work to **Step 13**" | Step 11 (`11-P2-frontend-migration`) | +2 |
+| "platform integration, shell stabilization, and UI-planning work to **Steps 14 through 16**" | Steps 12, 13, 14 | +2 |
+
+And the file's own handoff two lines earlier routes "Build & Run Modern App" to
+`.github/prompts/10-P2-frontend-foundation-and-scaffold.prompt.md` — i.e. **Step 10**, the
+thing Core Rule 2 calls Step 12. The handoff block was renumbered; the prose was not.
+
+This is the single cleanest demonstration of the +2 drift in the whole kit: same file, same
+screen, one surface correct and one surface stale, with the mapping unambiguous because the
+prompt filenames are right there.
+
+The Scope line ("the numbered **Step 12 through Step 16** prompts") is the one ambiguous case
+— `OpX-AppMod-P2-Modernize` states the active browser path is **Step 10 through Step 16**, so
+the lower bound is +2 but the upper bound matches. Recorded as ambiguous rather than assigned
+an offset.
+
+**2. A retired agent is still installed, and it is indistinguishable from a live one in an
+agent picker.**
+Nothing in the filename or the agent's `name:` marks it as archived — only the `description`
+does. It sits in the same `.github/agents/` directory as the eleven live agents. For a
+hackathon with 40 participants browsing an agent list, "OpX-Frontend-Angular-Transform" reads
+exactly like a legitimate frontend agent. If the goal is historical reference, it belongs in
+an `archive/` subfolder or outside `.github/agents/` entirely.
+
+**3. Emoji inconsistency within a three-item handoff list.** Handoffs 1 and 2
+("Back To Orchestrator", "Build & Run Modern App") carry no emoji at all; handoff 3
+("Step 11 Frontend Migration") carries a mojibake emoji. Same list, same file.
+
+## Transcription uncertainties (agent `OpX-Frontend-Angular-Transform`)
+
+- Line alignment verified at 10 anchors — 25, 27, 29, 31, 33, 37, 39, 46, 48, 50 — all
+  matching. Content ends at 50; the editor shows line 51 blank.
+- **Source line 24 appears to be blank *inside* the frontmatter**, immediately before the
+  closing `---` at line 25. Transcribed as photographed; harmless in YAML but unusual, and no
+  other agent file shows it.
+- The handoff-3 emoji is mojibake and is recorded as a `<MOJIBAKE: emoji>` placeholder.
+
+## Structural facts added by agent `OpX-dotnet-upgrade`
+
+The most rigorously engineered file in the kit, and the only one that encodes hard-won
+runtime-failure knowledge rather than style rules. 287 lines.
+
+- **A third frontmatter variant**: opens with `---` like the other specialists, but has **no
+  `user-invocable` field** (the two csharp specialists do). Same seven-tool list as those two.
+- **All five handoffs are `send: true`** — the csharp specialists are all `send: false`, the
+  P3 coordinator is all `send: false` for numbered steps, and P1/P2 are `send: true`. Four
+  files, three different policies, none documented.
+- **An eleventh agent: `OpX-QA-Run`** (backend-only test runner). Plus a **third unnumbered
+  prompt directory**: `.github/prompts/qaTestPrompts/qa-hub-routing.prompt.md`, routed with a
+  `::`-delimited workflow selector (`… :: [WORKFLOW] Backend - Upgrade .NET`).
+- **Two orthogonal mode contracts** must be declared per run:
+  - *Upgrade Mode* — `Retarget` (default, behavior-preserving, hold every package version
+    constant) or `Modernize` (opt-in, operator-requested).
+  - *Topology Execution Mode* — `RunnableRuntime` (host can be started and probed) or
+    `ConstrainedLegacyHost` (classic System.Web/MVC/WebForms; cannot run as net10 in-place,
+    and explicitly **must not** be called blocked just because probing is impossible).
+- **`step7UpgradeWorkspaceRoot` (fallback `step9UpgradeWorkspaceRoot`)** — the Step 7 uplift
+  happens in a separate mutable workspace defined by `Modernization-Execution-Contract.*`,
+  never in place inside `LegacyCode/` and never in `src/`.
+- **The single-version package consistency gate** is the standout piece of engineering:
+  `verify-upgrade-invariants.ps1 -WorkspaceRoot … [-PublishDir …]`, `RESULT: OK` (exit 0)
+  required to proceed, `RESULT: BLOCKED` (exit 2) on a split. Its rationale is written out:
+  NuGet builds green when two projects reference different versions of one package, only the
+  highest version ships to the run folder, and the other project then throws
+  `MissingMethodException`/`TypeLoadException` at runtime — which the app's own error handling
+  can disguise as an ordinary error status. Structural fix proposed: central package
+  management via `Directory.Packages.props`.
+- **The penetration-proof requirement**: an anonymous probe returning 401 proves auth is
+  wired, not that upgraded code runs, because middleware rejects before controller logic.
+  At least one real business route must be exercised under an authenticated context.
+  Startup/request logs must be scanned for loader-class exceptions
+  (`MissingMethodException`, `TypeLoadException`, `MissingFieldException`, `FileLoadException`,
+  `FileNotFoundException`, "Could not load file or assembly") — any of which is a hard failure
+  even on a healthy HTTP status. On a 500, read the response **body**, not the status.
+- **A named, diagnosed regression**: on a 3.x → 8 jump, `Microsoft.Data.SqlClient` flips its
+  `Encrypt` default from false to true (SqlClient 4.0+ arrives transitively via EF Core 7/8);
+  restore with `TrustServerCertificate=True` on every affected connection string including
+  `appsettings.Development.json`. This is real institutional knowledge, not generic advice.
+- **A question-tool gate**: the first Step 7 action must confirm with the operator, via a
+  strict clickable `Yes`/`No` question tool, that the current `src/` baseline builds locally.
+  The `src/` gate is **attestation-only** — this lane must not run `dotnet build`,
+  `dotnet run`, or HTTP probes against `src/`.
+- A breaking-changes mapping table (`HttpContext.Current` → `IHttpContextAccessor`,
+  `ConfigurationManager` → `IConfiguration`, `System.Web.Mvc`/`System.Web.Http` →
+  `Microsoft.AspNetCore.Mvc`, `Global.asax` → `Program.cs`/`Startup.cs`, `Web.config` →
+  `appsettings.json`), a 10-item Verification checklist, and a fixed `.NET UPGRADE COMPLETE`
+  report template.
+
+## ⚠ Findings in `OpX-dotnet-upgrade.agent.md`
+
+**1. The mandatory question-tool gate is not in the declared tool list.**
+The file says the *first* Step 7 action "must be a question-tool invocation … with strict
+clickable `Yes`/`No` options (no freeform answer)", and that asking it as plain markdown is
+"non-compliant". The seven declared tools are `edit/editFiles`, `read/readFile`,
+`search/codebase`, `execute/runInTerminal`, `execute/getTerminalOutput`,
+`read/terminalLastCommand`, `read/terminalSelection`. **No question tool.** The file already
+contains a fallback for "if the host cannot render the question tool" — framing a missing
+grant as an environment limitation. Same capability-gap class as P1 Discovery and P3 Review,
+but this one is self-aware.
+
+**2. `## Upgrade Mode Contract` is an empty shell; its subsections live under the wrong
+parent.**
+Line 46 `## Upgrade Mode Contract` contains one sentence ("Every run operates in exactly one
+declared mode. Default to Retarget.") and no subsections. Line 50
+`## Topology Execution Mode (required)` then owns **four** `###` subsections:
+`RunnableRuntime`, `ConstrainedLegacyHost`, `Retarget (default)`, and `Modernize`. The last
+two are upgrade modes, not topology modes. Any model reading structurally concludes Retarget
+is a topology mode — and the two contracts are genuinely orthogonal, so conflating them is a
+real comprehension hazard.
+
+**3. PowerShell inside ` ```bash ` fences — third file with this pattern.**
+`Get-ChildItem -Recurse -Filter "*.csproj" | Select-Object FullName` and
+`./.github/scripts/QA/qa-run-dotnet-tests.ps1 -ProjectPath … -NoBuild` are both in bash
+fences, while the adjacent SDK-instructions block correctly uses ` ```powershell `. Same
+defect appears in `OpX-csharp-expert` and `OpX-csharp-janitor`.
+
+**4. `step9UpgradeWorkspaceRoot` — the +2 drift baked into a variable name, but as a
+*deliberate* shim.**
+The pairing `step7UpgradeWorkspaceRoot` (fallback `step9UpgradeWorkspaceRoot`) appears four
+times. Old Step 9 = new Step 7 under the +2 offset, so this is a backwards-compatibility
+fallback someone wrote on purpose for artifacts produced under the old numbering. **This is
+the first hard evidence that the kit authors knew about the renumbering** — which strengthens
+the case that every *other* +2 reference is an unintentional leftover rather than a second
+live numbering system. Do not "fix" this one; it is load-bearing.
 
 ## Structural facts added by agent `OpX-csharp-janitor`
 
