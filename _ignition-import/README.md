@@ -47,8 +47,10 @@ references, not values).
 | `skills/appmod-testing-and-gates/SKILL.md` | testing — characterization tests, gate scripts, frozen scorecard | transcribed from 1 photo — complete (source lines 1-42, blank to 43); 14 line numbers spot-verified |
 | `skills/architecture-structure/Architecture-Structure.md` | **Ignition-native** — backend layering profiles + the canonical test workspace | transcribed from 4 photos — complete (source lines 1-215, blank to 216); 30 line numbers spot-verified |
 
+| `skills/architecture-structure/REMAINING-POINTS.md` | **Ignition-native** — the five formation decisions still intentionally open | transcribed from 2 photos — complete (source lines 1-108, blank to 109); 31 line numbers spot-verified |
+
 `architecture-structure/` is a **multi-file skill**: `SKILL.md`, `Architecture-Structure.md`, and
-`REMAINING-POINTS.md`. Only `Architecture-Structure.md` is transcribed so far.
+`REMAINING-POINTS.md`. `SKILL.md` is not yet transcribed.
 
 > **The `appmod-*` skills are Squad-side, not Ignition-native — CONFIRMED.** All five live in the
 > Ignition Kit's `.github/skills/` tree, but they are artifacts of *this conversion project*:
@@ -267,6 +269,97 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## Structural facts added by `architecture-structure/REMAINING-POINTS.md`
+
+A companion file whose entire job is to say **what the kit has deliberately not decided yet**.
+108 lines, no frontmatter (Ignition-native).
+
+- **The stated principle is the best governance sentence in the kit**:
+  > keep the unresolved points explicit instead of silently hard-coding premature answers into
+  > the skill
+- **Export Guidance** — the skill is explicitly designed to be lifted into "a reusable template
+  repository": copy `SKILL.md`, and copy this file too "if you want downstream teams to see what
+  is still intentionally unresolved". That is directly the Squad conversion's use case.
+- **Five named open formation decisions**, each with a "Current likely direction" that is
+  explicitly *not* a rule:
+  1. **Legacy Angular feature modules** — how `modules/<feature>/` becomes starter-derived
+     structure. Likely: map each feature to `src/app/pages/<feature>/`; split module-local
+     shared pieces into colocated page-support folders or shared `components/`; do **not** move
+     NgModule-era folders wholesale as `modules/`.
+  2. **Legacy Angular core/bootstrap files** — `app.module.ts`, `app-routing.module.ts`,
+     `APP_INITIALIZER`, custom route-reuse behavior, and `core/{services,guards,interceptors,models,util}/`.
+     Likely: translate bootstrap concerns into the starter's existing bootstrap/config files;
+     split `core/` by responsibility rather than preserving it as one destination folder.
+  3. **Shared shell components** — `nav-menu`, help modal/page, not-found pages,
+     layout-participating shell widgets. Likely: shell/navigation → layout-level or shared
+     `components/`; not-found → `pages/`; help → page or shared modal depending on runtime
+     behavior.
+  4. **Host-era static assets and web-host leftovers** — `wwwroot/`, `Pages/`, `libman.json`.
+     Likely: keep real API endpoints such as `StaticFileController` in the API project; review
+     `wwwroot` assets one-by-one; do not assume Razor-era files move unchanged.
+  5. **Filename hygiene as a formal formation rule** — "still open as a formal policy decision".
+- **`src/app/pages/<feature>/`** is the concrete client target structure — stated nowhere else
+  in the transcribed material.
+- **A well-argued filename-hygiene case**, grounded in real observed defects: three source files
+  with a **trailing space before `.cs`**. Why it matters is enumerated — scripted moves mismatch
+  visible name vs actual path, patches fail when the path is not typed exactly, Linux/container
+  tooling is less forgiving, reviewers miss visually subtle path defects, and a move script may
+  treat a malformed path as a separate file rather than the intended target.
+- **A naming-intent rule**: legacy `Input` / `View` / `Manager` should become `Request` /
+  `Response` / `Validator` / `Service`, and a `*View.cs` that is really an API response DTO
+  should be renamed — but only as a **move-slice concern**, never broad rename-only churn.
+
+## ⚠ Findings in `architecture-structure/REMAINING-POINTS.md`
+
+**1. This file is the fix for the open questions I flagged in `Architecture-Structure.md` — the
+mechanism already exists.**
+Yesterday's finding was that `Architecture-Structure.md` carries four unresolved questions inline
+(`Middleware/ // What does this do??`, `References: none? (Project.Application?)`, and two more).
+This companion file establishes the team's own practice for exactly that situation: open points
+live in a named companion, explicitly marked, with a "current likely direction" that is not
+mistaken for a rule. **The correct fix is to move those four inline `??` comments into this
+file**, not to invent a new mechanism and not to leave them in the normative document. The
+governing sentence is already written: "keep the unresolved points explicit instead of silently
+hard-coding premature answers into the skill."
+
+**2. All five open decisions are frontend, and all five land inside Steps 10-13.**
+Step 10 (Frontend Foundation & Scaffold) and Step 11 (Frontend Migration) execute against rules
+that this file says do not exist yet: how to convert `modules/<feature>/`, how to translate
+`app.module.ts` / `APP_INITIALIZER` / `core/`, where shell components go, and how to triage
+`wwwroot/`. "Current likely direction" is guidance, not a gate.
+
+For a 40-person hackathon this is the **largest single source of divergence identified so far**.
+Every participant's Step 11 will resolve four undefined conversions independently, all of them
+defensibly, and the resulting `src/app/` trees will not resemble each other. Unlike the
+numbering drift (mechanical, linter-fixable) or the `.feature` conflict (one file to rewrite),
+this needs four actual decisions made by a human before the event. The "current likely
+directions" are good and could be promoted to rules largely as written.
+
+**3. App-specific leakage — third instance.**
+`EquipmentService .cs`, `LineService .cs`, `EquipmentLinkView .cs` are real filenames from a
+specific application. Prompt 17 hard-codes `LegacyConnectionStringProviderTests.cs`; the same
+pattern appears here. It is more defensible in this file (they are cited as *observed evidence*
+for why the rule is needed, not as a template), but a kit exported to other teams will carry one
+app's file names in its architecture standard.
+
+**4. The trailing-space defect is real and is worth a gate, not a guideline.**
+A filename ending in `<space>.cs` is exactly the class of problem a five-line check catches
+deterministically and a human reviewer misses — the file itself says "reviewers can miss path
+defects because the problem is visually subtle". Given that the kit already has a gate
+convention with `.sh`/`.ps1` launchers, this belongs in `check-structure` rather than in prose.
+
+## Transcription uncertainties (`architecture-structure/REMAINING-POINTS.md`)
+
+- Line alignment verified at 31 anchors — 1, 3, 5, 7, 10, 12, 20, 22, 30, 35, 44, 50, 52, 59,
+  65, 67, 69, 71, 73, 75, 79, 81, 89, 91, 96, 98, 100, 102, 104, 106, 108 — all matching.
+  Content ends at 108; the editor shows line 109 blank.
+- **Source lines 8 and 9 are both blank** (a double blank line before `### 1.`), unlike every
+  other section break in the file, which uses one. Preserved as photographed.
+- **The trailing spaces inside `` `EquipmentService .cs` `` and its two siblings are
+  intentional and preserved** — they are the defect being documented. Verified byte-wise after
+  writing.
+- No mojibake in this file.
 
 ## Structural facts added by `architecture-structure/Architecture-Structure.md`
 
