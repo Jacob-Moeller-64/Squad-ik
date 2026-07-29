@@ -39,6 +39,7 @@ references, not values).
 
 | File | Role | Status |
 |---|---|---|
+| `instructions/modernization-starter-boundaries.instructions.md` | **Ignition-native** — the canonical LegacyCode→src guardrail file; protected control points, editable seams, ownership model | transcribed from 4 photos — complete (source lines 1-194, blank to 203); 16 anchors verified |
 | `instructions/kit-update.instructions.md` | **Ignition-native** — guardrails for editing the kit *itself* (toolkit-maintenance, not app modernization) | transcribed from 4 photos — complete (source lines 1-178, blank to 180); 18 anchors verified |
 | `instructions/step-registry.json` | **Ignition-native** — ★ the stable step-identity registry; the kit's designed fix for numbering drift | transcribed from 4 photos — complete (source lines 1-205); **validates as JSON**, all 24 steps present |
 | `instructions/step-confidence-contract.instructions.md` | **Ignition-native** — minimum confidence shape every numbered prompt must honor | transcribed from 2 photos — complete (source lines 1-63, blank to 64); 9 anchors verified |
@@ -320,6 +321,145 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## ⚠ HIGH: the kit's two top-level precedence lists disagree about what ranks first
+
+`modernization-starter-boundaries.instructions.md` calls itself *"the canonical
+guardrail file for restructure"* and opens with its own `## Source of truth`
+ordering:
+
+| Rank | `modernization-starter-boundaries` | `copilot.instructions.md` |
+|---|---|---|
+| 1 | **`constitution.md`** | The current user request |
+| 2 | `.github/copilot-instructions.md` | `.github/copilot-instructions.md` |
+| 3 | this file (starter-boundaries) | `AppMod-Process` + `AppMod-Step-Contract.json` |
+| 4 | the active starter-derived files under `src/` | `copilot.instructions.md` itself |
+| 5 | workflow-specific prompts, skills, and agents | targeted/path-scoped instruction files |
+
+They agree only on rank 2. Otherwise:
+
+- **`constitution.md` is rank 1 here and absent entirely from the other list.**
+  This is the third independent signal that `constitution.md` is load-bearing
+  (after the change-capture rule and the readiness-scoring rule) — and the first
+  that puts it at the *top* of a precedence order.
+- **"The current user request" is rank 1 there and absent entirely here.** So one
+  file says the user outranks everything; the other says a checked-in
+  constitution does.
+- `modernization-starter-boundaries` puts *itself* at rank 3, above `src/` and
+  above all prompts/skills/agents. Under `copilot.instructions.md`'s ordering it
+  is a path-scoped instruction file and lands at rank 5.
+
+Two files, each calling itself canonical, each ranking the other's top entry
+differently. An agent that reads one and not the other resolves conflicts the
+opposite way. This is a bigger interop problem than the artifact-root fork was,
+because precedence decides which rule wins *every* time two rules touch.
+
+**`constitution.md` is now unambiguously the top of the transcription backlog** —
+it is rank 1 in the only ordering that names it, it governs readiness scoring,
+and it is a documented write target.
+
+---
+
+## Structural facts added by `modernization-starter-boundaries.instructions.md`
+
+194 lines. The single most operationally specific file transcribed: it names
+exact file paths for the protected starter shell rather than describing roles in
+the abstract.
+
+**Six protected starter control points** (protected *by role*, "even when names
+vary across starter versions"):
+
+| Role | Path |
+|---|---|
+| API host entry point | `src/<AppName>.Web.Api/Program.cs` |
+| API platform composition seam | `src/<AppName>.Web.Api/Extensions/FusionWebBuilderExtensions.cs` |
+| Library platform composition seam | `src/<AppName>.Library/Extensions/FusionApplicationBuilderExtensions.cs` or `src/<AppName>.Library/DependencyInjection.cs` |
+| Client bootstrap entry point | `src/<AppName>.Web.Client/src/main.ts` |
+| Client provider and auth shell | `src/<AppName>.Web.Client/src/app/app.config.ts` |
+| Client Fusion environment config | `src/<AppName>.Web.Client/src/app/fusion.config*.ts` |
+
+Exactly **five allowed narrow edits** in those files (app identity rebinding;
+base URL / environment value rebinding; centralized DI registration for newly
+moved app-owned services; one approved connection-string composition seam;
+starter-version-aligned config value replacement already recorded in the
+migration plan). Anything that would "replace or duplicate the starter's
+provider graph, auth wiring, middleware order, logging bootstrap, or client
+bootstrap contract" requires stopping and recording an exception first.
+
+**Eleven editable app-owned seams** and **four guarded files** (`appsettings*.json`,
+`angular.json`, `package.json`, and the app `Dockerfile`/`nginx.conf`/`default.conf`)
+are enumerated by exact path.
+
+**Auth stance — now six-to-one against `fusion-auth-standards.md`.** This file
+states it flatly: *"Do not author new `AddAuthentication(...)`, `AddJwtBearer(...)`,
+custom Swagger bootstrapping, or ad hoc auth middleware from memory when the
+starter shell already owns that concern."* That is the exact pattern
+`fusion-auth-standards.md` presents as "Fusion pattern (use this)". The
+single-file rewrite recommendation is now very well supported.
+
+**Backend consumer-parity rules** — a genuinely useful failure mode: *"Do not
+treat a controller family as migrated if only the detail-by-id route exists while
+the migrated frontend or other consumers still call collection or list routes."*
+A non-404 live proof per consumer-used route family is required even when
+authenticated business data cannot be exercised.
+
+**Two named user-input gates** that the kit will otherwise guess at:
+the authoritative connection string / split DB inputs, and the authoritative
+Okta/AD group identifiers for at least `User` and `Admin` plus app-specific
+policy roles such as `TestAdmin`. Both say: ask the user rather than infer from
+sample apps, stale defaults, or unrelated legacy environments. A 403 with a valid
+bearer token is to be treated as a role-mapping input gap, not a code bug.
+
+---
+
+## ⚠ Findings in `modernization-starter-boundaries.instructions.md`
+
+**1. Windows backslash paths, only in this file.** Lines 187-189 write
+`.modernization\ignition-artifacts\modernize\fusion-restructure\ui-inventory.json`
+and `Push-Location src\<AppName>.Web.Client`. Every other transcribed file uses
+forward slashes. A linter matching on `.modernization/` will miss these three
+rules entirely, and they are the ones gating Fusion-swap completion.
+
+**2. `ui-component-map.json` and `ui-verification-report.json` are new artifacts**
+that appear in no other file and are **not** in `AppMod-Artifact-Contract.json`.
+The contract's Step 14 produces `ui-inventory`, `ui-visual-contract`,
+`ui-fusion-map`, `ui-migration-order` — not these two. So two artifacts required
+by a validation gate have no producer in the contract and cannot be verified.
+
+**3. `npm run verify:fusion-ui` and `verify:fusion-ui:complete` are undocumented
+scripts.** Both are required by validation gates; neither appears in any other
+transcribed file. Add them to the pre-flight existence check alongside the eight
+PowerShell scripts.
+
+---
+
+## ⚠ Findings in `kit-update.instructions.md`
+
+**1. A stray hyphen breaks a heading.** Line 33 is `-## Canonical Context Paths`
+— it renders as a list item containing `## Canonical Context Paths`, not as a
+heading. Reproduced faithfully; it is a source defect.
+
+**2. Duplicate list numbering in Change Strategy.** There are two items numbered
+`4.` (lines 121-123 and line 124), so the section runs 1, 2, 3, 4, 4, 5, 6, 7, 8
+and renders with the wrong numbers from there down.
+
+**3. A path rule that moves a file to itself.** Line 137: *"If an existing
+generated family is moved from `/.modernization/ignition-artifacts/**` to
+`/.modernization/ignition-artifacts/**`, propagate every path reference in the
+same change."* Source and destination are identical. Given the `generated/` fork
+recorded earlier, one side was probably meant to be `/.modernization/artifacts/**`.
+
+**4. The final line is duplicated verbatim.** Lines 177 and 178 are both
+*"Batch clarification questions into one concise review note whenever practical."*
+
+**5. Missing blank line before `## Editing Guardrails`** (line 40 follows line 39
+directly).
+
+None of these are dangerous on their own, but this is the file that governs how
+the kit edits *itself* — five formatting/logic defects in a maintenance rulebook
+is a signal that nothing lints the kit today.
+
+---
 
 ## ★ `step-registry.json` transcribed in full — the fix is real, and it is complete
 
