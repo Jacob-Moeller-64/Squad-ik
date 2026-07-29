@@ -53,6 +53,7 @@ references, not values).
 | `skills/diagnose/SKILL.md` | **Ignition-native, meta** — audits an AI workflow across 5 quality dimensions | transcribed from 2 photos — complete (source lines 1-106); 27 line numbers spot-verified |
 | `skills/dominion-requirements/AppMod-Acceptance-Criteria.md` | **Ignition-native** — the canonical Dominion acceptance-criteria rubric | transcribed from 2 photos — complete (source lines 1-100); 22 line numbers spot-verified |
 | `skills/dominion-requirements/SKILL.md` | **Ignition-native** — the full Dominion rubric with WHY/WHAT/HOW (largest file in the kit) | transcribed from 25 photos — complete (source lines 1-1398, blank to 1399); 100+ line numbers spot-verified |
+| `skills/fusion-feature-standards/fusion-auth-standards.md` | **Ignition-native** — non-negotiable Okta/auth/secrets/CORS security standards | transcribed from 6 photos — complete (source lines 1-301); 26 line numbers spot-verified |
 
 `architecture-structure/` is a **multi-file skill**, now fully transcribed: `SKILL.md` (470 lines),
 `Architecture-Structure.md` (215), `REMAINING-POINTS.md` (108).
@@ -274,6 +275,100 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## Structural facts added by `fusion-feature-standards/fusion-auth-standards.md`
+
+The security half of `fusion-feature-standards` (the skill named by `OpX-AppMod-P2-Modernize`).
+301 lines, no frontmatter, Ignition-native. Twelve sections, each in a
+`NOT acceptable` / `Fusion pattern` pair, closing with a Quick Reference severity table.
+
+- **The temporary-legacy-auth allowance is the most carefully bounded passage in the kit.**
+  A legacy app already using Windows/Forms auth "may temporarily retain that existing scheme
+  as an intermediate state", under four explicit conditions: it must already exist, be retained
+  only for parity, be documented as temporary and scheduled for replacement, and never be
+  treated as final or deployment-ready. Plus: "Do not introduce new legacy auth into
+  applications that do not already use it, and do not expand legacy auth to new features or
+  endpoints unless required strictly for parity." This is D-004's strangler order written out
+  as a reviewable rule.
+- **Concrete Okta config shape** (field names only; the values in the source are `your-org`,
+  `your-app-id`, `your-client-id` placeholders): `Okta:Issuer`, `Okta:Audience`, `Okta:ClientId`,
+  with `RequireHttpsMetadata` true in production and `ClockSkew = TimeSpan.FromMinutes(2)`.
+- **Five token-validation flags that MUST be true**: `ValidateIssuer`, `ValidateAudience`,
+  `ValidateLifetime`, `RequireExpirationTime`, and `RequireHttpsMetadata` outside development.
+- **Five CRITICAL secret patterns, written as greppable rules**: `Password=`/`Pwd=` with a
+  non-empty literal, connection strings with credentials in `appsettings.json`, API keys as
+  32+-character literals, JWT signing keys as literals, and `Bearer ` followed by a token string.
+- **A PII section with a genuinely useful before/after**: `X-User-Id: user.Name` →
+  `X-Correlation-Id: correlationId`; `LogInformation("User {Email}…", user.Email)` →
+  `("User {UserId}…", user.Id)`; `BadRequest(new { error = $"User {user.Email} is not
+  authorized" })` → `Forbid()`.
+- **CORS**: `AllowAnyOrigin().AllowCredentials()` is called out as a browser security violation,
+  with the correct pattern reading origins from `Cors:AllowedOrigins`.
+- **A dev-only-endpoint pattern** gated twice — by `IsDevelopment()` *and* by a
+  `DevAuth:Enabled` config flag.
+
+## ⚠ Findings in `fusion-feature-standards/fusion-auth-standards.md`
+
+**1. Its "Fusion pattern (use this)" is the exact stack two other files forbid.**
+This file presents as the recommended pattern:
+
+```csharp
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options => { … });
+```
+
+`dominion-requirements/SKILL.md` says the opposite, in its own Correct Implementation block:
+
+> Keep auth in the repo's approved starter/Fusion control points … **instead of introducing a
+> parallel generic `AddJwtBearer` stack.**
+
+And `appmod-fusion-target` describes a third model again: `FusionWebBuilder.CreateBuilder(...)`
+with Okta driven by appsettings config blocks and the `Fusion.Fx.Security.Web.OAuth.Okta`
+package — i.e. provisioned by construction, no hand-written `AddAuthentication` at all. The
+client side diverges the same way: this file hand-writes an `OktaAuthGuard` route guard and a
+bearer-token `HttpInterceptor`, while `appmod-fusion-target` specifies
+`provideNgxFusionAuthOAuthOkta()` with `FusionAuthenticatedGuard`/`FusionRoleGuard`.
+
+**Three files, three incompatible Okta wirings, all presented as correct.** For a hackathon this
+is more damaging than any numbering drift: auth is the one thing every participant must get
+right, and whichever file their agent loads first determines what they build. This needs a
+single decision, not a linter.
+
+**2. Same problem with API docs: this file hand-writes Swagger.**
+Its Fusion pattern is `app.UseSwagger(); app.UseSwaggerUI(c => c.SwaggerEndpoint(...))` inside an
+`IsDevelopment()` guard. But `appmod-fusion-target` states Scalar/OpenAPI "serves at `/scalar`
+transitively via `Fusion.Fx.App.Web`; do **NOT** hand-write `AddScalar`/`MapScalar`", and the
+whole kit targets Scalar (prompt 02 pins `https://localhost:4200/scalar`). This file never
+mentions Scalar at all — it is written entirely against Swagger.
+
+**3. Severity conflict on an identical finding.**
+`Token in localStorage` is **HIGH** in this file's Quick Reference. It is **CRITICAL** in
+`dominion-requirements/SKILL.md` ("Tokens in localStorage | XSS can steal tokens") and appears
+under Critical in `AppMod-Acceptance-Criteria.md`. Since Dominion is the scoring rubric, this
+file's table will under-rate a Critical finding by two bands.
+
+Related: this file treats Windows/IIS/Negotiate auth as CRITICAL, while Dominion scores
+`Forms Authentication` as HIGH — two legacy auth schemes that this file's own prose treats as
+equivalent ("Windows Authentication, Forms Authentication, or another legacy scheme").
+
+**4. `sessionStorage` is not a fix for the `localStorage` XSS risk.**
+> Tokens NEVER in `localStorage` (XSS vulnerable) - use `sessionStorage` or in-memory
+
+`sessionStorage` is readable by any script in the same origin, exactly like `localStorage`; it
+differs only in lifetime. Only the in-memory option in that sentence actually mitigates XSS
+token theft. In a document whose stated purpose is "non-negotiable security requirements", this
+should say in-memory (or httpOnly cookie), not offer `sessionStorage` as an equal alternative.
+
+## Transcription uncertainties (`fusion-feature-standards/fusion-auth-standards.md`)
+
+- Line alignment verified at 26 anchors — 1, 7, 22, 35, 47, 49, 70, 90, 104, 120, 126, 135, 155,
+  164, 176, 188, 206, 216, 231, 242, 252, 261, 274, 287, 289, 301 — all matching. Content ends
+  at 301.
+- The Okta values in the `appsettings.json` example (`https://your-org.okta.com/oauth2/default`,
+  `api://your-app-id`, `your-client-id`) are placeholders in the source; **no real tenant,
+  issuer, audience or client ID appears in the file and none was inferred.**
+- Line 3 wraps across three editor rows; reconstructed from wrap positions.
+- No mojibake in this file.
 
 ## Structural facts added by `dominion-requirements/SKILL.md`
 
