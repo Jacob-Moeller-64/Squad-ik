@@ -70,6 +70,7 @@ references, not values).
 
 | File | Role | Status |
 |---|---|---|
+| `Copilot-Customization-Cheat-Sheet.md` | **Ignition-native** — maintainer reference for which customization primitive to use; actual path is `.github/Copilot-Customization-Cheat-Sheet.md` | transcribed from 3 photos — complete (source lines 1-150); 15 anchors verified |
 | `constitution.md` | **Ignition-native** — ★ the durable governance source; actual path is **`.github/constitution.md`**, not the repo root | transcribed from 3 photos — complete (source lines 1-146); 14 section anchors verified |
 
 ### Templates
@@ -585,6 +586,143 @@ so it sits at rank 3 — above every prompt, agent, and skill, which is the corr
 place for a write boundary. The earlier reading (that it ranked below "the current
 user request") came from `copilot.instructions.md`'s mis-scoped list, not from
 the governing document.
+
+---
+
+## ★ NEW PRIMITIVE: `.github/hooks/*.json` — a seventh customization surface
+
+`Copilot-Customization-Cheat-Sheet.md` names a surface that appears **nowhere
+else** in this entire import:
+
+> **Hooks** — `/.github/hooks/*.json` — Use it when: *"You need deterministic
+> lifecycle behavior such as blocking a tool, auto-formatting, or injecting
+> context before or after tool use."* Avoid it when: *"A normal instruction is
+> enough and you do not need shell-enforced behavior."*
+
+And the reason it matters, stated plainly:
+
+> Hooks are **stronger than instructions** because they can run commands and
+> **block or modify workflow at lifecycle boundaries**.
+
+This is directly relevant to the biggest structural weakness recorded across this
+import — that every rule in the kit is advisory prose an agent may or may not
+honor. A hook is the one surface that is *enforced by the environment* rather
+than by the model's cooperation.
+
+The kit's own assessment of its hook usage is **"Not evident"** on both hook rows
+(Hooks, Agent-scoped hooks) — documented as available, unused in practice. Its own
+"Best Opportunities" list names the fix:
+
+> Evaluate agent-scoped hooks for mandatory guardrails such as **artifact
+> freshness checks, required validation before stopping, or tool restrictions**.
+
+Those three are precisely the failure modes this import has documented over and
+over: stale artifacts passing gates, steps reporting `Completed` without proof,
+and agents writing outside their allowed zone. **If one structural change goes
+into the kit before the hackathon, a stop-hook that refuses to let a step close
+without its verification artifact is the highest-leverage candidate.**
+
+Caveat the file states honestly: hooks are `Supported but preview`.
+
+---
+
+## ⚠ A candid capability audit — the kit grades its own feature usage
+
+The `Supported Handoff And Routing Features` table is unusual: 12 rows, each with
+an honest `Current Kit Usage` column. The kit's self-assessment:
+
+| Usage level | Capabilities |
+|---|---|
+| **Yes** | custom-agent `handoffs`, prompt-file `agent:` binding, slash prompts |
+| **Partial** | Skills |
+| **Limited** | `handoffs.send: true`, Subagents, Custom agents as subagents |
+| **Weakly used** | Allowed-subagent list (`agents`) |
+| **Not evident** | Hooks, Agent-scoped hooks, Hidden/worker-only agents, Cloud handoff |
+
+Two of these connect directly to findings recorded earlier in this document:
+
+- **`Allowed-subagent list (agents)` — "Weakly used"**, with the gap noted as
+  *"Current broad allow-lists could be tightened where appropriate."* That is the
+  same defect recorded against `Ultimate-AppMod-Ignition.agent.md`, whose
+  frontmatter declares `agents: ["*"]`. The kit already knows.
+- **Hidden or worker-only agents — "Not evident"**, described as *"Keep helper
+  agents from being directly user-invoked."* That is the missing control for the
+  `Ultimate-Ignition-edit` / `Ultimate-AppMod-Ignition` identical-twin problem:
+  the toolkit editor should be worker-only, not directly user-invocable.
+
+---
+
+## ✅ The `send: false` handoff pattern is explained (and is not a defect)
+
+An earlier finding noted that `OpX-AppMod-P3-Review.agent.md`'s six numbered
+handoffs all carry `send: false`, and treated it as notable. This file explains
+the design:
+
+> There is **no confirmed official Microsoft frontmatter field** for an automatic
+> `on completion` or `return to another agent when finished` route in the current
+> VS Code custom-agent and prompt-file docs used for this repo.
+
+The four closest supported patterns are then listed: `handoffs` shown after an
+agent finishes; `handoffs.send: true` for immediate submit; subagents (which
+return automatically); and hooks (which can enforce behavior around stop, *"but
+are not documented as agent-routing features"*).
+
+So `send: false` is the deliberate default — a visible next-step button the
+operator clicks — and `send: true` is the selective exception. Retracting the
+implication that it was a defect.
+
+---
+
+## Structural facts added by `Copilot-Customization-Cheat-Sheet.md`
+
+150 lines at `.github/Copilot-Customization-Cheat-Sheet.md`. Explicitly
+maintainer-facing, and explicitly **not** an authority:
+
+> Do not treat this cheat sheet as a second process specification.
+
+It then defers to `AppMod-Process.instructions.md` (human-readable authority),
+`AppMod-Step-Contract.json` (machine-readable authority), and the three phase
+agents — consistent with everything else transcribed.
+
+**It confirms the Constitution/copilot-instructions split from the other side**,
+in a two-row table with a `Key Constraint` column: the Constitution is *"Not the
+repo's auto-attached Copilot instruction primitive by itself"*;
+`copilot-instructions.md` *"Must stay concise and should point to the Constitution
+instead of duplicating it broadly."* Two files, written independently, agreeing
+exactly. That is the cleanest pair in the kit.
+
+**The seven-row Primitive Matrix** (Constitution, repo-wide instructions, file
+instructions, prompts, agents, skills, hooks) gives each surface both a
+*Use It When* and an **Avoid It When** column. The "avoid" column is what makes it
+usable — most such matrices only say what each surface is for.
+
+**Five named pitfalls**, two of which are recurring themes in this import:
+*"Do not put a repo-wide policy into a prompt just because it was discovered
+during one task"* and *"Do not duplicate the same contract across the
+Constitution, instructions, prompts, and agents when one shared source plus one
+attached surface can carry it."*
+
+**One dangling reference:** `/.modernization/OpXUtil/.conversation/Step-0-Extension-Paused-Status.md`,
+a paused "Step 0 extension experiment" the file says is *not* part of the active
+workflow surface, with an explicit instruction not to depend on
+extension-specific buttons or pause cards in active prompts. Worth knowing it
+exists so nobody revives it by accident.
+
+---
+
+## ⚠ Findings in `Copilot-Customization-Cheat-Sheet.md`
+
+**1. Quick Selection Test item 4 is garbled.** Line 69 reads *"Use prompts for
+repeatable tasks or another agent intentionally runs."* A word or clause is
+missing — most likely intended as "…tasks a user or another agent intentionally
+runs." Transcribed faithfully; it is a source defect, not a photo artifact (the
+line is short and fully legible).
+
+**2. It documents hooks but the kit has none.** Both hook rows read
+`Not evident`. Nothing is wrong with documenting an unused capability, but a
+hackathon reader could reasonably assume `.github/hooks/` exists. Worth a
+one-line "not currently used in this kit" note — or actually adding the stop-hook
+described above.
 
 ---
 
@@ -2573,7 +2711,7 @@ The file-tree photo shows `.github/skills/` contents not previously known:
 | `skills/workstation-playwright-setup/` | **new skill**, not transcribed |
 | `skills/visual-parity-gate/SKILL.md` | not transcribed (references now done) |
 | `.github/templates/` | confirms the folder `appmod-compliance-review` and `architecture-structure` both reference |
-| `.github/constitution.md` | **new top-level file**, never referenced by anything transcribed |
+| `.github/constitution.md` | **new top-level file** — *(this note is SUPERSEDED: constitution.md is now transcribed and is referenced by `copilot.instructions.md`, `modernization-starter-boundaries`, and the cheat sheet)* |
 | `.github/Copilot-Customization-Cheat-Sheet.md` | **new top-level file** |
 
 `constitution.md` is the notable one: a root-level document with a name implying kit-wide
