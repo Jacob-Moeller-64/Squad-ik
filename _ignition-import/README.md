@@ -35,6 +35,12 @@ references, not values).
 | `prompts/23-P3-final-readiness-review.prompt.md` | P3 Review, Step 23 | transcribed from 2 photos |
 | `prompts/24-P3-technical-review.prompt.md` | P3 Review, Step 24 | transcribed from 27 photos (5 were a re-shot of an already-captured range); complete — 16 heading line numbers spot-verified against the source |
 
+### Skills
+
+| File | Domain | Status |
+|---|---|---|
+| `skills/appmod-backend-dotnet/SKILL.md` | backend — .NET upgrade + restructure | transcribed from 1 photo — complete (source lines 1-34, blank to 35); 11 line numbers spot-verified |
+
 ### Agents
 
 | File | Role | Status |
@@ -156,6 +162,105 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by skill `appmod-backend-dotnet`
+
+First skill transcribed, and it is a **third artifact type** — not a prompt (procedure) and not
+an agent (identity + routing), but a distilled knowledge card. 34 lines, and the highest
+signal-per-line of anything in the kit.
+
+- **A completely different frontmatter schema**: `name`, `description`, `domain`, `confidence`,
+  `source` — all quoted strings, opening `---` at line 1. No `tools`, no `handoffs`, no
+  `agents`, no `user-invocable`.
+- **`confidence: "high"` and `source: "earned (Ignition Kit Step 7 + dotnet standards)"`.**
+  "Earned" is doing real work here: this is knowledge distilled from actual runs, tagged with
+  where it came from and how much to trust it. **No other artifact type in the kit carries
+  provenance or confidence metadata.** If the Squad conversion keeps one idea from the skills
+  layer, this is the one.
+- **A four-section shape**: Context / Patterns / Examples / Anti-Patterns. The Anti-Patterns
+  section is the largest, and it is written as failure modes with their exact symptoms.
+- **The direct answer to "how does Scalar get wired?"**:
+  > Scalar/OpenAPI is provisioned by construction via `Fusion.Fx.App.Web` (config blocks
+  > `Fusion.Web.Api.EnableApi` + `OpenApi`); **do NOT hand-write `AddScalar`/`MapScalar`**.
+  > The published endpoint set must EXACTLY match the inventory.
+
+  This is the first place the mechanism is named rather than the outcome. `Fusion.Fx.App.Web`
+  is a new package name.
+- **The connection-string contract (D-014)**: compose once at startup from split env vars
+  `SqlServer__Server` / `Database` / `Username` / `Password` / `Encrypt` /
+  `TrustServerCertificate` into `ConnectionStrings`. (Names only — no values, consistent with
+  the no-secrets rule for this import.)
+- **"Consumer-complete route parity"** with the family list spelled out:
+  list / detail / create / update / delete / export / current-user — each must exist on the
+  target or be a recorded temporary bridge.
+- **Four runtime traps a green build hides**, each with its observable symptom:
+  - `AddWithValue` infers the wrong `SqlDbType` → **SQL silently returns zero rows; the API
+    answers HTTP 200 with `[]` and no exception.** The nastiest one in the kit: no build error,
+    no test failure, no log line — just an empty grid that looks like "no data".
+  - Split-version package trap → builds green, only the highest version ships, sibling faults
+    at runtime.
+  - SqlClient `Encrypt` default flipped true → 500 at first DB hit, `InnerMessage` = "The
+    certificate chain was issued by an authority that is not trusted."
+  - Dapper materialization mismatch (SQL `int` → `string` ctor param) → "a parameterless
+    default constructor or one matching signature ... is required."
+  - Plus: `Microsoft.AspNetCore.SpaServices.Extensions` removed in .NET 8+.
+- **"Build-green is NOT done"** stated as a headline anti-pattern: "You are done only when the
+  backend STARTS and a real authenticated route returns real data." Same doctrine as
+  `OpX-dotnet-upgrade`'s penetration proof, compressed to one line.
+
+## ⚠ Findings for skill `appmod-backend-dotnet`
+
+**1. Decision-ID collision risk for the Squad conversion — worth resolving before importing
+anything.**
+
+This skill cites two decision IDs: **D-007** (`src/<App>.Web.Api` is *move-only*) and **D-014**
+(connection-string composition). Squad-ik's own `.squad/decisions.md` seeds **D-001…D-010**,
+and its **D-007** reads:
+
+> **D-007** · Behavior commits and move commits never mix.
+
+The Ignition Kit's D-007 and Squad-ik's D-007 **mean the same thing** — move-only vs behavior
+commits. That is a lucky alignment, not a guarantee. The Ignition Kit's ledger runs to at least
+**D-014**, past the end of Squad's seeded range, so the two ledgers are independent and only
+happen to agree at 007.
+
+**The hazard is the ones that don't agree.** If Ignition's D-003 means something different from
+Squad's D-003, importing Ignition prompts into Squad format produces cross-references that
+resolve to the wrong policy — silently, because the citation still looks valid. Before
+converting, the two decision ledgers need to be diffed ID by ID and either merged with a
+namespace (e.g. `IGN-D-014`) or renumbered.
+
+**2. The Ignition Kit's own decisions file has not been located yet.**
+D-007 and D-014 are cited with no path. None of the 24 prompts or 11 agents transcribed so far
+names a decisions ledger. It exists — worth photographing.
+
+**3. Nothing transcribed so far references this skill.**
+Agents and prompts have named eight skills — `fusion-restructure-review`,
+`architecture-structure`, `dominion-requirements`, `ignition-kit-maintenance`,
+`fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
+`screenshot-capture`. **`appmod-backend-dotnet` is not among them.** Either a loader picks up
+`.github/skills/**` by convention, or this skill is orphaned and never loads. Given that it
+contains the `AddWithValue` trap — a silent data-loss failure — an orphaned skill would be an
+expensive thing to leave unwired. Needs a directory listing of `.github/skills/` plus a check
+of how skills are discovered.
+
+**4. Knowledge is duplicated between the skill and the agent, with no stated source of truth.**
+The SqlClient `Encrypt` regression, the split-version trap, and the build-green-is-not-done
+doctrine all appear in **both** this skill and `OpX-dotnet-upgrade.agent.md`, in different
+words. That is defensible (skill = distilled recall, agent = procedural lane), but neither file
+points at the other, so the two will drift. The skill's `source:` field is the natural place to
+declare which one is canonical.
+
+## Transcription uncertainties (skill `appmod-backend-dotnet`)
+
+- Line alignment verified at 11 anchors — 7, 9, 11, 14, 16, 17, 22, 24, 27, 29, 34 — all
+  matching. Content ends at 34; the editor shows line 35 blank.
+- **Source lines 11-12 are a hard-wrapped paragraph, not a single wrapped line** — line 11 ends
+  at "behavior" and line 12 begins "commits only". Preserved as two physical lines.
+- Lines 16, 18, 19, 20, 29, 31 wrap in the editor; reconstructed from wrap positions.
+- Env-var **names** only are recorded (`SqlServer__Server`, `…__Password`, etc.); no values
+  appear in the source and none were inferred.
+- No mojibake anywhere in this file.
 
 ## Structural facts added by agent `Ultimate-Ignition-edit`
 
