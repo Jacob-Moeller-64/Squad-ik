@@ -270,3 +270,86 @@ Change-capture rule (required):
 ### SPA and deployment model
 - Treat the Angular frontend as a separate project and deployment unit from the .NET API.
 - Remove legacy embedded SPA hosting patterns when the target uses separate API and client projects/containers.
+
+### Angular modernization patterns
+- Prefer standalone components, current Angular structure, and environment/Fusion configuration patterns over legacy module-heavy or hardcoded approaches.
+- Prefer signals over legacy manual state-subscription patterns when aligning to the current Angular model.
+- Avoid direct DOM access when Angular framework alternatives exist.
+
+### Project-file modernization
+- Update target frameworks and project settings to the approved modern target.
+- Remove package references that only support retired legacy patterns once the replacement pattern is in place.
+
+## Code quality expectations
+- Write readable code with clear names and small functions.
+- Prefer KISS: don't over-engineer.
+- Optimize for long-term human maintenance.
+- Add simple-English comments aggressively enough that an entry-level developer can follow the file without guessing.
+- Default to header comments on important files and clear inline guidance for complex steps, parity-sensitive logic, setup, risks, and test intent.
+- No spaghetti code. No clever code unless it is clearly necessary and the reason is documented nearby.
+
+## Angular-specific guidance (when applicable)
+- When UI elements are used in tests, prefer stable selectors (e.g., `data-testid`).
+- Centralize API calls in services; keep components focused on UI logic.
+
+## Output format (how to respond)
+- Start with a brief summary.
+- Provide the proposed code changes (patch/file list) when making changes.
+- Include how to validate.
+- Call out risks and tradeoffs.
+
+## Communication style
+- Plain, simple, and clear English.
+- Avoid jargon; define acronyms on first use.
+- When in doubt, give more context, not less.
+- Prefer steps and todo lists for clarity.
+
+## QA summary default
+- For QA runs, do not ask for a summary; use the uppercase default "<TYPE> TESTING" (e.g., "UNIT TESTING", "INTEGRATION TESTING").
+
+## Scoring precedence
+- When scoring readiness/compliance, gates and policies are canonical.
+- Prompts are procedural helpers; if a prompt conflicts with a gate/policy, follow the gate/policy and record the conflict.
+
+## Build / run workflows
+- VS Code and Visual Studio must be interchangeable: keep CLI commands (`dotnet restore/build/test/run`) as the source of truth; avoid IDE-only steps.
+- Prefer the app's `README.md` for exact commands when it exists. If it does not, use `/.modernization/.readme/HowToRun.md`; if both are missing, discover the relevant `.sln`/`.csproj` under `src/` and use standard `dotnet` commands.
+- When Copilot starts any local web app/server (e.g., `dotnet run`), it must immediately open the reported `http://localhost:<port>` URL(s) in VS Code Simple Browser and then open the primary smoke endpoint(s) (at minimum `GET /health`) the same way.
+- Port management (always clear before rerun): Before starting any local web app/server, proactively free the last-used dev port.
+  - PowerShell helper (set `$port` to the app's dev port):
+    ```powershell
+    $pids = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique; if ($pids) { foreach ($procId in $pids) { Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue } }
+    ```
+- If local execution is blocked by workstation policy (e.g., `E_ACCESSDENIED 0x80070005`), don't "fix" this in code. Record the blocker + mitigation in `.modernization/ignition-artifacts/status/<AppName>/STATUS_REPORT.md`.
+
+## Project-specific coding conventions
+- Preserve existing DTO/property names and response shapes; do not change JSON casing conventions unless explicitly asked.
+- If the app exposes `GET /health`, preserve its response shape; prefer `{ "status": "ok" }` when establishing a new baseline.
+- Treat per-app conventions as owned by:
+  - `README.md` when present, otherwise `/.modernization/.readme/HowToRun.md`
+  - `.modernization/ignition-artifacts/status/<AppName>/STATUS_REPORT.md`
+
+## Dependencies / approvals
+- Treat NuGet/npm/tool additions as approval-sensitive in this repo. Before adding new auth/telemetry/infra packages/tools, record rationale + fallback in `.modernization/ignition-artifacts/status/<AppName>/STATUS_REPORT.md`.
+
+## Containerization
+- Apps must be containerized (Docker is in-scope). Maintain/extend the per-app `Dockerfile` without introducing secrets.
+
+## Status reporting (required)
+- Keep a manager/dev-friendly status report up to date for each app:
+  - `.modernization/ignition-artifacts/status/<AppName>/STATUS_REPORT.md`
+- Update the report after any build, run, parity work, auth/DB work, or any meaningful change.
+- Keep it short (rarely more than 1 page). It's a status, not a log.
+- The report must be readable by both non-technical and technical audiences and should summarize:
+  - Build & run status (what command, result, blockers)
+  - What has been modernized vs what is left
+  - Parity snapshot (summarized directly in the report)
+  - Acceptance criteria progress (summarized directly in the report)
+  - Authentication status
+  - Database status
+  - UI parity status
+  - API status
+  - Next steps + current blockers/risks + mitigation tactics
+
+### Readiness scoring
+Readiness scoring and tiers are governed by AppMod-Ignition (constitution + gate/policy catalogs). Keep `STATUS_REPORT.md` aligned to those definitions.

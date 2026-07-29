@@ -39,7 +39,10 @@ references, not values).
 
 | File | Role | Status |
 |---|---|---|
-| `instructions/copilot.instructions.md` | **Ignition-native** — task-discoverable operational supplement (`name: appmod-ignition-operations`); repo maintenance, rerun behavior, engineering standards, naming law | transcribed from 5 photos — complete (source lines 1-272, blank to 273); 39 line numbers spot-verified |
+| `instructions/discovery-runner.instructions.md` | **Squad-side bridge, NOT Ignition-native** — the Squad-as-runner pilot that executes Ignition Discovery Steps 1-6 | transcribed from 4 photos — content complete (source is 175 lines); **hard-wrap points not reproduced**, so local line numbers differ (see uncertainties) |
+| `instructions/frontend-modernization-learning.instructions.md` | **Ignition-native** — durable post-mortem rules from frontend modernization failures | transcribed from 5 photos — complete (source lines 1-170, blank to 171); 10 line numbers spot-verified |
+| `instructions/dotnet.instructions.md` | **Ignition-native** — .NET coding standards, auto-applied to `**/*.cs` | transcribed from 2 photos — complete (source lines 1-75, blank to 76); 9 line numbers spot-verified |
+| `instructions/copilot.instructions.md` | **Ignition-native** — task-discoverable operational supplement (`name: appmod-ignition-operations`); repo maintenance, rerun behavior, engineering standards, naming law | transcribed from 7 photos — complete (source lines 1-355, blank to 356); 51 line numbers spot-verified. **Earlier version was truncated at 272**; lines 273-355 added later |
 | `instructions/AppMod-Process.instructions.md` | **Ignition-native** — the human-readable 3-phase / 24-step authority; the narrative counterpart to the artifact contract | transcribed from 6 photos — complete (source lines 1-265, blank to 266); 29 line numbers spot-verified |
 | `instructions/appmod-phase-agent-contract.instructions.md` | **Ignition-native** — shared critical rules + chat contract for the three numbered phase coordinators | transcribed from 4 photos — complete (source lines 1-174 plus 3 trailing blanks, blank to 178); 16 line numbers spot-verified |
 | `instructions/AppMod-Artifact-Contract.json` | **Ignition-native** — the per-step artifact input/output contract that drives the shared verifier | **PARTIAL** — see `_wip/AppMod-Artifact-Contract-partial.md`; vertically complete (lines 1-345, all 24 steps) but long lines are still cut off at the right screen edge (word wrap was off) |
@@ -309,6 +312,284 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## ★★★ THE DRIFT PROBLEM IS ALREADY SOLVED — the fix is `step-registry.json`, and the migration is just unfinished
+
+This reframes every numbering finding in this document.
+
+`discovery-runner.instructions.md` documents a mechanism no previously transcribed
+file mentioned:
+
+> **Step identity (`stepId`).** Each step has a stable `stepId` in
+> `.github/instructions/step-registry.json`. Cross-references between toolkit
+> files use `step:<stepId>` tokens **so renumbering only touches the registry,
+> not every reference.**
+
+The six Discovery `stepId` values, verbatim:
+
+| Step | `stepId` | Label |
+|---|---|---|
+| 1 | `7be409` | Workstation Readiness |
+| 2 | `1fc2ba` | Rename Starter To `<AppName>` |
+| 3 | `26b4e1` | Legacy System Analysis |
+| 4 | `261769` | Baseline Acceptance-Criteria Review |
+| 5 | `d847e7` | Modernization Solution Design |
+| 6 | `6c50db` | Modernization Quality Design |
+
+Two hard rules are stated as coming *from* `step-registry.json`:
+
+1. **ALWAYS** translate a `stepId` to its human label in every developer-facing
+   stop (`step:26b4e1` -> `Step 3 - Legacy System Analysis`).
+2. **NEVER** surface a raw `stepId` to the developer.
+
+And the migration status is stated explicitly: the registry-migrated shared
+scripts (`verify-step-artifacts.ps1`, `Invoke-StepReconciliation.ps1`) accept
+`-StepId '<stepId>'`; **"scripts not yet migrated still take `-Step <N>`."**
+
+**What this means for everything above.** The +2 drift is not an unsolved design
+flaw — it is the *symptom of a half-finished migration to a fix that already
+exists*. The correct remediation is therefore **not** "renumber every reference"
+(which this document has been building toward). It is:
+
+- finish migrating references to `step:<stepId>` tokens,
+- finish migrating the scripts to `-StepId`,
+- and lint for any surviving bare `Step <N>` cross-reference.
+
+That is a smaller, safer, and permanent fix. It also explains why
+`step9UpgradeWorkspaceRoot` and the `step19-`/`step20-` filenames were
+deliberately frozen: they are pre-registry identifiers that renumbering would
+break, exactly as the registry design predicts.
+
+`step-registry.json` was listed in `manifests/github-instructions-listing.md`
+from the very first directory photo and I had no idea what it was. It is now,
+with `AppMod-Step-Contract.json`, the top of the transcription backlog.
+
+---
+
+## ⚠ IMPORTANT SCOPE CORRECTION: not everything in `.github/instructions/` is Ignition-native
+
+`discovery-runner.instructions.md` is **your own Squad-side bridge**, not part of
+the original Ignition Kit. It references `.squad/agents/lead/charter.md`,
+`.squad/agents/reviewer/charter.md`, `.squad/agents/tester/charter.md`,
+`.squad/routing.md`, `.github/agents/squad.agent.md`, and
+`tools/appmod/gates/compliance-scan.*` — all Squad-side assets.
+
+I have been labelling files in this directory "Ignition-native" by default. That
+was too broad. The `.github/instructions/` folder now demonstrably contains
+**both** original Ignition files and Squad integration files. The index above has
+been corrected for this file; the safest read of any remaining file is to check
+whether it references `.squad/` before assuming provenance.
+
+This also means part of the Ignition→Squad bridge already exists and works. It
+is worth reading as a design precedent rather than starting the integration from
+scratch.
+
+---
+
+## ★ The two-layer verification insight — the most transferable idea in the kit
+
+`discovery-runner.instructions.md` states, from observed experience, exactly why
+a presence-check gate is not a completeness gate:
+
+> **Layer 1 — deterministic presence** (`verify-step-artifacts.ps1`). Cheap,
+> fast, always run … **This is a floor, not proof of completeness** — a thin,
+> shallow artifact can still pass this check.
+>
+> **Layer 2 — independent AI completeness review.** … Presence-only checks
+> cannot tell **a 14-service inventory from the ~40 services that actually exist
+> in `LegacyCode/`** — both are "present and non-empty." Only reading the
+> artifact against real ground truth catches that gap. Never skip Layer 2 to
+> save a dispatch.
+
+That 14-vs-40 example is a real, measured failure, and it generalizes past this
+kit. It pairs with the `scan-ui-parity-gaps.ps1` rule in
+`frontend-modernization-learning.instructions.md`:
+
+> If a scan ever reports zero gaps while the running app is clearly missing
+> controls, **fix the scanner's harvesters before trusting the gate again — a
+> gate that manufactures false confidence is worse than no gate.**
+
+The runner also solves the self-grading problem structurally: the reviewer is a
+**separate subagent**, explicitly "not the producing agent grading its own work,"
+and "a bare 'looks fine' is not an acceptable verdict."
+
+The `[START]` determination rule is the sharpest expression of the idea: a step
+marked `Completed` is only trusted at face value for Steps 1-2 (procedural —
+a rename either built or it didn't). For Steps 3-6 (analytical), a `Completed`
+recorded before the reviewer gate existed "has NEVER been checked for depth at
+all" and must be re-run.
+
+---
+
+## ⚠ Another +2 survivor, again inside one bullet pair
+
+`frontend-modernization-learning.instructions.md`, consecutive bullets:
+
+> - **Step 6** owns the per-route behavior plan at
+>   `.modernization/portal/data/json/per-route-behavior-plan.json` … Routes whose
+>   interactive controls or data calls are not enumerated at **Step 6** are a
+>   **Step 6** blocker…
+> - Phase-discipline rule: when Phase 2 finds a route with dropped behavior or
+>   missing data wiring that **Step 8** did not list, the loop is stop Phase 2 ->
+>   route back to **Step 8** -> refresh the per-route behavior plan…
+
+Step 6 owns it; the very next line routes back to Step 8. 6 + 2 = 8. A third
+bullet later in the same file ("**Step 6** per-route behavior plan is the gate")
+agrees with 6, and the artifact contract confirms Step 6 produces
+`per-route-behavior-plan.json` — so the Phase-discipline bullet is the outlier.
+Same class as the `appmod-phase-agent-contract` rule 22 finding: a stale range
+sitting next to correct ones, invisible to a uniform-offset check, and exactly
+what `step:<stepId>` tokens are designed to prevent.
+
+---
+
+## ⚠ A sixth file uses the short artifact root
+
+`frontend-modernization-learning.instructions.md` writes to
+`.modernization/fusion-restructure/styling-foundation.json` and
+`.modernization/fusion-restructure/visual-parity-report.json` — the **short**
+form, which `agent-toolkit-protection` does not permit and the artifact contract
+never uses. Add it to the rewrite list alongside `visual-parity-gate`,
+`architecture-structure`, prompt 21, `runtime-parity-checkpoint`, and
+`_variables.scss`.
+
+---
+
+## Structural facts added by `frontend-modernization-learning.instructions.md`
+
+170 lines, and structurally unlike anything else in the kit: **every section
+opens by naming the specific failure that caused it to exist.** It is a
+post-mortem log promoted to policy. For hackathon risk this is the single most
+useful file transcribed, because it enumerates the precise ways a modernization
+looks finished and is not.
+
+The failures it documents, in its own words:
+
+- *"cosmetic restoration repeatedly slipped past closeout while the route was
+  functionally dead (visible HTML, broken data path)"*
+- *"a modernized frontend shipped unrecognizable and missing features (empty
+  shell nav, admin 'Add Row' hidden behind an unwired flag, a grid re-created
+  thinner than legacy) while every static gate passed"*
+- *"a modernized frontend reached the end of frontend migration looking nothing
+  like the legacy app … even though the legacy visual language was fully
+  derivable from legacy source"*
+- *"extracted the legacy palette, typography, and sizing correctly … yet still
+  rendered a dark, unbranded shell … Extraction succeeded; binding failed"*
+- *"reported `visual-parity-report.json` and `runtime-parity-checkpoint.json` as
+  `pass` while the running app rendered in the wrong color scheme … Every static
+  gate was green. The rules and gates to catch this already existed; the failure
+  was substituting proxies for an actual render."*
+
+Rules worth lifting verbatim into Squad:
+
+- **Move-first default.** *"The default migration verb is MOVE the real legacy
+  component (template, styles, logic), get it building, then swap individual
+  controls for Fusion primitives. Parity is the starting state you preserve, not
+  a percentage you climb toward."*
+- **"Page renders" is not "page works."** and **"Present-but-hidden is missing."**
+- **A deferral must name an owner step and be drained there.** The
+  `ui-deferral-registry.json` design — `{ handler, ownerStep, reason }`, always
+  emitted as `deferredInertControls[]` so a zero inert count can never be
+  mistaken for zero deferred behavior, drained by `-CurrentStep <n>`, and
+  "a behavioral deferral may never ride forward to the final review un-drained."
+- **Allowlists are app evidence, not script code.** The named failure is that a
+  hard-coded suppression list let a shipped `exportToExcel`/`addRows`/
+  `deleteSelected` stub set report `inertControlCount = 0` while the buttons
+  were dead — *and* it embedded app-specific handler names in a reusable script.
+- **When the scanner and the running app disagree, the running app wins.**
+
+**New scripts and artifacts named here:**
+`.github/scripts/parity/scan-ui-parity-gaps.ps1`,
+`.github/scripts/parity/scan-styling-foundation.ps1`,
+`ui-deferral-registry.json`, `route-contract-diff.generated.json`,
+`MVC-To-Browser-Client-Decomposition-Contract.generated.json` (+ `.md`),
+`Angular-To-Browser-Client-Decomposition-Contract.generated.json` (+ `.md`).
+
+---
+
+## Structural facts added by `dotnet.instructions.md`
+
+75 lines, `applyTo: "**/*.cs"`. Mostly conventional .NET guidance, with two
+Fusion-specific mandates (`Fusion.Fx.IErrorService` for error capture; **do NOT**
+write argument null checks because nullability annotations and analyzers cover
+them) and two sections of genuinely hard-won production debugging knowledge:
+
+**ADO.NET / SqlClient parameter typing.** `AddWithValue` infers `SqlDbType.Int`;
+if the column is `SMALLINT`/`TINYINT`/`BIT`/`DECIMAL`/`VARCHAR(n)`, SQL Server
+applies implicit conversions that *"silently return zero rows"* while the API
+still answers HTTP 200 with an empty array. The stated symptom signature —
+*"legacy worked, modern controller responds 200 OK with `[]`, frontend shows 'no
+results' for valid keys, no exception is logged"* — is the kind of thing teams
+lose a day to. It also gives the load-bearing evidence rule: a legacy explicit
+cast (`Convert.ToInt16`) *is* the column-type evidence, so preserve it.
+
+**Dapper typed materialization parity.** Constructor-bound mapping requires CLR
+types to match SQL result column types; the fix is a two-stage materialization
+(DB-shape row type, then project to the API contract). The exception signature
+*"A parameterless default constructor or one matching signature (...) is
+required"* is called a hard blocker.
+
+Both sections deserve to survive the port. They are the only place in the kit
+that documents a silent-wrong-answer failure mode rather than a loud one.
+
+---
+
+## Structural facts added by `copilot.instructions.md` lines 273-355
+
+The earlier transcription stopped at 272; the file actually runs to 355. The
+missing 83 lines contain:
+
+**A second `constitution` reference, and this one makes it authoritative.**
+Line 355: *"Readiness scoring and tiers are governed by AppMod-Ignition
+(**constitution** + gate/policy catalogs). Keep `STATUS_REPORT.md` aligned to
+those definitions."* So `constitution.md` is not just a writable policy surface
+(the change-capture rule) — it **governs the readiness scoring rubric**. That is
+a direct analogue of Squad's frozen scorecard, and it moves `constitution.md` up
+the backlog again.
+
+**A sixth precedence statement — and it matches Squad's core principle.**
+Lines 310-312, `## Scoring precedence`:
+
+> When scoring readiness/compliance, **gates and policies are canonical.**
+> Prompts are procedural helpers; if a prompt conflicts with a gate/policy,
+> follow the gate/policy and record the conflict.
+
+That is almost word-for-word Squad's *"Gates are scripts, not opinions. Never
+soften or overrule a gate result."* The two kits already agree on the most
+important rule; it just is not stated in the file that carries the *global*
+precedence list (which, as recorded above, ranks path-scoped files last).
+
+**A `STATUS_REPORT.md` contract** — nine required summary sections, one page max,
+readable by non-technical and technical audiences, updated after any build, run,
+parity, or auth/DB work.
+
+**Operational specifics:** the `dotnet restore/build/test/run` CLI-as-source-of-
+truth rule (VS Code and Visual Studio must be interchangeable); auto-opening
+`http://localhost:<port>` and `GET /health` in Simple Browser after any local
+start; a PowerShell port-freeing helper; `{ "status": "ok" }` as the preferred
+`GET /health` baseline shape; Docker required; and the instruction that a
+workstation-policy block (`E_ACCESSDENIED 0x80070005`) must be *recorded*, not
+"fixed" in code.
+
+---
+
+## ⚠ A fourth step-status vocabulary
+
+`discovery-runner.instructions.md` uses `Pass` / `Partial` / `Blocked` / `Fail`
+for step stops (matching `AppMod-Process`) and `Pass` / `Partial` / `Fail` for
+reviewer verdicts. Running tally of terminal-status vocabularies across the kit:
+
+| Source | Terminal statuses |
+|---|---|
+| `copilot.instructions.md` | `Completed`, `Blocked`, `Failed` |
+| `appmod-phase-agent-contract` | `Completed`, `Blocked`, `Partial` |
+| `AppMod-Process` | `Pass`, `Partial`, `Blocked`, `Fail` |
+| `discovery-runner` | `Pass`, `Partial`, `Blocked`, `Fail` (+ reviewer `Pass`/`Partial`/`Fail`) |
+
+Two files say `Completed`/`Failed`, two say `Pass`/`Fail`. The enum in
+`step-workflow-state.schema.json` remains the cheapest fix.
+
+---
 
 ## ⚠ CORRECTED: `constitution.md` IS referenced from inside the kit
 
@@ -1411,6 +1692,37 @@ and no stale maintainer notes. Against the eleven transcribed agents:
 `OpX-Fusion-Reviewer` (no handoffs, so no next-step contract), and
 `OpX-csharp-janitor` (three YAML errors) would all fail. **Running this file's own seven checks
 across `.github/agents/` is a concrete, cheap pre-hackathon task.**
+
+## Transcription uncertainties (`discovery-runner`, `frontend-modernization-learning`, `dotnet`, `copilot` part 2)
+
+**`discovery-runner.instructions.md` — line numbers do NOT match the source.**
+This is the one real caveat in this batch. The source file is **hard-wrapped**
+at roughly 100-110 characters: its prose paragraphs are split across many short
+source lines, so the file is 175 lines. My transcription preserves the text
+verbatim at the sentence level but reflows it into long single lines, giving 88.
+**The content is complete and accurate; the line breaks are not the source's.**
+I chose this over guessing wrap columns from an angled photo, which would have
+produced false precision. If line-for-line fidelity matters for this file, it
+needs a re-shoot I can measure against — but for reading and for porting the
+design into Squad, the current version is faithful.
+
+The other three files are soft-wrapped (long single source lines, wrapped only
+for display), so their line numbers do match:
+
+- **`frontend-modernization-learning.instructions.md`** — 170 lines, 10 anchors
+  verified. The multi-blank-line gaps before four headings (`Slice Parity`,
+  `Live-Wire Click-Through`, `Runtime Parity And Move-First`, `Legacy Visual
+  Parity`) are faithful to the source; the arithmetic only closes at 170 if they
+  are reproduced. This file is very dense small text and is the batch's
+  highest-effort read; if any single passage matters operationally, spot-check it
+  against the photo before acting on it.
+- **`dotnet.instructions.md`** — 75 lines, 9 anchors verified. Note the double
+  blank line before `## Data Access (ADO.NET / SqlClient parameter typing)` at
+  line 55-56; that is in the source.
+- **`copilot.instructions.md`** — now 355 lines, 51 anchors verified across both
+  batches. **My earlier report that this file was complete at 272 was wrong** —
+  it was the end of the photo range, not the end of the file. Lines 273-355 have
+  been appended and the index corrected.
 
 ## Transcription uncertainties (`copilot.instructions.md`)
 
