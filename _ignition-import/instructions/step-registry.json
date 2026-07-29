@@ -1,0 +1,205 @@
+{
+  "schemaVersion": "1.0",
+  "purpose": "Stable step identity registry. Assign one stepId per numbered step. Use stepId tokens in all cross-references between prompts, instructions, agents, and scripts so step renumbering or renaming only requires updating this file.",
+  "resolutionConvention": {
+    "tokenFormat": "step:<stepId>",
+    "inMarkdown": "Write cross-references as step:<stepId> (e.g., step:26b4e1). Copilot resolves these to the human label before producing any output.",
+    "inScripts": "Pass -StepId '<stepId>' instead of -Step <n> for scripts that have been updated to support this registry. Scripts not yet migrated still use -Step <n>; migrate them as each step's prompt is updated.",
+    "inOutput": "Always translate a stepId to its human label (e.g., step:26b4e1 -> Step 3 - Legacy System Analysis) in every user-facing output. Never surface raw stepId tokens to a user.",
+    "addingNewStep": "Generate a new 6-char lowercase hex ID with: [System.Convert]::ToHexString([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(3)).ToLower(). Verify it does not already appear in this file before commit."
+  },
+  "steps": [
+    {
+      "stepId": "7be409",
+      "step": 1,
+      "label": "Step 1 - Workstation Readiness",
+      "phase": "P1",
+      "promptPath": ".github/prompts/01-P1-workstation-readiness.prompt.md",
+      "scriptPrefix": "01-P1"
+    },
+    {
+      "stepId": "1fc2ba",
+      "step": 2,
+      "label": "Step 2 - Rename Starter To <AppName>",
+      "phase": "P1",
+      "promptPath": ".github/prompts/02-P1-rename-starter-to-appname.prompt.md",
+      "scriptPrefix": "02-P1"
+    },
+    {
+      "stepId": "26b4e1",
+      "step": 3,
+      "label": "Step 3 - Legacy System Analysis",
+      "phase": "P1",
+      "promptPath": ".github/prompts/03-P1-legacy-system-analysis.prompt.md",
+      "scriptPrefix": "03-P1"
+    },
+    {
+      "stepId": "261769",
+      "step": 4,
+      "label": "Step 4 - Baseline Acceptance-Criteria Review",
+      "phase": "P1",
+      "promptPath": ".github/prompts/04-P1-baseline-acceptance-criteria-review.prompt.md",
+      "scriptPrefix": "04-P1"
+    },
+    {
+      "stepId": "d847e7",
+      "step": 5,
+      "label": "Step 5 - Modernization Solution Design",
+      "phase": "P1",
+      "promptPath": ".github/prompts/05-P1-modernization-solution-design.prompt.md",
+      "scriptPrefix": "05-P1"
+    },
+    {
+      "stepId": "6c50db",
+      "step": 6,
+      "label": "Step 6 - Modernization Quality Design",
+      "phase": "P1",
+      "promptPath": ".github/prompts/06-P1-modernization-quality-design.prompt.md",
+      "scriptPrefix": "06-P1"
+    },
+    {
+      "stepId": "476ced",
+      "step": 7,
+      "label": "Step 7 - Backend - Upgrade .NET",
+      "phase": "P2",
+      "promptPath": ".github/prompts/07-P2-backend-upgrade-dotnet.prompt.md",
+      "scriptPrefix": "07-P2"
+    },
+    {
+      "stepId": "300dfa",
+      "step": 8,
+      "label": "Step 8 - Backend - Modernization Formation",
+      "phase": "P2",
+      "promptPath": ".github/prompts/08-P2-backend-modernization-formation.prompt.md",
+      "scriptPrefix": "08-P2"
+    },
+    {
+      "stepId": "2dbd04",
+      "step": 9,
+      "label": "Step 9 - Backend - .NET Integration Hardening",
+      "phase": "P2",
+      "promptPath": ".github/prompts/09-P2-backend-dotnet-integration-hardening.prompt.md",
+      "scriptPrefix": "09-P2"
+    },
+    {
+      "stepId": "a417e0",
+      "step": 10,
+      "label": "Step 10 - Frontend Foundation & Scaffold",
+      "phase": "P2",
+      "promptPath": ".github/prompts/10-P2-frontend-foundation-and-scaffold.prompt.md",
+      "scriptPrefix": "10-P2"
+    },
+    {
+      "stepId": "6cd2a2",
+      "step": 11,
+      "label": "Step 11 - Frontend Migration",
+      "phase": "P2",
+      "promptPath": ".github/prompts/11-P2-frontend-migration.prompt.md",
+      "scriptPrefix": "11-P2"
+    },
+    {
+      "stepId": "24a83e",
+      "step": 12,
+      "label": "Step 12 - Frontend Platform Integration",
+      "phase": "P2",
+      "promptPath": ".github/prompts/12-P2-frontend-platform-integration.prompt.md",
+      "scriptPrefix": "12-P2"
+    },
+    {
+      "stepId": "278613",
+      "step": 13,
+      "label": "Step 13 - Frontend Shell Stabilization",
+      "phase": "P2",
+      "promptPath": ".github/prompts/13-P2-frontend-shell-stabilization.prompt.md",
+      "scriptPrefix": "13-P2"
+    },
+    {
+      "stepId": "f746b9",
+      "step": 14,
+      "label": "Step 14 - Frontend UI Inventory & Fusion Map",
+      "phase": "P2",
+      "promptPath": ".github/prompts/14-P2-frontend-ui-inventory-and-fusion-map.prompt.md",
+      "scriptPrefix": "14-P2"
+    },
+    {
+      "stepId": "2d136c",
+      "step": 15,
+      "label": "Step 15 - Fusion UI Integration",
+      "phase": "P2",
+      "promptPath": ".github/prompts/15-P2-fusion-ui-integration.prompt.md",
+      "scriptPrefix": "15-P2"
+    },
+    {
+      "stepId": "fe0270",
+      "step": 16,
+      "label": "Step 16 - Next Fusion UI Upgrade Slice",
+      "phase": "P2",
+      "promptPath": ".github/prompts/16-P2-next-fusion-ui-upgrade-slice.prompt.md",
+      "scriptPrefix": "16-P2"
+    },
+    {
+      "stepId": "0576c8",
+      "step": 17,
+      "label": "Step 17 - Rewire All Tests & Verify",
+      "phase": "P2",
+      "promptPath": ".github/prompts/17-P2-rewire-all-tests-and-verify.prompt.md",
+      "scriptPrefix": "17-P2"
+    },
+    {
+      "stepId": "be24f9",
+      "step": 18,
+      "label": "Step 18 - Deployment & Clean Up",
+      "phase": "P2",
+      "promptPath": ".github/prompts/18-P2-deployment-and-clean-up.prompt.md",
+      "scriptPrefix": "18-P2"
+    },
+    {
+      "stepId": "22f169",
+      "step": 19,
+      "label": "Step 19 - Final Fusion Restructure Review",
+      "phase": "P3",
+      "promptPath": ".github/prompts/19-P3-final-fusion-restructure-review.prompt.md",
+      "scriptPrefix": "19-P3"
+    },
+    {
+      "stepId": "cec9a1",
+      "step": 20,
+      "label": "Step 20 - Final Verification",
+      "phase": "P3",
+      "promptPath": ".github/prompts/20-P3-final-verification.prompt.md",
+      "scriptPrefix": "20-P3"
+    },
+    {
+      "stepId": "e30c80",
+      "step": 21,
+      "label": "Step 21 - Figma Review",
+      "phase": "P3",
+      "promptPath": ".github/prompts/21-P3-figma-review.prompt.md",
+      "scriptPrefix": "21-P3"
+    },
+    {
+      "stepId": "57c6af",
+      "step": 22,
+      "label": "Step 22 - Final Acceptance-Criteria Review",
+      "phase": "P3",
+      "promptPath": ".github/prompts/22-P3-final-acceptance-criteria-review.prompt.md",
+      "scriptPrefix": "22-P3"
+    },
+    {
+      "stepId": "9710dc",
+      "step": 23,
+      "label": "Step 23 - Final Readiness Review",
+      "phase": "P3",
+      "promptPath": ".github/prompts/23-P3-final-readiness-review.prompt.md",
+      "scriptPrefix": "23-P3"
+    },
+    {
+      "stepId": "9bd419",
+      "step": 24,
+      "label": "Step 24 - Technical Review",
+      "phase": "P3",
+      "promptPath": ".github/prompts/24-P3-technical-review.prompt.md",
+      "scriptPrefix": "24-P3"
+    }
+  ]
+}

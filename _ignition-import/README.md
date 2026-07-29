@@ -39,6 +39,13 @@ references, not values).
 
 | File | Role | Status |
 |---|---|---|
+| `instructions/step-registry.json` | **Ignition-native** — ★ the stable step-identity registry; the kit's designed fix for numbering drift | transcribed from 4 photos — complete (source lines 1-205); **validates as JSON**, all 24 steps present |
+| `instructions/step-confidence-contract.instructions.md` | **Ignition-native** — minimum confidence shape every numbered prompt must honor | transcribed from 2 photos — complete (source lines 1-63, blank to 64); 9 anchors verified |
+| `instructions/qa-portal-reporting.instructions.md` | **Ignition-native** — the canonical portal-is-manual-only rule (referenced by 3 other files) | transcribed from 1 photo — complete (source lines 1-35 + 1 trailing blank, blank to 37) |
+| `instructions/fusion-restructure.instructions.md` | **Ignition-native** — LegacyCode→src restructure handoffs, bridges, starter-shell preservation | transcribed from 2 photos — complete (source lines 1-75, blank to 76); 9 anchors verified |
+| `instructions/fusion-mcp-restructure.instructions.md` | **Ignition-native** — Fusion MCP-first lookup order before inventing any Fusion-aligned solution | transcribed from 2 photos — complete (source lines 1-58, blank to 60); 8 anchors verified |
+| `instructions/modernization-deep-scan-checklist.instructions.md` | **Ignition-native** — deep-scan checklist for discovery, planning, verification, cleanup | transcribed from 1 photo — complete (source lines 1-44, blank to 45) |
+| `instructions/powershell-script-maintenance.instructions.md` | **Ignition-native** — advisory PSScriptAnalyzer stance for toolkit scripts | transcribed from 1 photo — complete (source lines 1-37, blank to 38) |
 | `instructions/discovery-runner.instructions.md` | **Squad-side bridge, NOT Ignition-native** — the Squad-as-runner pilot that executes Ignition Discovery Steps 1-6 | transcribed from 4 photos — content complete (source is 175 lines); **hard-wrap points not reproduced**, so local line numbers differ (see uncertainties) |
 | `instructions/frontend-modernization-learning.instructions.md` | **Ignition-native** — durable post-mortem rules from frontend modernization failures | transcribed from 5 photos — complete (source lines 1-170, blank to 171); 10 line numbers spot-verified |
 | `instructions/dotnet.instructions.md` | **Ignition-native** — .NET coding standards, auto-applied to `**/*.cs` | transcribed from 2 photos — complete (source lines 1-75, blank to 76); 9 line numbers spot-verified |
