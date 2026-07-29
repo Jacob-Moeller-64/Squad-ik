@@ -94,6 +94,7 @@ pattern-match against.
 | File | Role | Status |
 |---|---|---|
 | `starter/Starter.Library/Entities/MyEntity.cs` | reference domain entity | transcribed from 1 photo — complete (source lines 1-28) |
+| `starter/Starter.Library/Options/MyOptions.cs` | reference options class | transcribed from 1 photo — complete (source lines 1-8) |
 | `starter/Starter.Library/Extensions/FusionApplicationBuilderExtensions.cs` | **protected starter control point** — library DI/options composition seam | transcribed from 1 photo — complete (source lines 1-39); 11 anchors verified |
 
 ### Contracts / schemas
@@ -695,6 +696,41 @@ Headline coverage:
    implies.
 6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
    `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## `MyOptions.cs` — small, correct, and it closes a cross-reference
+
+8 lines. The standard .NET options-pattern shape:
+
+```csharp
+public const string ConfigSection = "MyApp";
+public string MyOption1 { get; set; } = string.Empty;
+```
+
+**It confirms the binding chain end to end.** `FusionApplicationBuilderExtensions.cs`
+line 17 reads `MyOptions.ConfigSection`; this file defines it as `"MyApp"`. So the
+demonstrated pattern is: *the config section name lives as a `const` on the options
+type, never as a string literal at the registration site.* That is the concrete
+form of `copilot.instructions.md`'s *"Prefer strongly typed options and named
+sections over scattered ad hoc config lookups"* and `dotnet.instructions.md`'s
+*"Bind settings from named configuration sections and inject them via
+`IOptions<T>`"*. Worth naming explicitly as the pattern teams should copy.
+
+`"MyApp"` is correctly a generic placeholder, not the validation app's name —
+consistent with the naming law's prohibition on encoding the current app into
+reusable assets.
+
+Two very minor observations, neither worth acting on alone:
+
+- **Not `sealed`**, where `MyEntity` is. For an options class that is arguably
+  correct (binders and test doubles occasionally subclass), so this reads as
+  deliberate rather than inconsistent.
+- **No file header comment**, consistent with the other two starter files. Three
+  for three now on that specific gap.
+
+`const` over `static readonly` is fine — `AppMod-Acceptance-Criteria.md` lists
+*"static readonly and const values"* explicitly under **Non-Violations**.
 
 ---
 
