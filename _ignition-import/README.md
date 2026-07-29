@@ -61,6 +61,7 @@ references, not values).
 | `skills/runtime-parity-checkpoint/SKILL.md` | **Ignition-native** — boot-observe-assert runtime proof against the running app | transcribed from 3 photos — complete (source lines 1-91); 23 line numbers spot-verified |
 | `skills/step3-legacy-system-analysis/references/Step3-Artifact-Schema-Contract.md` | **Ignition-native** — the versioned schema for all seven Step 3 artifacts | transcribed from 3 photos — complete (source lines 1-143, blank to 145); 23 line numbers spot-verified |
 | `skills/step3-legacy-system-analysis/SKILL.md` | **Ignition-native** — Step 3 entry point, modality detection, gate enforcement | transcribed from 2 photos — complete (source lines 1-73, blank to 75); 22 line numbers spot-verified |
+| `skills/workstation-playwright-setup/SKILL.md` | **Ignition-native** — Playwright/Chromium install + capture-path troubleshooting | transcribed from 2 photos — complete (source lines 1-72, blank to 73); 21 line numbers spot-verified |
 | `skills/visual-parity-gate/SKILL.md` | **Ignition-native** — dual-port legacy-visual-parity gate (Step 13 closeout) | transcribed from 4 photos — complete (source lines 1-101, blank to 102); 25 line numbers spot-verified |
 | `skills/visual-parity-gate/references/fusion-client-foundation-templates/_variables.scss` | **Ignition-native** — brand/layout token template bound to the legacy visual contract | transcribed from 1 photo — complete (source lines 1-37, blank to 38) |
 | `skills/visual-parity-gate/references/fusion-client-foundation-templates/_collection-grid.scss` | **Ignition-native** — collection-grid layout template | transcribed from 1 photo — complete (source lines 1-59, blank to 60) |
@@ -286,6 +287,77 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## Structural facts added by `workstation-playwright-setup/SKILL.md`
+
+A small, practical setup skill — 72 lines, and **the fourth file in the kit with correct step
+numbering throughout** (Step 1 readiness, Step 3 legacy screenshot capture).
+
+- **Scoped to the app client workspace**, not global: install Playwright into
+  `src/<AppName>.Web.Client`, then install Chromium with the **workspace-local CLI**
+  (`node .\node_modules\playwright\cli.js install chromium`) rather than `npx`.
+- **The `npx` trap is documented with its cause**: "npx playwright install downloads a revision
+  different from the runtime package … Cause: multiple Playwright versions in dependency tree."
+  That is a genuinely common and hard-to-diagnose failure.
+- **An optional probe** that validates the whole capture path end-to-end before Step 3 — headless
+  Chromium, 1920×1080 viewport, `domcontentloaded`, full-page screenshot into
+  `.modernization/portal/data/images/legacy-system-analysis/`, and a `PLAYWRIGHT_PROBE_OK`
+  sentinel on success. The output path matches the legacy-reference location
+  `visual-parity-gate` reads from.
+- **A three-line Capture Policy Reminder** consistent with `screenshot-capture`'s stated
+  mechanics: desktop viewport baselines, include modal/dialog states that belong to user
+  workflows, suppress duplicates when two routes render equivalent visual output.
+
+## ⚠ Findings in `workstation-playwright-setup/SKILL.md`
+
+**1. The TLS workaround disables certificate validation entirely.**
+
+```powershell
+$env:NODE_TLS_REJECT_UNAUTHORIZED='0'
+node .\node_modules\playwright\cli.js install chromium
+Remove-Item Env:\NODE_TLS_REJECT_UNAUTHORIZED -ErrorAction SilentlyContinue
+```
+
+The file scopes it honestly ("Fix (process-local only)") and removes the variable immediately
+afterwards, which is better than most write-ups. But `NODE_TLS_REJECT_UNAUTHORIZED=0` turns off
+**all** certificate verification for that Node process, and the thing being downloaded during that
+window is an executable browser binary from a CDN. On a single developer machine that is a
+contained risk; distributed to a large group as the documented fix, it is a supply-chain exposure
+repeated across every workstation.
+
+The stated cause — "enterprise TLS chain blocks CDN download" — has a targeted fix that does not
+weaken verification: point Node at the corporate root CA instead, e.g.
+`$env:NODE_EXTRA_CA_CERTS='<path-to-corporate-ca.pem>'`, or configure the Playwright download
+host/proxy. Worth changing before the kit is handed to a wide audience, and worth pairing with
+whoever owns the corporate CA bundle so the path can be stated concretely.
+
+**2. App-specific leakage — sixth instance.** The probe hard-codes
+`http://localhost:56383/#table-details`, a port and route from one specific application, inside a
+skill whose stated purpose is reusable workstation setup. Prior instances: prompt 17's
+`LegacyConnectionStringProviderTests.cs`, the `EquipmentService .cs` filenames in
+`REMAINING-POINTS.md`, `GetAutoCardEnrollEligible`/`PaymentsWebApi` in `fusion-g1-recognition.md`,
+the five Spec Book types in `runtime-parity-checkpoint`, and the Kendo example set. A
+`<AppName>`-style placeholder is used correctly elsewhere in this same file, so the fix is
+mechanical.
+
+**3. It is the third skill that assumes PowerShell without saying so** — every fenced block is
+` ```powershell ` with `Push-Location`/`Pop-Location`/`$env:`/`Remove-Item`. Here that is
+defensible (it is explicitly a Windows workstation setup skill), unlike
+`fusion-ui-component-upgrade`, which uses PowerShell cmdlets in an otherwise portable validation
+baseline.
+
+## Transcription uncertainties (`workstation-playwright-setup/SKILL.md`)
+
+- Line alignment verified at 21 anchors — 5, 7, 9, 11, 18, 20, 22, 24, 29, 31, 36, 38, 40, 46, 48,
+  52, 56, 64, 68, 70, 72 — all matching. Content ends at 72; the editor shows line 73 blank.
+- **Source line 42 is a single very long line** — the whole `node -e "…"` probe on one physical
+  line, wrapping across four editor rows. Reconstructed from wrap positions; the port `56383` and
+  the relative path `../../.modernization/portal/data/images/legacy-system-analysis/` are the
+  least certain tokens.
+- The first fenced block (source lines 24-27) closes without a `Pop-Location`, which is supplied
+  at the end of the second block (line 33). Transcribed as photographed — the two blocks are one
+  logical sequence.
+- No mojibake in this file.
 
 ## Structural facts added by `visual-parity-gate/SKILL.md`
 
