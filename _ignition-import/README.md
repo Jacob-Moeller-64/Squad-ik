@@ -39,6 +39,9 @@ references, not values).
 
 | File | Role | Status |
 |---|---|---|
+| `instructions/tests-commenting.instructions.md` | **Ignition-native** — tutorial-level commenting rules for everything under `tests/` | transcribed from 2 photos — complete (source lines 1-90, blank to 91); 12 anchors verified |
+| `instructions/ui-capture-reverse-engineering.instructions.md` | **Ignition-native** — ★ the canonical legacy-UI capture rulebook; **435 lines, the largest instruction file in the kit** | **PENDING** — photos received; lines 1-159 and 396-435 read, middle range not yet transcribed |
+| `instructions/testing-design-contract.instructions.md` | **Ignition-native** — testing design contract | **PENDING** — 10 photos received, not yet read |
 | `instructions/modernization-starter-boundaries.instructions.md` | **Ignition-native** — the canonical LegacyCode→src guardrail file; protected control points, editable seams, ownership model | transcribed from 4 photos — complete (source lines 1-194, blank to 203); 16 anchors verified |
 | `instructions/kit-update.instructions.md` | **Ignition-native** — guardrails for editing the kit *itself* (toolkit-maintenance, not app modernization) | transcribed from 4 photos — complete (source lines 1-178, blank to 180); 18 anchors verified |
 | `instructions/step-registry.json` | **Ignition-native** — ★ the stable step-identity registry; the kit's designed fix for numbering drift | transcribed from 4 photos — complete (source lines 1-205); **validates as JSON**, all 24 steps present |
@@ -321,6 +324,82 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## ✅ Gherkin settled for the third time, by the file that owns the rule
+
+`tests-commenting.instructions.md` is the file `copilot.instructions.md` line 196
+points at for everything under `tests/`. It specifies the same tag set, exactly:
+
+- **Metadata comments** on every test case: `CaseId`, `Scenario`, `Description`,
+  `Input`, `Expected`
+- **Flow comments** in every test body: `Given`, `When`, `Then`
+- Plus optional `And` comments "where they help a junior reader follow the sequence"
+
+Three independent sources now specify Gherkin-*style comments* with an identical
+tag list, and the file that owns `tests/**` is one of them. No `.feature` file,
+no step definitions, no Cucumber runner anywhere in it. The question is closed;
+prompt 24 and `tests.gherkinCoverage` are wording defects to fix.
+
+The rest of the file is a commenting standard with unusual teeth — a "tutorial-level"
+bar defined as *"a walkthrough where the developer explains the file line by
+line"*, extended to helpers, config files, runner scripts, and `.csproj` files,
+with a closing **No Surprise Rule**: *"Do not leave config, helper, script,
+`.csproj`, or proof-of-concept files less documented than the test cases."*
+
+---
+
+## Partial notes on `ui-capture-reverse-engineering.instructions.md` (435 lines)
+
+Not yet transcribed — see the honest status note at the end of this section. What
+the read portions (lines 1-159, 396-435) establish:
+
+**The Functional Parity Ledger.** Every interactive control resolves to exactly
+one `effectClass`, each with a required runtime assertion:
+
+| effectClass | What the control does | Required runtime assertion |
+|---|---|---|
+| `navigate` | Routes to another page/route | `route-changes-to-target` |
+| `read` | Fires a GET and renders data | `real-rows-present` |
+| `filter` | Applies criteria that change the visible row set | `grid-rows-change-after-apply` |
+| `mutate` | Creates, updates, or deletes data (POST/PUT/DELETE/PATCH) | `api-call-fires-and-persists` |
+| `export` | Downloads a file or triggers print | `file-download-response` |
+| `open-dialog` | Opens a form/modal whose own controls are separately ledgered | `dialog-renders-and-own-controls-verified` |
+| `ui-only` | Pure client-side toggle/collapse with no backend effect | `no-backend-proof-needed` |
+
+**A five-state lifecycle ladder** every ledger row must climb:
+`Inventoried` (Step 3) → `Mapped` (Step 6) → `Implemented` (Step 9/11/12) →
+`Verified` (Step 12/13) → `Waived` (Review). All step numbers here are
+**correct** — no +2 drift in this ladder.
+
+> **Hard rule:** a row stuck below `Verified` with no `waiver` is a step blocker.
+> The kit closes no step that has unverified ledger rows for in-scope controls.
+> This is the mechanism that prevents "detected but never proven" from shipping
+> as done.
+
+**Three named screenshot-pipeline gate failure classes** — `Gate 1
+(route-source)`, `Gate 2 (runtime-unreachable)`, `Gate 3
+(playwright-unavailable)` — each to be reported with its gate label "so the
+remediation action is immediately clear without re-running discovery."
+
+**Two Step 5 catalog contracts not seen anywhere else:** `databaseSchemaCatalog`
+(one entry per connection string, with `tables[]`, `views[]`,
+`storedProcedures[]`, `triggers[]`, `functions[]`, `sequences[]`,
+`foreignKeyEdges[]`, `orphanedTables[]`, `captureMethod`,
+`captureCompletenessPercent`) and `backgroundJobCatalog` (one row per discovered
+job, covering `hangfire`, `quartz`, `windows-service`, `windows-scheduled-task`,
+`iis-webjob`, `azure-webjob`, `azure-function-timer`, `cron`, `polling-loop`,
+`message-consumer`, `startup-task`). Both support `notPresent: true` **only with
+explicit source-evidence attestation** — *"Inferred-empty without evidence is a
+Step 5 gap."*
+
+**A durable route-derivation rule** worth extracting: for SPA and hybrid apps,
+derive screenshot targets from the **client-side router**, not server-side view
+file paths — and Angular `path:` values are frequently identifier references to
+route-name constants, so *"treating only quoted literals as routes produces a
+false Gate 1 (route-source) zero-target result for apps that centralize route
+names in constants."*
+
+---
 
 ## ⚠ HIGH: the kit's two top-level precedence lists disagree about what ranks first
 
