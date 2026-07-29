@@ -47,6 +47,7 @@ references, not values).
 | `agents/OpX-dotnet-upgrade.agent.md` | .NET Framework → .NET 10 upgrade specialist (Step 7 lane) | transcribed from 6 photos — complete (source lines 1-287); 25 heading line numbers spot-verified |
 | `agents/OpX-Frontend-Angular-Transform.agent.md` | **Archived** compatibility redirect for the retired Angular specialist lane | transcribed from 1 photo — complete (source lines 1-50, blank to 51) |
 | `agents/OpX-Fusion-Reviewer.agent.md` | Fusion restructure reviewer (Step 19 lane) | transcribed from 2 photos — complete (source lines 1-90, blank to 92); 16 heading line numbers spot-verified |
+| `agents/OpX-fusion-ui-component-upgrade.agent.md` | Fusion UI slice executor (Steps 15-16 lane) | transcribed from 1 photo — complete (source lines 1-57, blank to 59); 12 heading line numbers spot-verified |
 
 ## Structural facts about the Ignition Kit learned from transcription
 
@@ -153,6 +154,80 @@ references, not values).
   for the OpenShift/Kubernetes final state; Dapper row-model type hints
   (`dbParameterTypeHints[]`, `dbResultColumnTypeHints[]`) captured at discovery for
   Steps 8-9.
+
+## Structural facts added by agent `OpX-fusion-ui-component-upgrade`
+
+The Steps 15-16 Fusion UI execution lane. 57 lines, and the densest file in the kit for
+concrete Fusion facts.
+
+- **The real Fusion Angular package name: `@fusion/ngx-fusion`.** First time the actual npm
+  scope and package appear anywhere in the transcribed material.
+- **The slice loop is a real task graph, not prose.** `ui-fusion-map.json` carries a
+  `taskGraph` and a `completedTaskIds` list; the agent derives "the next eligible task" from
+  those plus dependency order. That is what makes Step 16 ("Next Fusion UI Upgrade Slice")
+  re-runnable — it is a worklist drain, and the artifact is the cursor.
+- **A companion markdown artifact**: `ui-fusion-task-list.md`, alongside the JSON map. One of
+  very few `.md` artifacts in a mostly-JSON artifact set (the other is Step 24's
+  `technical-review-report.md`).
+- **One slice per run, enforced**: "Execute exactly one route-local or shell-local slice."
+- **Validation is the real client build**: `npm run build`, run as "the first validation
+  action after the first substantive edit" — before any artifact reconciliation. Artifacts
+  update *only after* validation passes.
+- **Target surface named precisely**: `src/<AppName>.Web.Client/src/app/**`.
+- **A fourteenth named surface: `OpX-Fusion-Transform`** — the sole handoff target
+  ("Back To Restructure Workflow"). Distinct from the archived
+  `OpX-Frontend-Angular-Transform`.
+- **A new skill**: `.github/skills/fusion-ui-component-upgrade/SKILL.md`, loaded "before
+  selecting or editing any route surface" — same skill-owns-method / agent-owns-execution
+  split as `OpX-Fusion-Reviewer`.
+- **Third file to guard the retired Fusion-only state tracker**: "Do not create or rely on a
+  retired parallel Fusion-only state tracker as numbered-step state; the numbered workflow
+  artifacts remain authoritative." (`OpX-Fusion-Reviewer` and `OpX-AppMod-P2-Modernize` carry
+  the same rule.)
+- **Its step numbers are correct.** The description names Steps 15 and 16 and they match
+  `15-P2-fusion-ui-integration` and `16-P2-next-fusion-ui-upgrade-slice`; the execution
+  contract's "step-14 UI inventory and Fusion map artifacts" matches
+  `14-P2-frontend-ui-inventory-and-fusion-map`. No drift in this file.
+- **The reporting contract names the exact button to click** (`Back To Restructure Workflow`)
+  rather than describing it — the only agent that closes the loop that precisely.
+
+## ⚠ Findings in `OpX-fusion-ui-component-upgrade.agent.md`
+
+**1. Its only handoff points at an agent not yet seen — `OpX-Fusion-Transform`.**
+This is the agent's sole exit, and the Reporting Contract instructs the model to tell the user
+to click it by name. If `OpX-Fusion-Transform` does not exist in `.github/agents/`, this lane
+is a dead end and the closing instruction is unfollowable. Note the kit already contains an
+*archived* `OpX-Frontend-Angular-Transform` whose job was to redirect away from a retired
+frontend lane — so a stale reference here is plausible. **Needs a directory listing of
+`.github/agents/` to confirm; flagged, not assumed.**
+
+**2. The description covers Steps 15 *and* 16; the Mission covers only Step 16.**
+
+> `description:` "Runs the **Step 15** Fusion UI Integration **and Step 16** Next Fusion UI
+> Upgrade Slice lane…"
+> `## Mission` — "Execute exactly one artifact-driven Fusion UI slice during restructure
+> **Step 16**."
+
+Step 15 is the initial Fusion UI integration; Step 16 is the repeatable next-slice drain.
+They are different jobs, and the Mission — the part the model actually acts on — only claims
+one of them. Either Step 15 has no execution lane of its own, or the Mission is under-scoped.
+
+**3. `description` is a quoted YAML string; every other agent's is unquoted.** Harmless, but
+it is the fifth distinct frontmatter convention observed across nine agent files
+(opening-`---` or not, `user-invocable` or not, `handoffs` or not, `agents` or not, quoted
+`description` or not).
+
+## Transcription uncertainties (agent `OpX-fusion-ui-component-upgrade`)
+
+- Line alignment verified at 12 anchors — 17, 19, 21, 23, 25, 28, 30, 37, 39, 47, 49, 51 —
+  all matching.
+- **The exact end line is approximate.** The seven Reporting Contract bullets are transcribed
+  consecutively as lines 51-57, which is consistent with every verified anchor above them and
+  with the editor showing blanks at 58-59. The photo's gutter in that region was not legible
+  enough to rule out a blank line between the last two bullets, which would shift the final
+  line to 58.
+- Line 3 (`description`) wraps across three editor rows; reconstructed from wrap positions.
+- No mojibake anywhere in this file.
 
 ## Structural facts added by agent `OpX-Fusion-Reviewer`
 
