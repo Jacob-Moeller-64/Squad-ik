@@ -89,6 +89,7 @@ references, not values).
 
 | File | Role | Status |
 |---|---|---|
+| `contracts/schemas/per-route-behavior-plan.schema.json` | **Ignition-native** — ⚠ the weakest floor in the family: **no `type` key at all**, only `notEmpty` | transcribed from 1 photo — complete (source lines 1-13); **validates as JSON** |
 | `contracts/schemas/modernization-solution-design.schema.json` | **Ignition-native** — `New-ControlPlaneSkeleton` family; `required: [reportId, title]` | transcribed from 1 photo — complete (source lines 1-19); **validates as JSON** |
 | `contracts/schemas/modernization-phase-assessment.schema.json` | **Ignition-native** — `New-ControlPlaneSkeleton` family; `required: [reportId, title]` | transcribed from 1 photo — complete (source lines 1-19); **validates as JSON** |
 | `contracts/schemas/modernization-execution-contract.schema.json` | **Ignition-native** — ★ the only schema with a **deterministic producer** and a `required[]` array | transcribed from 1 photo — complete (source lines 1-19); **validates as JSON** |
@@ -681,6 +682,75 @@ Headline coverage:
    implies.
 6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
    `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## ⚠⚠ The weakest contract in the kit guards the artifact that stops "dead shell" shipping
+
+`per-route-behavior-plan.schema.json` has **no `type` key at all** — the only
+schema in the family that omits it. Its entire assertion is:
+
+```json
+"notEmpty": true
+```
+
+The reason is a **fourth** distinct cause, different from the three catalogued
+earlier: the root *container shape* itself is unproven.
+
+> Agent-authored at Step 6 with NO deterministic producer and NO committed
+> sample, so **the exact ROOT container is not proven** - it may be a bare array
+> of route entries **or** an object wrapping a routes array. The floor therefore
+> **omits `type`** and only asserts `notEmpty`, which accepts a non-empty array
+> OR a non-empty object.
+
+Complete taxonomy across seven schemas, now four causes:
+
+| Cause | Schema | Floor |
+|---|---|---|
+| Producer divergence (root key) | `executable-testcase-catalog` | `type`+`notEmpty` |
+| No consumer at all | `fusion-control-point-inventory` | `type`+`notEmpty` |
+| Defensive consumers | `fusion-migration-plan` | `type`+`notEmpty` |
+| **Root container unproven** | **`per-route-behavior-plan`** | **`notEmpty` only** |
+
+**Why this one matters more than its size suggests.** `per-route-behavior-plan.json`
+is the artifact the entire "page renders is not page works" doctrine rests on.
+From `frontend-modernization-learning.instructions.md`:
+
+> Step 6 owns the per-route behavior plan … Routes whose interactive controls or
+> data calls are not enumerated at Step 6 are a **Step 6 blocker**, not a Step 11
+> or Step 12 discovery item — **this is the only way to keep the kit repeatable on
+> the next application without rediscovering the same dead-shell failure mode.**
+
+And the `groundedBy[]` here confirms the consumers:
+`AppMod-Step-Contract.json` — *"Steps 11 and 12 tick off route entries"*.
+
+So: Steps 11 and 12 tick entries off a plan whose only validation is "this file
+is not empty." A plan listing one route with no behavior fields passes. The
+`ownerStep` drain gate, the `perRouteBehaviorList`, the `no button is dead` rule
+— all of it downstream of a contract that cannot tell a complete route inventory
+from a stub.
+
+This is the same shape as the `control-point-inventory` finding, and it lands on
+the other half of the kit's parity story: control points guard the backend/platform
+seams, per-route behavior guards the frontend behavior seams. **Both are
+agent-authored, both have no deterministic producer, and both are effectively
+unvalidated.**
+
+**The fix is the same and the note already names it:** *"TIGHTEN ONLY after
+observing a real produced file: pin the root (array vs `object+routes[]`) and
+promote the four behavior fields to required per entry."* One committed sample
+from a completed run resolves the root-shape question, and the four behavior
+fields (`primaryDataCalls`, `interactiveElements`, `modalsAndBanners`,
+`placeholderDataPolicy`) are already named as the promotion targets.
+
+**Also useful:** this schema documents the full Step 6 entry shape, which no
+other transcribed file gives in one place — `route`, `legacyRoute`,
+`primaryDataCalls`, `interactiveElements`, `modalsAndBanners`,
+`placeholderDataPolicy`. Six fields; the last four are the behavior contract.
+
+And it independently confirms **Step 6** as the owner, which settles the +2 drift
+recorded earlier where `frontend-modernization-learning` said "route back to
+Step 8" one line after saying Step 6 owns it. Step 6 is correct.
 
 ---
 

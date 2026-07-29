@@ -1,0 +1,13 @@
+{
+  "dialect": "opx-field-contract/v1",
+  "contractId": "per-route-behavior-plan",
+  "title": "Per-route behavior plan (Step 6)",
+  "appliesTo": ".modernization/portal/data/json/per-route-behavior-plan.json",
+  "rootPath": "per-route-behavior-plan",
+  "groundedBy": [
+    ".github/prompts/06-P1-modernization-quality-design.prompt.md (Step 6 authors this; entry shape: route, legacyRoute, primaryDataCalls, interactiveElements, modalsAndBanners, placeholderDataPolicy)",
+    ".github/instructions/AppMod-Step-Contract.json (Steps 11 and 12 tick off route entries)"
+  ],
+  "authoringNote": "CONSERVATIVE FLOOR. Agent-authored at Step 6 with NO deterministic producer and NO committed sample, so the exact ROOT container is not proven - it may be a bare array of route entries or an object wrapping a routes array. The floor therefore omits 'type' and only asserts notEmpty, which accepts a non-empty array OR a non-empty object and rejects the real failure modes (empty [], empty {}, blank, truncated). The richer per-entry shape (route + legacyRoute + the four behavior fields primaryDataCalls/interactiveElements/modalsAndBanners/placeholderDataPolicy) is validated by the reconciliation engine (Invoke-StepReconciliation.ps1), not here, because reconciliation can probe whichever root shape the producer used. TIGHTEN ONLY after observing a real produced file: pin the root (array vs object+routes[]) and promote the four behavior fields to required per entry.",
+  "notEmpty": true
+}
