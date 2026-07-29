@@ -66,6 +66,12 @@ references, not values).
 `_wip/agent-integrity-checks-partial-notes.md` holds structure + findings for
 `agent-integrity-checks.instructions.md` (file complete at 383 lines; verbatim body not yet written).
 
+### Templates
+
+| File | Role | Status |
+|---|---|---|
+| `templates/AMBIGUOUS-PLACEMENT-REPORT-TEMPLATE.md` | **Ignition-native** — durable review artifact for a legacy surface that does not map cleanly into the approved target structure | transcribed from 2 photos — complete (source lines 1-81); 14 anchors verified |
+
 ### Manifests
 
 | File | Contents |
@@ -324,6 +330,56 @@ structural facts below), but they should be tagged as conversion-side and exclud
 `fusion-feature-standards`, `fusion-ui-component-upgrade`, `step3-legacy-system-analysis`,
 `screenshot-capture`). If those lack `source:`/`confidence:` and reference `.github/scripts/`
 rather than `tools/appmod/`, the split is confirmed and the `appmod-*` prefix is the marker.
+
+## Structural facts added by `templates/AMBIGUOUS-PLACEMENT-REPORT-TEMPLATE.md`
+
+81 lines, **no frontmatter** — it opens directly with the H1
+`# LegacyCode -> <ArchitectureStyle> Gap Analysis`. That is the expected shape
+for a `templates/` file (it is filled in and emitted, not loaded as guidance), and
+it is the first file in this import with no `---` block at all.
+
+This is the kit's escape hatch for the case
+`modernization-starter-boundaries.instructions.md` does not cover: a legacy file,
+folder, or test surface that does not map cleanly into the approved target
+structure. Rather than let the agent guess, the kit makes it produce a reviewable
+artifact.
+
+**The `<ArchitectureStyle>` placeholder in the title** binds this template to the
+`architectureStyle` field in `kit-params.md` — the Simple-vs-Clean selection gate
+identified earlier in this import. So the report is explicitly scoped to whichever
+target structure the app chose, not to a single canonical layout.
+
+**Structure:** Purpose → Assumptions Used → Executive Summary → Detailed Findings
+(5 numbered subsections) → Proposed Skill/Reference Enhancements →
+Highest-Confidence Immediate Recommendations → Items That Likely Need Explicit
+User Direction.
+
+Two tables carry the actual analysis:
+
+- **Evidence Snapshot** — six fixed evidence rows (Controller/API usage,
+  Service/feature usage, Repository/persistence usage, DI or startup wiring, Test
+  or call-site evidence, Naming/folder clues), each with `Observation` and
+  `Placement Impact` columns. Fixing the rows means an agent cannot quietly skip
+  the evidence class that would have contradicted its preferred answer.
+- **Candidate Destinations** — three pre-seeded rows, each requiring
+  `Why It Fits`, **`Why It Might Be Wrong`**, and a
+  `High/Medium/Low` confidence. The mandatory counter-argument column is the good
+  part: a single-candidate answer cannot be filed.
+
+**Four reviewer verdicts:** `Approve`, `Approve with follow-up`,
+`Needs more evidence`, `Reject`. Note this is a *fifth* distinct verdict
+vocabulary in the kit, alongside the four step-status vocabularies already
+recorded — though this one is scoped to a human review decision rather than
+written into `step-workflow-state.json`, so it is far less likely to cause
+interop breakage.
+
+**Two sections worth porting to Squad regardless of the rest.** The template ends
+by asking the agent to name (a) what skill or reference material would have
+prevented the ambiguity, and (b) which items need explicit user direction. That
+converts a one-off placement puzzle into a durable kit improvement and an explicit
+escalation list — exactly the loop this whole import is trying to build.
+
+---
 
 ## ✅ Gherkin settled for the third time, by the file that owns the rule
 
