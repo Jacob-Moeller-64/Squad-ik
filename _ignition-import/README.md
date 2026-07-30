@@ -94,6 +94,7 @@ pattern-match against.
 | File | Role | Status |
 |---|---|---|
 | `starter/Starter.Library/Entities/MyEntity.cs` | reference domain entity | transcribed from 1 photo — complete (source lines 1-28) |
+| `starter/Starter.Web.Api/appsettings.Development.json` | ★ empirical proof the API surface is **config-driven and Development-gated** | transcribed from 1 photo — complete (11 lines, **validates as JSON**) |
 | `starter/Starter.Web.Api/AppInfo.xml` | deployment descriptor — 12 environments, Azure DevOps pipelines | transcribed from 2 photos — complete (89 lines, **validates as XML**); **2 values redacted** — see below |
 | `starter/Starter.Web.Api/Models/PublicTextResponse.cs` | ✅ `sealed record`, XML `<summary>` + `<param>` | transcribed from 1 photo — complete (7 lines) |
 | `starter/Starter.Web.Api/Models/MyModel.cs` | input DTO — correct `[Required]` + `required` pairing, no docs | transcribed from 1 photo — complete (11 lines) |
@@ -706,6 +707,65 @@ Headline coverage:
    implies.
 6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
    `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## ★ Third leg of the proof: the API surface is turned on by config, in Development only
+
+`appsettings.Development.json` is 11 lines and contains exactly one setting:
+
+```json
+{
+  "Fusion": {
+    "Web": {
+      "Api": {
+        "OpenApi": {
+          "EnableOpenApi": true
+        }
+      }
+    }
+  }
+}
+```
+
+This completes the empirical case that **Fusion owns the web platform**:
+
+| Evidence | Source |
+|---|---|
+| No auth wiring in either Fusion extension file | `FusionWebBuilderExtensions.cs`, `FusionApplicationBuilderExtensions.cs` — grep returned 0 |
+| No Swagger/Scalar wiring in code | same two files |
+| **The API surface is enabled by an appsettings key instead** | **this file** |
+
+So `fusion-mcp-restructure.instructions.md` was accurate: the OpenAPI/Scalar
+surface is *"driven by the appsettings config blocks"* rather than by
+`AddScalar`/`MapScalar` calls. The exact key path is
+`Fusion:Web:Api:OpenApi:EnableOpenApi` — slightly more nested than the
+instruction file's shorthand (`Fusion.Web.Api.EnableApi` and `OpenApi`), so that
+shorthand is directionally right but imprecise. Worth correcting to the literal
+path, since an agent searching appsettings for `EnableApi` will not find this key.
+
+**It also splits `fusion-auth-standards.md` cleanly in two**, which sharpens the
+earlier recommendation:
+
+- Its **rules** are correct. *"Swagger: Development Only"* is exactly what this
+  file implements — enabled in the Development override, absent from base
+  `appsettings.json`, so production never exposes it. Same for policy-based
+  authz, secrets handling, PII, CORS, and the severity table.
+- Its **code blocks** describe an app-owned implementation that does not exist and
+  must not be written.
+
+That is a much easier fix than "rewrite the file": **keep every rule, delete the
+two `csharp` blocks under "Fusion pattern (use this)", and replace them with the
+config keys.** The behavioural intent survives intact; only the mechanism changes
+from hand-rolled middleware to Fusion configuration.
+
+**One structural note for the modernization agents:** because the surface is
+config-gated rather than code-gated, an agent verifying "is OpenAPI correctly
+Development-only?" must inspect `appsettings*.json`, not search for
+`app.UseSwagger()`. A compliance scan looking only for the code pattern would
+report a false pass on a Fusion app that had `EnableOpenApi: true` in its base
+settings — the actual production-exposure risk. Worth a targeted check in the
+review lane.
 
 ---
 
