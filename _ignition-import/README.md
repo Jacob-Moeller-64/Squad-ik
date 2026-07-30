@@ -126,6 +126,8 @@ pattern-match against.
 | `starter/.../src/main.ts` | standalone bootstrap | transcribed from 1 photo — complete (6 content lines) |
 | `starter/.../src/web.config` | the strongest security artefact in the starter; **3 corp domains redacted** | transcribed from 3 photos — complete (156 lines, validates as XML) |
 | `starter/Starter.Web.Client/tmpt/.npmrc` | ⚠⚠ **`strict-ssl=false`**; confirms `ignore-scripts=true` + the `@fusion:` scoped registry; **host redacted** | transcribed from 1 photo — complete (7 content lines) |
+| `starter/Starter.Web.Client/.npmrc` | the **root** copy `npmAuth()` actually reads — no token markers; **host redacted** | transcribed from 1 photo — complete (5 content lines) |
+| `starter/Starter.Web.Client/.dockerignore` | excludes `cert.pem`/`cert.key` from the image; reveals a `Dockerfile` exists | transcribed from 1 photo — complete (16 content lines) |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -2366,6 +2368,127 @@ settle it is a listing of `Starter.Web.Client/` including dotfiles, or the
 
 ---
 
+## Client root `.npmrc` and `.dockerignore` — two open questions closed, one opened
+
+### RESOLVED (downgrade) — the root `.npmrc` exists, so the ENOENT path is much narrower
+
+```
+registry=https://<SONATYPE-NPM-HOST>/repository/npm-org/
+@fusion:registry=https://<SONATYPE-NPM-HOST>/repository/fusion-npm/
+engine-strict=true
+ignore-scripts=true
+strict-ssl=false
+```
+
+Five lines at `Starter.Web.Client/.npmrc` — **the exact path
+`npmAuth()` reads** (`path.join('./', '.npmrc')`). The earlier HIGH:
+
+> `npmAuth` reads `.npmrc` with an unguarded `readFile`. No `.npmrc` means an
+> unhandled `ENOENT` on the first statement of `npm start`.
+
+**is downgraded to MEDIUM.** The file is present at the client root, so the
+common case — clone and run `npm start` — works. I recorded that risk before
+seeing this file and after seeing only the `tmpt/` copy, and the inference that
+the root file might be generated rather than committed was wrong.
+
+What survives is narrower and still worth fixing: the `readFile` is unguarded, so
+the failure mode exists for anyone whose `.npmrc` is absent — and `.npmrc` is a
+conventionally-gitignored filename, so a participant who copies the starter into
+a repo with a stock Node `.gitignore` will lose it and get an ENOENT stack trace
+pointing at the wrong problem. A three-line `existsSync` guard still closes it,
+but this is a robustness improvement, not a broken first run.
+
+**The two `.npmrc` files differ, which explains `tmpt/`.** The root copy has no
+`; begin auth token` / `; end auth token` markers and no token; the `tmpt/` copy
+has the markers wrapping the same five settings. The natural reading is that
+`tmpt/` is the template a build step renders with credentials spliced into the
+marked region, while the root file is the credential-free version committed for
+local development. That is a sensible split and worth stating, because an agent
+that "tidies up the duplicate `.npmrc`" would break the credentialed build path.
+
+`strict-ssl=false` appears in **both** copies. The HIGH recorded against it is
+unaffected — if anything it is reinforced, since the setting is present in the
+committed developer config *and* in whatever the build renders.
+
+### CONFIRMED — `cert.pem` and `cert.key` are known about, but only by Docker
+
+`.dockerignore` (16 lines) lists them explicitly:
+
+```
+dist
+coverage
+cert.pem
+cert.key
+Dockerfile
+.dockerignore
+```
+
+The `pre-start.mjs` entry flagged that
+`dotnet dev-certs https --export-path ./cert.pem --format Pem --no-password`
+writes an **unencrypted private key** into the client working tree on every
+`npm start`, and asked whether `.gitignore` covers it.
+
+This is **not** that answer. `.dockerignore` keeps the key out of the Docker build
+context — a genuinely good call, and evidence that someone knew these files get
+produced — but it has no bearing on what git tracks. **The `.gitignore` question
+is still open**, and it is now the more interesting of the two, because we know
+the risk was recognised in one place. If it was handled in both, the finding
+closes entirely; if only here, then the person who thought about it stopped one
+file short.
+
+### NEW — the client has a second, containerised deployment path
+
+Two artefacts point at it:
+
+- `.dockerignore` line 15 excludes a **`Dockerfile`**, so one exists.
+- A path tooltip in the same screenshot reads
+  `…\src\Starter.Web.Client\default.conf` — the conventional filename for an
+  **nginx** server block.
+
+So the client is deployed at least two ways: IIS via `src/web.config`, and a
+container serving through nginx. The `fusion.config.dvl.ts` callback hosts
+(OpenShift `ocp.` subdomains, before redaction) and the API's already-transcribed
+`entrypoint.sh` both suggest the **container path is the real one** for deployed
+environments, with `web.config` covering IIS or local hosting.
+
+That has a direct consequence for something recorded two sections ago. The
+`web.config` entry called its Content-Security-Policy *"the most
+security-conscious artefact in the starter"* — `default-src 'self'`, a
+hash-pinned inline script, `Referrer-Policy`. **All of that lives in the IIS
+config.** If deployed environments serve through nginx, those headers apply only
+if `default.conf` sets them too, and nothing transcribed so far shows that it
+does.
+
+I am not claiming the container path is unprotected — I have not seen
+`default.conf`. But the question is now concrete and worth answering before the
+hackathon: *do the CSP and `Referrer-Policy` headers exist on the path production
+actually uses, or only on the one it does not?* A starter that ships a strong
+policy on the unused path and nothing on the used one is worse than either
+alone, because a reviewer reading `web.config` will conclude the app is covered.
+
+**`default.conf` and the client `Dockerfile` are now the two files I would ask
+for next**, ahead of `package.json` — they decide whether a real security control
+is in force.
+
+### Smaller observations
+
+- `.dockerignore` excludes `**/bin` and `**/obj` — the MSBuild directories, in a
+  *client* project. Consistent with `build.mjs` hand-creating `obj/Debug`: the
+  .NET and Angular builds share this directory tree, and the container build
+  correctly refuses to copy the .NET leftovers.
+- It also excludes `dist` and `coverage`, so the image is built from source
+  inside the container rather than from a host-side `ng build` output. That is
+  the right choice and means the container build runs `npm ci` itself — which
+  puts it squarely behind the `strict-ssl=false` and `ignore-scripts` settings
+  above.
+- No `.env`, `*.pem` wildcard, or `.npmrc` entry in `.dockerignore`. The `.npmrc`
+  omission is presumably deliberate — the container build needs the registry
+  configuration — but it does mean that if the token-bearing rendered `.npmrc`
+  ever lands at the client root, it goes into the image layer. Worth a line in
+  whatever documents the container build.
+
+---
+
 ## `Starter.Web.Client/scripts/` — the Node build harness
 
 The client is not driven through raw `ng` commands or through `dotnet build`. It
@@ -2471,6 +2594,13 @@ this string should resolve from `kit-params.md` too — a starter that hard-code
 one company's registry host cannot be handed to anyone else.
 
 ### ⚠ HIGH — `npmAuth` throws ENOENT on a missing `.npmrc`, killing first run
+
+> **DOWNGRADED to MEDIUM.** The root `Starter.Web.Client/.npmrc` exists — the
+> exact path `npmAuth()` reads — so clone-and-`npm start` works. This was
+> recorded after seeing only the `tmpt/` copy, and the inference that the root
+> file might be generated rather than committed was wrong. The unguarded
+> `readFile` is still worth a guard, since `.npmrc` is a conventionally
+> gitignored filename. See the client-root `.npmrc` section.
 
 ```js
 const npmrc = await fsPromises.readFile(npmrcPath, 'utf8');
@@ -11728,6 +11858,26 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (client-root `.npmrc`, `.dockerignore`)
+
+- **Redaction applied.** The Sonatype host appears twice in the root `.npmrc`;
+  same `<SONATYPE-NPM-HOST>` placeholder as `tools.mjs` and `tmpt/.npmrc`. The
+  repository paths are kept.
+- The root `.npmrc` has **no** `; begin auth token` / `; end auth token` markers
+  and carries no credential — that is the difference from the `tmpt/` copy, and
+  it is what supports reading `tmpt/` as a build-time template.
+- **Whether the root `.npmrc` is committed or merely present on disk cannot be
+  determined from a photo.** The finding downgrade assumes it is tracked; if it
+  is gitignored, the original ENOENT reasoning applies again to fresh clones.
+  A `git check-ignore .npmrc` in the source repo settles it.
+- The `.dockerignore` photo was taken sideways; line order was read from the
+  gutter and is unambiguous. 16 content lines, gutter 17.
+- **`default.conf` is inferred from a path tooltip**, not from a file listing —
+  `…\src\Starter.Web.Client\default.conf` appeared in the corner of the
+  `.npmrc` screenshot. Its existence is solid; its contents are entirely unknown,
+  and every statement about the container path's security headers is therefore a
+  question rather than a finding.
 
 ## Transcription uncertainties (`tmpt/.npmrc`)
 
