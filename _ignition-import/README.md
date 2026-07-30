@@ -141,6 +141,7 @@ pattern-match against.
 | `scripts/parity/scan-backend-parity.ps1` | ★★ endpoint-level sibling; quantified postmortem (35 mutations → 0, shipped green); ⚠ same vacuous pass, ⚠ `controller\|verb` key under-counts | transcribed from 5 photos — complete (241 content lines) |
 | `scripts/parity/scan-functional-parity-ledger.ps1` | ★★ the **composition** gate — cross-references the other scans; ★ has the missing-input guard the siblings lack; ⚠ evidence inputs still degrade to "clean" | transcribed from 7 photos — **complete** (376 content lines) |
 | `scripts/parity/scan-scaffold-debt.ps1` | ★★ detects surviving "wired in a later step" deferral markers; **drain semantics** via `-CurrentStep` | transcribed from 4 photos — complete (221 content lines) |
+| `scripts/parity/scan-ui-parity-gaps.PARTIAL.ps1` | ★★ produces `ui-parity-gap-scan.json` (the ledger's `filter` input); ★ **honesty rules** — a waiver that cannot hide what it waives | **PARTIAL** — lines 1-290 of N, from 5 photos; do not execute |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -3885,6 +3886,142 @@ already in the artefact, so the same three-line guard applies.
 - **The accepted-marker registry matches on substrings** (`-like '*...*'` on both
   file and text), which is looser than the parity gates' exact comparisons. A
   broad `textContains` waiver could silence more than intended.
+
+---
+
+## `parity/scan-ui-parity-gaps.ps1` (lines 1-290 of N) — PARTIAL
+
+The UI-side sibling, and it closes the artefact chain: this produces
+`ui-parity-gap-scan.json`, which `scan-functional-parity-ledger.ps1` reads for
+its `filter` verdict. Committed as `.PARTIAL.ps1` with a delimited trailing note;
+everything from `$ParityDimensions` / `Scan-File` onward is unphotographed and the
+file **must not be executed**.
+
+Seven gap kinds: `MissingControl`, `MissingColumn`, `InertControl`,
+`MissingIcon`, `IconMismatch`, `LowControlCoverage`, plus `passiveLabelDrops`
+which are *"reported, never silently zeroed"*.
+
+### ★★ The honesty rules — a waiver system that cannot hide what it waives
+
+```
+# Honesty rules for the deferral list (the previous failure mode was an
+# app-specific hardcoded allowlist that permanently blinded the inert gate):
+#   1. A suppressed handler is STILL counted and listed in deferredInertControls[],
+#      so inertControlCount = 0 can never hide N parked stubs.
+#   2. When -CurrentStep is passed and a deferral's owner step is reached or passed
+#      (ownerStep <= CurrentStep), the deferral is STALE and is re-flagged as a Major
+#      InertControl (the drain gate) instead of being suppressed.
+```
+
+This is the strongest governance design found anywhere in the kit, and it
+directly answers a concern raised twice in this review — that waivers accumulate
+and quietly become permanent blindness.
+
+Rule 1 means a waiver **suppresses the block but not the visibility**: the
+suppressed handler still appears in `deferredInertControls[]`, so nobody can read
+`inertControlCount: 0` as "no parked stubs". Rule 2 applies the same
+**drain semantics** as `scan-scaffold-debt.ps1` — a deferral with an owner step
+expires the moment that step is reached, and re-arms as a Major.
+
+Together they make a waiver a *dated loan* rather than a pardon. That is the
+pattern the other gates' `acceptedDrops[]` registries should adopt: today those
+are permanent and invisible once written.
+
+The comment also names the failure mode it replaced — *"an app-specific hardcoded
+allowlist that permanently blinded the inert gate"* — which is the fourth
+postmortem-driven design decision found in `parity/`.
+
+### ★★ "A gate that fails a control that is actually present is as dishonest as one that passes a missing control"
+
+```
+# it sees native <button> and <fusion-button>; otherwise it is blind to every wrapped
+# control and reports FALSE MissingControl gaps after a wrapper-swap pass (a gate that fails
+# a control that is actually present is as dishonest as one that passes a missing control).
+```
+
+Stated explicitly, in the source. **False blocking and false passing are treated
+as equally serious.**
+
+That principle is exactly what the `scan-functional-parity-ledger.ps1` finding
+violates — its `\[Http(?:Post|Put|Delete|Patch)\]` regex misses
+`[HttpPost("Search")]` and therefore blocks correctly-modernized apps. The kit
+**has** the right principle written down; it simply is not applied uniformly. As
+with the missing-input guard, the fix is consistency, not invention.
+
+### ★ App-agnosticism is enforced by derivation, not by convention
+
+```powershell
+$script:AppComponentPrefix = ($appNameForPrefix -replace '[^A-Za-z0-9]', '').ToLowerInvariant()
+```
+
+The app's own wrapper components (`<filelog-command-button>` for app "FileLog")
+are recognised by a prefix **derived** from `kit-params.md` `appName`, with a
+fallback to the `<App>.Web.Client` folder name — *"so no app identity is
+hard-coded here."* The registry comment repeats it: *"this reusable script
+carries no app identity (no app-shaped labels, handler names, or feature
+names)."*
+
+This is the discipline that makes the kit survive a few hundred participants:
+every app fact lives in per-app JSON, every rule lives in the shared script. It
+is applied more rigorously here than in any other file reviewed.
+
+### ⚠ MEDIUM — `LowControlCoverage` is off by default
+
+```powershell
+# default so early foundation passes are not blocked while coverage is legitimately low.
+[double]$CoverageFloor = 0,
+```
+
+The check that would catch the bluntest failure of all — *modern has 3
+interactive controls where legacy had 200* — **never fires unless a caller passes
+`-CoverageFloor`**. The rationale is sound (early passes shouldn't be blocked),
+and it mirrors `scan-scaffold-debt`'s `-Strict`. But it means the safety net
+depends entirely on some closeout step remembering to pass the flag, and nothing
+in the transcribed material shows which step does. Worth confirming against the
+prompts: if no caller sets it, this check is dead code.
+
+### ⚠ MEDIUM — interpolated modern labels normalize to empty
+
+```powershell
+$t = $t -replace '\{\{[^}]*\}\}', ' '
+...
+return $t.Trim().ToLowerInvariant().TrimEnd(':').Trim()
+```
+
+`Normalize-Label` strips Angular interpolations to a space. A modern control
+whose label is entirely `{{ item.name }}` or `{{ 'buttons.save' | translate }}`
+therefore normalizes to the **empty string** and can match no legacy label.
+
+Legacy `.cshtml` labels are usually static text; modern Angular labels are
+frequently interpolated or translated. If label matching is the only join key,
+that produces **false `MissingControl` gaps** — precisely the dishonesty the file
+elsewhere warns against.
+
+The `testId="..."` / `data-testid="..."` extraction mentioned in the header is the
+obvious mitigation (match by test id when the label is dynamic), and the matcher
+itself is in the unphotographed remainder. **Recorded as a risk to confirm, not a
+confirmed defect** — the rest of the file may already handle it.
+
+### Smaller observations
+
+- **`'lock'` and `'unlock'` both map to `fa-edit`** in `$SemanticIconMap`, so the
+  two are indistinguishable to `IconMismatch`. Presumably faithful to the app's
+  wrapper; worth a comment in the source so it does not read as a copy-paste slip.
+- **`Resolve-IconTokens` drops unknown `semantic:*` markers** rather than
+  reporting them, *"treated as 'has icon, unknown glyph'... so they no longer
+  create false IconMismatch noise."* Correct call, and another instance of the
+  false-positive discipline.
+- **FA4 alias normalization** (`fa-save` ↔ `fa-floppy-o`, `fa-edit` ↔
+  `fa-pencil-square-o`) removes mismatch noise *"that has no visual impact at
+  runtime"* — the right level of abstraction for a parity check.
+- **`MissingColumn` reads `<th>`, ag-grid `headerName`, ColDef titles and
+  Fusion/Kendo grid-column titles.** The Fusion/Kendo branch ties directly to the
+  grid components found in the starter, and the described defect — *"a grid loads
+  real data in fewer or more generic columns than legacy"* — is the same
+  column-collapse family as `scan-api-dto-coverage`'s `FileLogResponse`
+  postmortem, caught from the UI side instead of the DTO side.
+- **`throw` on an unresolvable client root**, matching `scan-scaffold-debt.ps1`
+  and unlike the two `scan-*-parity` scripts.
 
 ---
 
@@ -13257,6 +13394,27 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (`scan-ui-parity-gaps.ps1`)
+
+- **PARTIAL** — source lines 1-290, with a delimited trailing note in the
+  committed copy. Not photographed: `$ParityDimensions`, `Scan-File`, the
+  legacy/modern matcher, gap emission, the summary and the exit. Deliberately
+  incomplete; must not be run.
+- Fifteen photographed anchors match the written file (53 `param(`, 75
+  `$ErrorActionPreference`, 82 the root resolution, 114 `$script:AppComponentPrefix`,
+  129 the registry banner, 148 `$inertControlAllowlist`, 155 the registry path,
+  177 `Normalize-Label`, 189 `Extract-IconClasses`, 204 `$SemanticIconMap`, 224
+  `$IconAliasMap`, 241 `Resolve-IconTokens`, 261 the dimension-registry banner,
+  282 `$BootstrapColorMap`, 290 its close).
+- The long FA-modifier exclusion regex on line 193 is the least legible token in
+  the batch; the `Normalize-Label` replacements on 179-185 are next. Both findings
+  that depend on them (the modifier list, the `{{...}}` stripping) should be
+  re-checked against the real file.
+- `FileLog` / `filelog-command-button` appear as worked examples in comments;
+  they are app and component names, not credentials or hosts, and were left as
+  photographed.
+- **Not executed** — `pwsh` unavailable, and the file is incomplete regardless.
 
 ## Transcription uncertainties (`scan-scaffold-debt.ps1`)
 
