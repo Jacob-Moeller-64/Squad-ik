@@ -109,6 +109,7 @@ pattern-match against.
 | `starter/.../pages/my-entity/my-entity.component.html` | ⚠ block-grid, `fusion-textbox`, `@for`; `theme` button vocabulary | transcribed from 1 photo — complete (43 content lines) |
 | `starter/.../pages/test-datastore/test-datastore.component.html` | ⚠ **contradicts the other pages**: plain fields, `[(ngModel)]`, hand-rolled layout; adds `fusion-textarea` + `[disabled]` | transcribed from 1 photo — complete (54 lines, **no trailing newline**) |
 | `starter/.../pages/test-datastore/test-datastore.component.scss` | `:host` + `.panel-actions`; defines 1 of the 8 classes the template uses | transcribed from 1 photo — complete (14 content lines) |
+| `starter/.../pages/test-datastore/test-datastore.component.ts` | private signals behind public getters (for `[(ngModel)]`); the only `try`/`finally` in the client | transcribed from 2 photos — complete (74 lines, **no trailing newline**) |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -1121,7 +1122,14 @@ bindings, `:host { display: block }`, and subtitled panel headers. None of the
 other pages do. But it reaches those results by different means than every other
 page in the starter, and an agent has no way to tell which set is canonical.
 
-**State: plain properties, not signals.**
+**State: three different exposure conventions.**
+
+> **CORRECTED after `test-datastore.component.ts` arrived.** This subsection
+> originally read "plain properties, not signals". The component in fact holds
+> five private signals behind public getters, so the template reads accessors,
+> not fields. See the `.ts` entry below for the corrected finding, which is
+> weaker than what is written here but still real.
+
 
 ```html
 <pre class="value">{{ displayedText }}</pre>
@@ -1240,6 +1248,131 @@ Two smaller notes on the stylesheet:
 - **`<pre>` for the retrieved value** preserves server whitespace, which is
   deliberate for a datastore harness and worth keeping if this page is ever
   used as a parity fixture.
+
+---
+
+### `test-datastore.component.ts` (74 lines) — CORRECTS the "plain fields" finding
+
+> **CORRECTED.** The entry above read the template's `{{ displayedText }}` and
+> `[disabled]="isLoading"` — no call parentheses — as evidence that this page uses
+> plain mutable fields while `home` and `my-entity` use signals. **That was wrong.**
+> The component holds **five** private signals and exposes them through public
+> getters, so the template reads accessors, not fields. The template was
+> transcribed correctly; the inference from it was not.
+
+```ts
+private readonly _payload = signal('');
+private readonly _storedText = signal<string | null>(null);
+private readonly _isLoading = signal(false);
+private readonly _isSaving = signal(false);
+
+get payloadValue(): string {
+    return this._payload();
+}
+
+set payloadValue(value: string) {
+    this._payload.set(value);
+}
+```
+
+The mechanism was wrong; the underlying observation was not. There are now
+**three** conventions for exposing state to a template across four pages:
+
+| Page | Declaration | Template reads |
+|---|---|---|
+| `home` | `protected readonly publicText = signal('')` | `publicText()` |
+| `my-entity` | `entities = signal<MyEntity[]>([])` (public) | `entities()` |
+| `test-datastore` | `private readonly _payload = signal('')` + public getter/setter | `payloadValue` |
+
+That is a weaker finding than "one page ignores signals", and it should be
+recorded as such. It is also a *deliberate* pattern rather than an oversight,
+which matters for how the kit should respond.
+
+#### Why the facade exists — and the one-line replacement
+
+The getter/setter pair is not decoration. It is what makes this work:
+
+```html
+<fusion-textarea [(ngModel)]="payloadValue"></fusion-textarea>
+```
+
+Two-way `[(ngModel)]` needs a readable **and settable** property; a bare
+`WritableSignal` field cannot be banana-boxed. So the author wrapped the signal
+in an accessor pair to get two-way binding back.
+
+Angular has shipped the purpose-built answer since 17.2: **`model()`**. The
+starter is confirmed on Angular ≥ 17 (`@if` / `@for` with `track`), so
+`model<string>('')` almost certainly replaces `_payload` plus both accessors —
+twelve lines down to one, with `[(ngModel)]` still working. Worth verifying
+against the pinned Angular minor before recommending it, but if it holds this is
+the single cleanest simplification available in the client, and it removes the
+reason this page looks different from the others.
+
+The three read-only getters (`displayedText`, `isLoading`, `isSaving`) have no
+such excuse — they are plain signal reads behind an accessor, and exposing the
+signals directly would match `home` exactly.
+
+#### What this page gets right, and the other three do not
+
+- **`try` / `finally` around every network call.** `loadStoredText` and
+  `saveText` both set a busy flag, `await` in a `try`, and reset the flag in
+  `finally`. No `catch`, so failures still propagate — which is the correct
+  choice: the spinner is cleaned up and the error is not swallowed. This is the
+  **only** error-adjacent handling anywhere in the client. It is still not a
+  user-facing error path, so the earlier "no frontend error convention" gap
+  stands; but the busy-flag discipline here is the best model in the starter and
+  is what a documented convention should be built on.
+- **`override ngOnInit()` + `void this.loadStoredText()`** matches `my-entity`
+  exactly. One thing that *is* consistent.
+- **Read-after-write**: `saveText` clears the payload and re-runs
+  `loadStoredText()` rather than trusting the response. Same conservative pattern
+  as `my-entity.submitEntity`.
+
+#### Confirmed: no `OnPush` here either
+
+`@Component` carries `imports`, `selector`, `standalone`, `templateUrl`,
+`styleUrls` — no `changeDetection`. So `HomeComponent` remains the **only** page
+with `ChangeDetectionStrategy.OnPush`, out of four. With signals used throughout,
+`OnPush` is the correct default everywhere, and nothing states it.
+
+#### More style divergence, in the same file
+
+- **The `imports:` array is not alphabetised**: `CommonModule`, `FormsModule`,
+  `FusionTextareaComponent`, `FusionGridCellComponent`, `FusionGridContainerComponent`,
+  `FusionGridRowComponent`, `FusionButtonComponent`. `Textarea` before `GridCell`
+  breaks the ordering the other three pages follow.
+- **It has a trailing comma** after the last entry; the other three do not.
+- **The `@fusion/ngx-fusion` import is one flat line** (six symbols, ~190
+  characters) where the other three pages use the multi-line braced form.
+- **`CommonModule` is imported and unnecessary again** — same as `my-entity`,
+  with built-in control flow and no `CommonModule` directives in the template.
+  Two of four pages carry it needlessly.
+- **No trailing newline**, matching this folder's `.html` and unlike every other
+  file in the starter.
+
+Taken together — no final newline, unused imports, unsorted arrays, inconsistent
+comma style — `test-datastore` looks like it is not passing through whatever
+`npm run lint` actually enforces. That is worth checking directly: if `lint`
+covers `src/app/**` these would be errors, so either the rules are off or the
+glob misses. `.eslintrc` / `eslint.config.js` and `.prettierrc` are the files
+that would settle it, and they are more valuable than another page.
+
+#### Net effect on the earlier HIGH
+
+The three-axis finding above stands, with axis 1 restated:
+
+1. **State exposure** — three conventions (`protected` signal, public signal,
+   private signal behind accessors). Weaker than first recorded, still real.
+2. **Forms** — `ReactiveFormsModule` + typed `FormGroup` on `my-entity` vs
+   `FormsModule` + `[(ngModel)]` here. Unchanged, and now confirmed from the
+   `.ts` (`FormsModule` is imported explicitly).
+3. **Inner layout** — `fusion-block-grid-*` vs hand-rolled `section`/`div` + SCSS.
+   Unchanged.
+
+The recommendation is unchanged and, if anything, better supported: the fix is a
+documented canonical-patterns statement in `angular.instructions.md`, not more
+starter pages. Three of the four divergences here are the kind a linter should
+catch and evidently does not.
 
 ---
 
@@ -10607,6 +10740,14 @@ not corrected:
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
 
 ## Transcription uncertainties (`pages/test-datastore`)
+- `test-datastore.component.ts` line 4 is a single ~190-character import. The
+  photo's tilt places its tail visually alongside line 5; confirmed as one line by
+  measuring the row slope and by the fact that line 5 is a complete statement.
+- The `imports:` array order and its trailing comma were verified by magnifying
+  the region — both diverge from the other three components, and both are as
+  photographed.
+- `test-datastore.component.ts` also has **no trailing newline** (gutter ends at
+  74 with `}` on it), matching the `.html` in the same folder.
 
 - **The missing trailing newline was verified, not assumed.** The editor gutter
   ends at line 54 with content on it and no line 55, which is how VS Code renders
