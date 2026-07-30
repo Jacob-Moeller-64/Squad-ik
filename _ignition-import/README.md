@@ -137,6 +137,7 @@ pattern-match against.
 | `starter/Starter.Web.Client/tsconfig.{app,spec}.json` | per-target tsconfigs | transcribed from 2 photos — complete (15 / 14 content lines) |
 | `starter/Starter.Web.Client/AppInfo.xml` | ★ **already uses the `{Placeholder}` convention** — no redaction needed | transcribed from 2 photos — complete (77 lines, validates as XML) |
 | `starter/Starter.Web.Client/Starter.Web.Client.esproj` | `ShouldRunNpmInstall=false`; maps MSBuild onto the npm scripts | transcribed from 1 photo — complete (11 content lines) |
+| `scripts/parity/scan-api-dto-coverage.ps1` | ★★ **the first real gate** — legacy-anchored DTO field coverage; confirms `kit-params.md` `appName` resolution; ⚠ passes vacuously when nothing is scanned | transcribed from 4 photos — complete (222 content lines) |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -3005,6 +3006,272 @@ After a long run of findings, three parts of this batch are genuinely good:
   — so the spec tsconfig is wired correctly. The problem with the frontend tests
   has never been configuration; it is that the two specs that exist assert
   nothing.
+
+---
+
+# `.github/scripts/` — the enforcement layer
+
+First file transcribed from this tree. Nothing else under `.github/scripts/` has
+been imported yet; the tree lists roughly **91 scripts** across `parity/`,
+`P1-Discovery/`, `P2-Modernize/`, `QA/`, `shared/`, `maintenance/`, `step0/` and
+`Workspace/`.
+
+**Caveat that applies to everything in this directory:** `pwsh` is not installed
+in this environment, and unlike `.squad/gates/` (which ships `.sh` + `.ps1`
+launchers over shared logic) `.github/scripts/` appears to be PowerShell-only.
+These can be read and reviewed but **not executed** here, so every statement
+about them is a code reading, not a test result.
+
+---
+
+## `parity/scan-api-dto-coverage.ps1` (222 lines) — a genuinely good gate
+
+This is the first real gate seen end to end, and it deserves saying plainly: it
+is **well designed**, it is written from a real incident, and its central insight
+is better than most of what the instructions files contain.
+
+### It was written from a postmortem
+
+```
+THE FAILURE MODE THIS EXISTS TO CATCH
+A developer writes a modern DTO with fewer fields than the legacy View it replaces:
+  Legacy:  FileLogView { DrawingNo, DocumentType, Title, FileName, PublicationDate, ... }
+  Modern:  FileLogResponse(Directory, DrawingNo, Description) - only 3 of 10 fields
+The TypeScript type may match the narrow modern DTO (so TS compiles), the column headers
+are declared with the right labels, the grid renders with real rows - but 7 columns are
+permanently empty because the server never sends those fields. No gate caught this because
+every gate checked "what exists in modern is wired" without checking "everything in legacy
+was carried forward".
+```
+
+That last sentence is the most valuable line of design thinking found anywhere in
+the kit so far. Every other gate reviewed to date is *modern-anchored* — it
+verifies that what exists in the new code is correct. This one is
+**legacy-anchored**: it verifies that nothing from the old code was silently
+lost. Those catch disjoint failure classes, and the second is the one that
+produces "it looks fine and the data is wrong."
+
+Two more things it gets right:
+
+- **Deterministic and content-only.** No running app, no screenshots, no
+  network. It walks C# files and compares property-name sets. That makes it fast,
+  reproducible, and usable in CI — the opposite of the visual-parity gate's
+  failure modes.
+- **Waivers are visible, not silent.** Intentional drops go in
+  `api-dto-coverage-registry.json` under `acceptedDrops[]` *with a reason*, and
+  the count is echoed into the output artefact. That is exactly the right shape
+  for D-001-style evidence discipline: you can drop a field, but the drop is a
+  recorded decision rather than an absence.
+
+Exit codes are `0` / `2`, matching the kit's `RESULT: OK` / `RESULT: BLOCKED`
+convention.
+
+### CONFIRMED — `kit-params.md` `appName` resolution already exists
+
+```powershell
+$kitParams = Join-Path (Get-Location) '.modernization\.readme\kit-params.md'
+if (Test-Path $kitParams) {
+    $appNameMatch = Select-String -Path $kitParams -Pattern '^appName:\s*(.+)$' | Select-Object -First 1
+    if ($appNameMatch) {
+        $appName = $appNameMatch.Matches[0].Groups[1].Value.Trim()
+        $candidate = Join-Path (Get-Location) ("src\{0}.Web.Api" -f $appName)
+```
+
+This matters well beyond this script. Several earlier entries recommended
+resolving hard-coded values — the Okta client ID and issuer in
+`appsettings.json` and `fusion.config.base.ts`, the Sonatype registry host in
+`.npmrc` — **from `kit-params.md` at the Step 2 rename**, and the `AppInfo.xml`
+entry noted that the `{Placeholder}` convention already exists for those files.
+
+Now the *resolver* is confirmed too. `kit-params.md` is a real, parsed file with
+at least an `appName` key, and at least one script already reads it. So the
+recommendation collapses further, from *"apply the placeholder convention you
+already have"* to **"add two keys to a file that is already being parsed, and
+extend the substitution step that already runs."** That is a materially easier
+sell, and `P1-Discovery/replace-deploy-values` (still untranscribed) is very
+likely the step that already does the substituting.
+
+Also confirmed: the Step 2 rename must produce **`src/{appName}.Web.Api`**
+exactly. That naming is load-bearing for at least this gate, and probably others.
+
+### ⚠ HIGH — the gate cannot distinguish "no gaps" from "nothing scanned"
+
+```powershell
+$legacyFiles = @(Get-ChildItem -Path (Join-Path $LegacyRoot '*') -Recurse -Filter '*View.cs' ...)
+...
+if ($gaps.Count -gt 0) { exit 2 } else { exit 0 }
+```
+
+Legacy discovery is anchored on the filename filter **`*View.cs`**. If a legacy
+app does not name its DTOs that way — and MVC5/WebForms apps frequently use
+`*Model.cs`, `*Item.cs`, `*Row.cs`, `*Info.cs`, or nothing systematic —
+`$legacyFiles` is empty, `$legacyDtos` is empty, no pairs are matched, `$gaps` is
+empty, and the script **exits 0 and reports success**:
+
+```
+  Missing fields: 0 (all modern DTOs cover their legacy counterparts)
+```
+
+printed in green. The gate reports PASS on an application it was structurally
+unable to analyse.
+
+This is the most consequential finding in the file, and it is exactly the class
+of problem the script's own header warns about — a gate that checks a thing and
+concludes safety without checking that it *could* check the thing. For a
+hackathon where every participant brings a differently-shaped legacy app, the
+expected outcome is that this gate passes vacuously for most of them.
+
+The data needed to catch it is **already in the output artefact**:
+
+```powershell
+legacyViewsScanned   = $legacyDtos.Count
+modernDtosMatched    = $checkedPairs.Count
+```
+
+The exit code just ignores both. A three-line fix restores the guarantee:
+
+```powershell
+if ($legacyDtos.Count -eq 0) {
+    Write-Host "  No legacy View classes found under $LegacyRoot - gate cannot run." -ForegroundColor Yellow
+    exit 2   # or a distinct 'inconclusive' code, but NOT 0
+}
+```
+
+The same reasoning applies to `modernDtosMatched -eq 0`: every modern DTO
+unmatched means the concept-matching found nothing to compare.
+
+Worth pairing with a `-LegacyDtoFilter` parameter so an app with different
+naming can point the gate at its own convention rather than silently passing.
+
+### ⚠ MEDIUM — two places where the header documents behaviour the code does not implement
+
+**1. There is no fuzzy matching.** The `.DESCRIPTION` says:
+
+> *"Falls back to fuzzy name matching when exact mapping is not present."*
+
+The matching loop is an exact, case-insensitive comparison of the stripped domain
+concept and nothing else:
+
+```powershell
+foreach ($lName in $legacyDtos.Keys) {
+    $lConcept = Get-DomainConcept $lName
+    if ($lConcept -ieq $concept) { $legacyMatch = $lName; break }
+}
+if (-not $legacyMatch) { continue }
+```
+
+No Levenshtein, no substring, no token overlap, no fallback of any kind — an
+unmatched DTO is simply skipped. Since skipping is silent and the header promises
+a fallback, a reviewer reading the docs will over-trust the coverage. Either
+implement the fallback or delete the sentence; the sentence is currently the more
+dangerous of the two.
+
+**2. Field declarations are documented but not matched.** The helper's comment
+reads:
+
+```
+# Handles: "public string Foo { get; set; }", "public sealed record Foo(string Bar, ...)", "public int Id;".
+```
+
+but the auto-property regex requires an opening brace:
+
+```powershell
+'(?im)^\s*public\s+[\w<>\[\]\?]+\s+(\w+)\s*\{'
+```
+
+`public int Id;` never matches. Legacy View classes written with public *fields*
+rather than properties — common in older code, which is precisely what
+`LegacyCode/` contains — contribute **zero** properties, and if a whole class is
+fields-only it is dropped by `if ($props.Count -gt 0)` and never enters
+`$legacyDtos` at all. That is a silent under-count feeding a gate whose entire
+purpose is to catch under-counting.
+
+### ⚠ MEDIUM — the property regex misses common C# shapes
+
+`[\w<>\[\]\?]+` for the type has no `,` and no space, so any generic with more
+than one type argument fails to match:
+
+| Declaration | Matched? |
+|---|---|
+| `public string Foo { get; set; }` | yes |
+| `public List<string> Foo { get; set; }` | yes |
+| `public Dictionary<string, int> Foo { get; set; }` | **no** (comma + space) |
+| `public string Foo => _foo;` (expression-bodied) | **no** (no `{`) |
+| `public int Id;` (field) | **no** (no `{`) |
+| `public required string Name { get; set; }` | **no** (`required` modifier) |
+
+That last row matters directly: the starter's own `MyEntity.cs` declares
+`public required string Name { get; set; }`, and the `required` keyword sits
+between `public` and the type, which the anchored `^\s*public\s+<type>\s+<name>`
+pattern does not allow. Any modernized code following the starter's own idiom is
+partly invisible to this scanner.
+
+All of these fail **toward false negatives** — properties that exist but are not
+seen. On the legacy side that under-counts what must be carried forward (gate too
+lenient); on the modern side it over-reports gaps (gate too noisy). Both erode
+trust in the same output.
+
+### ⚠ MEDIUM — properties are extracted per *file*, not per *class*
+
+```powershell
+foreach ($cm in [regex]::Matches($text, '...(?:class|record)\s+(\w+)')) {
+    $modernName = $cm.Groups[1].Value
+    ...
+    $modernProps = Get-CSharpProperties $text     # <- whole file, every time
+```
+
+`Get-CSharpProperties` is handed `$text` — the entire file — inside a loop over
+*every class in that file*. So when one file declares two types, each is credited
+with the union of both types' properties. A `FooResponse` that is missing three
+legacy fields passes if a `FooRequest` in the same file happens to declare them.
+
+The same applies on the legacy side, which only ever takes the **first** class
+match per file (`[regex]::Match`, not `Matches`) and then attributes the whole
+file's properties to it.
+
+This is survivable in practice for exactly one reason, and it is worth naming:
+`dotnet.instructions.md` mandates *"Types should be in separate files unless they
+are private nested types or very small related types"*. The gate is correct only
+because the kit's own coding standard keeps files single-type. That is a real
+coupling between a style rule and a correctness guarantee, and it is written down
+in neither place. Legacy code — which predates the standard by definition —
+has no such protection.
+
+### Smaller observations
+
+- **`$InternalPropNames` is a good touch.** Ten audit/identity property names
+  (`id`, `createdby`, `createdat`, `rowversion`, `concurrencytoken`, …) are
+  exempt by default and the list is an overridable parameter. That prevents the
+  most obvious class of false positive without hard-coding it.
+- **The interface/base skip is a prefix heuristic**: `^(I[A-Z]|Abstract|Base)`.
+  It will also skip a legitimately-named `IdentityResponse` — `I` followed by
+  `d`… no, `[A-Z]` requires an uppercase second character, so `IdentityResponse`
+  is safe. `IOResponse` would be skipped. Narrow enough to be fine.
+- **The modern-file filter matches on `FullName`**, not just the leaf name:
+  `$_.FullName -match '(?i)Response|Dto|Model|Request'`. Any file under a
+  directory called `Models/` therefore qualifies — which is how the starter is
+  laid out (`Starter.Web.Api/Models/`). Probably intentional, and worth knowing,
+  because it means a project that renames that folder changes what the gate sees.
+- **`-Depth 6` on `ConvertTo-Json`** is sufficient for the emitted shape
+  (`checkedPairs[].missing[]` is depth 4).
+- The `.EXAMPLE` invokes `powershell` (Windows PowerShell 5.1), not `pwsh`. That
+  is consistent with the kit's PowerShell 5.1 constraint recorded earlier — the
+  same constraint that forced the custom `opx-field-contract/v1` schema dialect
+  because 5.1 lacks `Test-Json -Schema`.
+
+### What this one file implies about the other ~90
+
+If `scan-api-dto-coverage.ps1` is representative, the scripts layer is **the
+strongest part of the kit** — better reasoned than the instructions files and
+noticeably better than the starter. The defects found here are not sloppiness;
+they are the ordinary edges of regex-based static analysis, plus one exit-code
+gap that matters a lot.
+
+That last one is the pattern worth checking for across every other gate as they
+arrive: **does this script distinguish "I checked and found nothing wrong" from
+"I could not check"?** On the evidence of this file, that question is the highest
+-yield thing to ask of the remaining `parity/`, `P2-Modernize/verify-*` and
+`shared/verify-*` scripts.
 
 ---
 
@@ -12377,6 +12644,25 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (`scripts/parity/scan-api-dto-coverage.ps1`)
+
+- Nothing required redaction. `FileLog` / `FileLogView` / `FileLogResponse` are
+  domain type names used as worked examples in the header comment, not
+  credentials, hosts or tenant identifiers.
+- Line count verified against the gutter: 222 content lines (gutter 223). Photo
+  coverage overlapped at 62-67, 121-125 and 177-188, so every function boundary
+  was read directly.
+- Line 200 (`note = '...'`) is a single long string that soft-wraps across two
+  editor rows in the photo; transcribed as one line, which is what makes the
+  total land on 222.
+- The regexes were read at magnification but are the least legible tokens in the
+  file — particularly `'(?im)^\s*public\s+[\w<>\[\]\?]+\s+(\w+)\s*\{'` and
+  `'(?i)\brecord\s+\w+\s*\(([^)]+)\)'`. The findings that depend on them
+  (missed generics with commas, missed `required` modifier, missed field
+  declarations) should be re-checked against the real file before being acted on.
+- **Not executed.** `pwsh` is unavailable in this environment and this script has
+  no `.sh` counterpart, so every claim here is from reading, not from running it.
 
 ## Transcription uncertainties (client root configs)
 
