@@ -107,6 +107,8 @@ pattern-match against.
 | `starter/.../pages/home/home.component.scss` | one rule, `.sample-api-result` | transcribed from 1 photo — complete (4 content lines) |
 | `starter/.../pages/my-entity/my-entity.component.ts` | reactive forms + signals CRUD page | transcribed from 2 photos — complete (69 content lines) |
 | `starter/.../pages/my-entity/my-entity.component.html` | ⚠ block-grid, `fusion-textbox`, `@for`; `theme` button vocabulary | transcribed from 1 photo — complete (43 content lines) |
+| `starter/.../pages/test-datastore/test-datastore.component.html` | ⚠ **contradicts the other pages**: plain fields, `[(ngModel)]`, hand-rolled layout; adds `fusion-textarea` + `[disabled]` | transcribed from 1 photo — complete (54 lines, **no trailing newline**) |
+| `starter/.../pages/test-datastore/test-datastore.component.scss` | `:host` + `.panel-actions`; defines 1 of the 8 classes the template uses | transcribed from 1 photo — complete (14 content lines) |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -1093,6 +1095,151 @@ which still compiles — so this will drift silently unless it is stated.
   **not** the `title-banner` class used by `common-components` and `my-entity`.
   `title-banner` is therefore defined globally (`styles.scss`) or by Fusion
   itself; still unresolved.
+
+---
+
+## `pages/test-datastore/` — the fourth page, and a third way of doing everything
+
+`test-datastore.component.html` (54 lines) and `.scss` (14 lines) transcribed;
+`.ts` and `.spec.ts` outstanding. The page is a simple read/write harness: one
+panel loads a string from the server, the other posts a new one.
+
+Two new items for the Fusion inventory, bringing it to nine components:
+
+| Component | Attributes seen here |
+|---|---|
+| `fusion-textarea` | `[rows]`, `placeholder`, `[(ngModel)]` |
+| `fusion-button` | `label`, `type`, `(click)`, **`[disabled]`** |
+
+`[disabled]` is new and matters — it is the only demonstrated way to gate a
+Fusion control on in-flight state.
+
+### ⚠ HIGH — this page contradicts the other three on every axis that matters
+
+`test-datastore` is well-built in isolation: it has loading states, disabled
+bindings, `:host { display: block }`, and subtitled panel headers. None of the
+other pages do. But it reaches those results by different means than every other
+page in the starter, and an agent has no way to tell which set is canonical.
+
+**State: plain properties, not signals.**
+
+```html
+<pre class="value">{{ displayedText }}</pre>
+[disabled]="isLoading"
+```
+
+No call parentheses. `displayedText`, `isLoading`, `isSaving`, and
+`payloadValue` are ordinary class fields. `home` and `my-entity` both use
+`signal()` and read it as `publicText()` / `entities()`. So the starter teaches
+signals on two pages and plain mutable fields on a third.
+
+**Forms: `[(ngModel)]`, i.e. template-driven.**
+
+```html
+<fusion-textarea [rows]="6" placeholder="Enter text to persist..." [(ngModel)]="payloadValue"></fusion-textarea>
+```
+
+`my-entity` uses `ReactiveFormsModule` with a typed `FormGroup` and
+`formControlName`. This page uses two-way `ngModel`. Angular has treated these as
+two distinct, not-to-be-mixed strategies for a decade. The starter ships both,
+with nothing stating when to use which — and `ngModel` inside a Fusion component
+also implies `FusionTextareaComponent` implements `ControlValueAccessor`, which
+is worth knowing but is nowhere written down.
+
+**Inner layout: raw HTML and hand-rolled CSS, not Fusion.**
+
+```html
+<section class="panel">
+    <header>
+        <h2>Retrieve value</h2>
+        <p class="subtitle">…</p>
+    </header>
+    <div class="value-wrapper">…</div>
+    <div class="panel-actions">…</div>
+</section>
+```
+
+`my-entity` lays out the inside of a grid cell with `fusion-block-grid-*`.
+This page uses `<section>` / `<header>` / `<div>` plus custom SCSS. That is now
+**three** worked answers to "how do I lay out content inside a cell" — Fusion
+grid, Fusion block-grid, and plain HTML — across four pages.
+
+Why this is HIGH rather than a style nit: the frontend swap step asks an agent to
+convert a legacy view into the Fusion idiom. The starter is the answer key. On
+signals-vs-fields, reactive-vs-template forms, and Fusion-vs-hand-rolled layout,
+the answer key gives two or three mutually exclusive answers with equal apparent
+authority, no gate distinguishing them, and no instructions file adjudicating.
+Every participant's agent will pick differently. This is the same failure as the
+`fusion-button` attribute split recorded above, but broader — and taken together
+the two are the strongest evidence so far that the starter needs a documented
+"canonical patterns" pass before the hackathon, not just more content.
+
+The cheapest fix is not to rewrite pages. It is to state the rules — signals over
+fields, reactive over template-driven, Fusion layout components over hand-rolled
+CSS — in `angular.instructions.md`, and to mark whichever page violates them as
+deliberately non-canonical. Agents follow instructions files; they only imitate
+code when the instructions are silent.
+
+### The SCSS defines one of the eight classes the template uses
+
+```scss
+:host {
+    display: block;
+}
+
+.panel-actions {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.panel-actions fusion-button {
+    margin-left: auto;
+}
+```
+
+The template uses `datastore-page`, `panel-row`, `panel`, `subtitle`,
+`value-wrapper`, `value`, `loading`, and `panel-actions`. The component
+stylesheet defines **only** `panel-actions`. The other seven are either global
+(`src/styles.scss`, not yet transcribed), supplied by Fusion, or dead. This is
+the same open question as `title-banner` on `common-components` and `my-entity`,
+and it is now blocking: without `styles.scss` there is no way to tell which
+class names are part of the kit's vocabulary and which are one page's leftovers.
+**`src/styles.scss` is the file I would ask for next.**
+
+Two smaller notes on the stylesheet:
+
+- `:host { display: block; }` is correct Angular practice and this is the **only**
+  page that does it. `home.component.scss` is four lines with no `:host`.
+- `.panel-actions fusion-button { margin-left: auto; }` styles a third-party
+  component's host element from a parent stylesheet. It works, and it is a
+  legitimate technique, but it couples the page to `fusion-button`'s tag name and
+  will silently stop applying if the selector is ever renamed. Worth a note in
+  whatever styling guidance gets written.
+
+### Smaller observations
+
+- **First use of `@else`.** `@if (!isLoading) { … } @else { … }` — with the
+  negated condition first, so the loading branch is the `@else`. Inverting it
+  would read better, but it confirms the `@if`/`@else` block syntax for the
+  frontend-port rules.
+- **`fusion-button` appears here with neither `appearance`/`color` nor `theme`** —
+  just `label`, `type`, `(click)`, `[disabled]`. So both decorative vocabularies
+  are optional, which means the HIGH recorded above is not "one of them is
+  invalid" but "three call sites, three different styling choices, no stated
+  default". That is still worth normalising, and the bare form here is arguably
+  the sanest baseline.
+- **The file has no trailing newline.** Every other file transcribed from the
+  starter ends with one; the editor gutter here stops at line 54 with content on
+  it. `dotnet.instructions.md` mandates `.editorconfig` adherence and the client
+  is Prettier-formatted, both of which normally enforce a final newline — so this
+  file is likely escaping whatever formatter runs in `npm run lint`. Trivial in
+  itself; interesting as a signal that the lint step's coverage is narrower than
+  assumed (the unused `CommonModule` import in `my-entity` points the same way).
+- **`<pre>` for the retrieved value** preserves server whitespace, which is
+  deliberate for a datastore harness and worth keeping if this page is ever
+  used as a parity fixture.
 
 ---
 
@@ -10458,6 +10605,25 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (`pages/test-datastore`)
+
+- **The missing trailing newline was verified, not assumed.** The editor gutter
+  ends at line 54 with content on it and no line 55, which is how VS Code renders
+  a file with no final newline. Every other starter file shows a trailing empty
+  gutter row. The committed copy reproduces this exactly.
+- Gutter-to-line alignment for lines 8-15 was checked by magnifying the region,
+  because the photo's tilt made the mapping ambiguous at a glance. Sequence
+  confirmed: 10 `<section class="panel">`, 11 `<header>`, 12 `<h2>`.
+- `{{ displayedText }}`, `[disabled]="isLoading"`, `[disabled]="isSaving"`, and
+  `[(ngModel)]="payloadValue"` are all transcribed **without** call parentheses,
+  as photographed. That is the basis for the "plain fields, not signals" finding,
+  so it is worth re-checking against `test-datastore.component.ts` when that
+  arrives — if the `.ts` declares them as signals, the template is buggy rather
+  than merely inconsistent.
+- Line counts verified against the gutters: `.html` 54 (no trailing newline),
+  `.scss` 14 (gutter 15).
+- **Still outstanding:** `test-datastore.component.ts` and `.spec.ts`.
 
 ## Transcription uncertainties (`pages/home`, `pages/my-entity`)
 

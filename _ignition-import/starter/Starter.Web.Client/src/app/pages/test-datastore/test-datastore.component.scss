@@ -1,0 +1,14 @@
+:host {
+    display: block;
+}
+
+.panel-actions {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.panel-actions fusion-button {
+    margin-left: auto;
+}

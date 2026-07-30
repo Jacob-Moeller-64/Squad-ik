@@ -1,0 +1,54 @@
+<fusion-grid-container class="datastore-page">
+    <fusion-grid-row>
+        <fusion-grid-cell>
+            <h1>Test Datastore</h1>
+            <p>Persist and read back a simple string from the server for quick verification.</p>
+        </fusion-grid-cell>
+    </fusion-grid-row>
+    <fusion-grid-row class="panel-row">
+        <fusion-grid-cell [smallColumns]="12" [mediumColumns]="6">
+            <section class="panel">
+                <header>
+                    <h2>Retrieve value</h2>
+                    <p class="subtitle">Loads whatever text is currently stored on disk.</p>
+                </header>
+                <div class="value-wrapper">
+                    @if (!isLoading) {
+                        <pre class="value">{{ displayedText }}</pre>
+                    } @else {
+                        <p class="value loading">Loading...</p>
+                    }
+                </div>
+                <div class="panel-actions">
+                    <fusion-button
+                        label="Refresh text"
+                        type="button"
+                        (click)="loadStoredText()"
+                        [disabled]="isLoading"
+                    ></fusion-button>
+                </div>
+            </section>
+        </fusion-grid-cell>
+        <fusion-grid-cell [smallColumns]="12" [mediumColumns]="6">
+            <section class="panel">
+                <header>
+                    <h2>Save new value</h2>
+                    <p class="subtitle">Send a new string for the test datastore file.</p>
+                </header>
+                <fusion-textarea
+                    [rows]="6"
+                    placeholder="Enter text to persist..."
+                    [(ngModel)]="payloadValue"
+                ></fusion-textarea>
+                <div class="panel-actions">
+                    <fusion-button
+                        label="Save text"
+                        type="button"
+                        (click)="saveText()"
+                        [disabled]="isSaving"
+                    ></fusion-button>
+                </div>
+            </section>
+        </fusion-grid-cell>
+    </fusion-grid-row>
+</fusion-grid-container>
