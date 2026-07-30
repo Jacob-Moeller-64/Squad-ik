@@ -150,7 +150,7 @@ pattern-match against.
 | `scripts/shared/field-contract.PARTIAL.ps1` | ★★ **the `opx-field-contract/v1` validator**; ★ its *authoring rule* reframes the loose-schema finding | **PARTIAL** — lines 1-63; 1 of 5 photos read; do not dot-source |
 | `scripts/shared/Invoke-StepReconciliation.PARTIAL.ps1` | ★★★★ **settles the highest-severity finding** — *"a step with no registered rules reconciles to OK"* | **PARTIAL** — 1-67, 274-336, 755-804 of **803**; gaps at 68-273 and 337-754 |
 | `scripts/shared/verify-step-artifacts.PARTIAL.ps1` | ★★★ layer 1 of the two-layer model; ★ **`-EnsureControlPlane` explains why the skeleton stops at 3 files** | **PARTIAL** — lines 1-66; 1 of 5 photos read; do not execute |
-| `scripts/shared/verify-upgrade-invariants.PARTIAL.ps1` | ★★★ the **fourth and last** `shared/` script — catches diamond / split-version breaks a clean build hides | **PARTIAL** — lines 1-66; 1 of 5 photos read; do not execute |
+| `scripts/shared/verify-upgrade-invariants.PARTIAL.ps1` | ★★★ the **fourth and last** `shared/` script — catches diamond / split-version breaks a clean build hides | **PARTIAL** — lines 1-66 + tail 251-307 of **306**; gap 67-250 |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -5510,6 +5510,85 @@ worth noting that this file gets the opt-in shape right.
 kit *reads*. It is listed in the file tree at the repo root and is still
 untranscribed; its content now matters more, because it is the central version
 source this invariant resolves against.
+
+---
+
+### Tail (251-307) — the fix for the behavioural checkpoint is already written, here
+
+The file is **306 content lines**. The tail is the decide/report/exit block, and
+line 292 closes this review's one surviving finding by demonstrating its remedy.
+
+```powershell
+if (-not [string]::IsNullOrWhiteSpace($PublishDir)) {
+  if ($null -eq $publishResolved) {
+    Write-Host ("  [PublishDir] Not found, shipped-vs-compiled cross-check skipped: {0}" -f $PublishDir)
+  }
+```
+
+**This is the same situation as the behavioural-parity checkpoint** — an optional
+cross-check whose input is not present — and it is handled by *saying so*:
+`shipped-vs-compiled cross-check skipped`, with the path that was looked for.
+
+So the tally becomes:
+
+| Situation | Reported? |
+|---|---|
+| reconciliation: no rules registered | ✅ |
+| reconciliation: rule found nothing | ✅ |
+| gate-integrity: no self-tests found | ✅ blocks |
+| verifier: no inputs/outputs declared | ✅ `(none)` |
+| verifier: artefact skipped | ✅ `[Skipped]` |
+| verifier: skeleton materialised | ✅ named |
+| **invariants: publish dir absent, cross-check skipped** | ✅ **`[PublishDir] … skipped`** |
+| behavioural-parity checkpoint not run | ❌ silent |
+
+**Seven to one.** And the seventh is the closest possible analogue — an opt-in
+runtime cross-check, input missing, in the same directory, by the same authors,
+three lines of code.
+
+That retires the last open question about whether the proposed fix is in keeping
+with the kit's design. It is not a recommendation from outside; it is
+`verify-upgrade-invariants.ps1` line 292 applied to
+`verify-step-artifacts.ps1` line 618. The remediation can be written by copying a
+sibling.
+
+### Reporting conventions confirmed
+
+Tag prefixes are consistent and greppable: `[SPLIT]`, `[SHIPPED MISMATCH]`,
+`[PublishDir]`, `[OK]` — and the final line is `RESULT: {0}` where the value is
+`BLOCKED` or `OK`, matching the kit-wide convention with a single exit at the
+bottom.
+
+Note the **positive** confirmations are printed too:
+`"[OK] No product package is split across versions."` and
+`"[OK] Shipped assemblies match the compiled package majors."` The gate states
+what it verified, not only what failed — which is the same property that makes
+the skipped-check line meaningful.
+
+`-AsJson` carries the full structure: `productSplits`, `testOnlyDifferences`,
+`shippedMismatches`, plus `productProjectCount` / `testProjectCount`, so a
+consumer can distinguish "scanned 40 projects, none split" from "scanned 0
+projects" — the counts are in the payload, not just the prose.
+
+---
+
+## Closing summary — `.github/scripts/shared/`
+
+All four scripts touched. Together with `parity/`, this is the enforcement layer,
+and the review of it can be stated in three lines:
+
+1. **The layering is real and complete.** well-formed (`field-contract`) →
+   semantically ready (`verify-step-artifacts`) → true against the workspace
+   (`Invoke-StepReconciliation`) → behaves at runtime (behavioural-parity spec) →
+   plus a dependency-graph invariant (`verify-upgrade-invariants`) that no other
+   layer would catch.
+2. **Three of the four findings I raised against it were wrong**, and each was
+   corrected by the file itself: the schema looseness is deliberate, the
+   reconciliation engine does report zero rules, and extending the skeleton
+   generator would fabricate evidence.
+3. **One survives**: the behavioural-parity checkpoint is the single place in
+   seven that skips silently — and the fix now has a working reference
+   implementation in the same directory.
 
 ---
 
