@@ -148,7 +148,7 @@ pattern-match against.
 | `scripts/parity/selftest-scaffold-debt.PARTIAL.ps1` | ★★★ **fourth** self-test — four of six scanners now confirmed to have paired regression tests | **PARTIAL** — lines 1-65; 1 of 3 photos read; do not execute |
 | `scripts/parity/verify-gate-integrity.ps1` | ★★★★ **the meta-gate** — auto-discovers and runs every `selftest-*.ps1`; ★ **refuses to pass when it finds none** | transcribed from 2 photos — complete (86 content lines) |
 | `scripts/shared/field-contract.PARTIAL.ps1` | ★★ **the `opx-field-contract/v1` validator**; ★ its *authoring rule* reframes the loose-schema finding | **PARTIAL** — lines 1-63; 1 of 5 photos read; do not dot-source |
-| `scripts/shared/Invoke-StepReconciliation.PARTIAL.ps1` | ★★★★ **settles the highest-severity finding** — *"a step with no registered rules reconciles to OK"* | **PARTIAL** — lines 1-67; 1 of 5 photos read; do not execute |
+| `scripts/shared/Invoke-StepReconciliation.PARTIAL.ps1` | ★★★★ **settles the highest-severity finding** — *"a step with no registered rules reconciles to OK"* | **PARTIAL** — lines 1-67 + fragment 274-336; **gap 68-273**; do not execute |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -4886,6 +4886,95 @@ a gate that stops work and a gate that redirects it.
 So reconciliation runs regardless of whether the QA lane is active — which
 matters because the kit has a large `QA/` script directory and a documented
 "No QA" mode. Worth knowing that the truth-checking layer is not gated behind it.
+
+---
+
+### Fragment 274-336 — two working rules, and a refinement of the recommendation
+
+Held as `Invoke-StepReconciliation.FRAGMENT-274-336.ps1`; lines **68-273 remain
+missing**, so it is a separate file rather than a splice. It shows the exemplar
+rule from the synopsis actually implemented, plus the start of a second.
+
+### ★ REFINED — rules already report what they checked
+
+```powershell
+$script:ReconNotes.Add("Catalog root key '$($found.RootKey)', $checked non-deferred testcase(s) with a concrete test file checked.") | Out-Null
+```
+
+The previous entry recommended that the engine report its rule count so exit 0
+from "twelve rules passed" could be distinguished from exit 0 from "zero rules
+ran". **A per-rule version of that already exists.** Every rule appends a
+`ReconNotes` line stating what it examined and how many items it covered — so a
+rule that ran but found nothing to inspect (`$checked = 0`) says so.
+
+That narrows the recommendation usefully. The *rule* layer is already
+self-reporting; the missing piece is one level up — the **engine** saying how
+many rules it loaded for the requested step. Steps 8-16 with no registered rules
+produce no `ReconNotes` at all, which is silence rather than a statement. Adding
+`"Step {N}: {count} rule(s) registered"` to the engine's output completes a
+pattern the rules already follow, and costs a single line.
+
+### ★ The remediation text is the best in the kit
+
+```
+-Message   ("Catalog entry '{0}' (owningStep {1}) names test file '{2}', but that file does not exist." -f $id, $owner, $testFile)
+-Remediation ("Either implement the test at '{0}' as part of Step {1}, or - if this case is intentionally not built - set its status to 'Deferred' with a deferralId and re-run Step 6 to refresh the catalog. Then re-run this reconciliation." -f $testFile, $owner)
+```
+
+Message and remediation are **separate parameters**, and the remediation offers
+*both* legitimate resolutions — implement it, or mark it Deferred with a
+`deferralId` — then names the step to re-run and closes the loop back to this
+gate. An agent handed that text can act without reading the source. This is the
+`.NOTES` quality bar (*"actionable remediation text, not just a description"*)
+being met rather than merely stated.
+
+Note also `Test-CaseDeferred` at the top of the loop: deferred cases are skipped
+before the file check, so the deferral mechanism is honoured by the rule itself,
+consistent with the waiver-honesty discipline in `parity/`.
+
+### ★ Two-producer tolerance is a named, reused concept
+
+```powershell
+# The plan root is not deterministically proven, so probe a bare array root and the
+# common wrapper keys. This mirrors the catalog's two-producer tolerance.
+```
+
+`Get-RouteEntrySet` accepts four possible root shapes (`routes`, `entries`,
+`perRouteBehaviorPlan`, `plan`, or a bare array) and **records which one it
+found** in `RootKey`, which then appears in the `ReconNotes` line. So the engine
+tolerates producer variation without hiding it — the artefact's actual shape is
+reported, not silently normalised.
+
+This is the practical consequence of the schema-level finding recorded earlier:
+several contracts assert no required fields because their producers are
+non-deterministic. Reconciliation is where that ambiguity gets resolved, and it
+resolves it by probing and reporting rather than by assuming.
+
+`ConvertTo-NormalizedRouteToken` is the matching-tolerance layer — lowercase,
+slash unification, stripping `.cshtml|.razor|.html|.cs|.aspx|.ascx`, so
+`Views/Home/Index.cshtml` and `/home/index` compare equal. That is the legacy
+corpus this kit actually targets.
+
+### ⚠ To check — `Invoke-Recon-RouteLegacyReferenceResolve` shows **0 references**
+
+The editor's CodeLens reads `0 references` above that function, while
+`Get-RouteEntrySet` shows `2 references` and `ConvertTo-NormalizedRouteToken`
+shows `1 reference`.
+
+**This is most likely benign.** If `$RuleRegistry` maps steps to function names
+as *strings* and invokes them with `& $name`, PowerShell's CodeLens cannot
+resolve the reference and reports zero — while directly-called helpers count
+normally. That is the expected pattern for a registry-driven engine.
+
+The alternative reading — a reconciliation rule that exists but was never
+registered, and therefore never runs — would be a significant finding, and it is
+not distinguishable from the photo. **`$RuleRegistry` is in the untranscribed
+68-273 range and settles it.** Recorded as a question, not a defect.
+
+Either way it is worth a direct check when the registry is available: a rule that
+is written, tested against a real artefact path
+(`.modernization/portal/data/json/per-route-behavior-plan.json`), and silently
+not wired would be exactly the class of gap this review has been tracking.
 
 ---
 
@@ -14261,9 +14350,12 @@ not corrected:
 
 ## Transcription uncertainties (`shared/Invoke-StepReconciliation.ps1`)
 
-- **PARTIAL — 1 of the 5 photos in the batch was read.** Source lines **1-67**
-  (through `Set-StrictMode`); the rule registry, the rule functions,
-  `Add-Violation`, the engine and the exit are all unphotographed here.
+- **PARTIAL, in two fragments with a known interior gap.** `…PARTIAL.ps1` holds
+  source lines **1-67**; `…FRAGMENT-274-336.ps1` holds **274-336**. **Lines
+  68-273 are not transcribed** — that range contains `$RuleRegistry`,
+  `Add-Violation`, `Get-CaseField`, `Test-CaseDeferred` and the head of
+  `Invoke-Recon-TestcaseFilesResolve` (which the breadcrumb places at line 244).
+  The engine body and exit are also still unseen.
   Delimited trailing note in the committed copy. Must not be executed.
 - All fifteen photographed anchors in range match (14/17 the rule-registration
   paragraph, 22/25 the `Step`/`StepId` parameters, 35 `.OUTPUTS`, 39/42 the two
