@@ -96,6 +96,10 @@ pattern-match against.
 | `starter/Starter.Library/Entities/MyEntity.cs` | reference domain entity | transcribed from 1 photo — complete (source lines 1-28) |
 | `starter/Starter.Web.Client/.vscode/{extensions,launch,tasks}.json` | stock Angular CLI scaffolding — no customisation, no findings | transcribed from 3 photos — complete (4 / 20 / 42 lines) |
 | `starter/Starter.Web.Client/scripts/build.mjs` | Node build wrapper around `ng build` — pre-build hook + `obj/Debug` shim | transcribed from 1 photo — complete (13 content lines) |
+| `starter/Starter.Web.Client/scripts/tools.mjs` | ★★ **the shared shell-out / npm layer for every client script** — `execute`, `npmAuth`, `npmInstall`, `npmUpdate`, `installSafePackages`, `spawn` | transcribed from 4 photos — complete (180 content lines); **1 internal hostname redacted** |
+| `starter/Starter.Web.Client/scripts/pre-build.mjs` | the unconditional pre-build hook: auth → install → clean → lint | transcribed from 1 photo — complete (19 lines) |
+| `starter/Starter.Web.Client/scripts/pre-start.mjs` | `preBuild(true)` + `dotnet dev-certs` trust/export | transcribed from 1 photo — complete (10 content lines) |
+| `starter/Starter.Web.Client/scripts/update.mjs` | `npmAuth()` + `npmUpdate()` — the documented drift-recovery entry point | transcribed from 1 photo — complete (4 content lines) |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -717,100 +721,298 @@ Headline coverage:
 
 ---
 
-## `Starter.Web.Client/scripts/` — the Node build harness (partial)
+## `Starter.Web.Client/scripts/` — the Node build harness
 
-The client does not drive Angular through raw `ng` commands or through
-`dotnet build`; it drives it through a set of hand-written ESM scripts under
-`src/Starter.Web.Client/scripts/`. The file tree lists these, and the user named
-five of them for transcription: `build.mjs`, `clean.mjs`, `install.mjs`,
-`npm-clean.mjs`, `npm-safe-package-installs.mjs`. **Only `build.mjs` is
-transcribed so far** — see the uncertainties note below.
+The client is not driven through raw `ng` commands or through `dotnet build`. It
+is driven through a set of hand-written ESM scripts under
+`src/Starter.Web.Client/scripts/`, and `tools.mjs` is the single module every one
+of them shells out through. Five of the nine files in the folder are now
+transcribed; `clean.mjs`, `install.mjs`, `npm-clean.mjs`, and
+`npm-safe-package-installs.mjs` are still outstanding.
 
-### `build.mjs` (13 content lines)
-
-```
-import process from 'node:process';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { execute } from './tools.mjs';
-import { preBuild } from './pre-build.mjs';
-```
-
-Four structural facts, all of which matter to the pipeline:
-
-**1. There are two more scripts in this folder that were not in the batch.**
-`build.mjs` imports `execute` from `./tools.mjs` and `preBuild` from
-`./pre-build.mjs`. Both appear in the transcribed file tree under
-`Starter.Web.Client/scripts/`, but neither was among the five files named for
-this batch. `tools.mjs` owns `execute()` — the single choke point through which
-every one of these scripts shells out — so it is the highest-value untranscribed
-file in the folder. Added to the outstanding list.
-
-**2. The build is gated on a pre-build hook that runs unconditionally.**
-`await preBuild(false)` is the first statement after the imports; nothing calls
-`ng build` until it resolves. Whatever `pre-build.mjs` does — and the Kendo
-licence patch from `angular.instructions.md` is the obvious candidate for a hook
-in exactly this position — it runs on **every** build, on every developer
-machine and every CI agent, with no opt-out flag visible at this layer. The
-`false` argument is the only knob and its meaning is defined in the file we do
-not have. This is a concrete, checkable version of the risk flagged earlier
-against the `\b174733\d{4}\b` regex: if that patch has been wired into
-`preBuild`, it is no longer a documented manual workaround, it is an automated
-mutation of `node_modules/` at build time. **Cannot be confirmed or ruled out
-until `pre-build.mjs` is transcribed** — flagged, not asserted.
-
-**3. `obj/Debug` is created by hand before `ng build` runs.**
+### The call graph
 
 ```
-await fs.mkdir(path.join(process.cwd(), 'obj', 'Debug'), { recursive: true });
+pre-start.mjs          build.mjs              update.mjs
+  preBuild(true)         preBuild(false)        npmAuth()
+  dotnet dev-certs       mkdir obj/Debug        npmUpdate()
+                         ng build --configuration <x>
+         \                   /                      |
+          `-- pre-build.mjs -'                      |
+               npmAuth()   (start only)             |
+               npmInstall()                         |
+               npm run clean                        |
+               npm run lint                         |
+                         |                          |
+                         `-------- tools.mjs -------'
+                                    execute / executeWithResult / spawn
+                                    npmAuth / npmInstall / npmUpdate
+                                    installSafePackages / removePath
+                                    listFiles / listFolders / getFullPath
+                                    appendLine
+                                         |
+                            npm-safe-package-installs.mjs   (NOT TRANSCRIBED)
+                                    safePackageInstalls
 ```
 
-`obj/Debug` is an MSBuild convention, not an Angular one. Angular has no use for
-it; the directory is created because something downstream in the .NET build
-expects the Angular project to look like a project MSBuild has already touched.
-`recursive: true` makes it idempotent and non-fatal if it already exists. Two
-consequences for the kit: any "clean" step that deletes `obj/` must run *before*
-`build.mjs` rather than after (which is presumably what `clean.mjs` is for), and
-any modernization step that reasons about `obj/**` as a legacy build artifact to
-be purged — `copilot.instructions.md` line 54-55 explicitly names `.vs`/`obj`
-as stale outputs to remove — must not treat this particular `obj/Debug` as
-legacy residue. It is created fresh on every build by design.
+### RESOLVED: the Kendo licence patch is **not** in `pre-build.mjs`
 
-**4. Configuration is selected by a positional `configuration:` argv token, not
-a flag, and it defaults to `local`.**
+Recorded earlier against `build.mjs` as an unconfirmed risk — that
+`await preBuild(false)` might be where the `\b174733\d{4}\b` `node_modules`
+rewrite from `angular.instructions.md` had been automated. **It is not.**
+`preBuild` is nineteen lines and does exactly four things: `npmAuth()` when
+`start` is truthy, `npmInstall()`, `npm run clean`, `npm run lint`. No Kendo
+handling, no `node_modules` mutation, no regex.
 
+The risk does not disappear, it **moves one file over**. `tools.mjs` exports
+`installSafePackages()`, a general-purpose mechanism for running a script *inside
+an already-installed package* with `--ignore-scripts` turned back off:
+
+```js
+for (const safePackage in safePackageInstalls) {
+    const packagePath = path.join(nodeModulesPath, safePackage);
+    if (fs.existsSync(packagePath)) {
+        console.log(`installing safe package - ${safePackage}`);
+        await execute(`npm run ${safePackageInstalls[safePackage]} --ignore-scripts false`, packagePath);
+    }
+}
 ```
-const configuration = process.argv.find((p) => p.startsWith('configuration:'))?.replace('configuration:', '') || 'local';
+
+`installSafePackages` is called from **both** `npmInstall` and `npmUpdate`, i.e.
+on every install and every update. The package → script map lives in
+`npm-safe-package-installs.mjs`, which is the one file in this folder that is
+both untranscribed and load-bearing. `@progress/kendo-licensing` ships a
+`postinstall` that runs `kendo-ui-license activate` — a package whose install
+script is suppressed globally and then re-run deliberately is precisely the shape
+this mechanism exists for. **Strong hypothesis, not confirmed.**
+`npm-safe-package-installs.mjs` settles it, and is now the highest-priority file
+in the folder.
+
+Note what this implies about the surrounding npm config: running with
+`--ignore-scripts false` per-package only makes sense if `ignore-scripts=true` is
+set globally in `.npmrc`. That is a *good* supply-chain posture — lifecycle
+scripts off by default, allow-listed back on one package at a time — and worth
+calling out as a strength, because the kit does not document it anywhere.
+
+### CONFIRMED: Sonatype, and `npmAuth` is now a no-op
+
+`copilot.instructions.md`'s "treat Sonatype as the required npm source" is
+implemented here, though not the way the prose suggests. `npmAuth` reads
+`.npmrc`, and if it contains the Sonatype host it logs two lines and returns:
+
+```js
+const npmrcPath = path.join(projectDirectory, '.npmrc');
+const npmrc = await fsPromises.readFile(npmrcPath, 'utf8');
+
+if (npmrc.includes('<SONATYPE-NPM-HOST>')) {
+    console.log('using Sonatype npm registry configuration from .npmrc');
+    console.log('npmAuth is a no-op for Sonatype-backed installs; provide auth through user or environment npm config when needed.');
+    return;
+}
 ```
 
-This is a bespoke argument convention — not `--configuration`, not an env var,
-and not anything `npm` or `ng` parses natively. It scans the whole of
-`process.argv` for the first token starting with `configuration:` and strips the
-prefix. Three things follow:
+The Azure Artifacts auth flow it replaced has been removed, and the `win32`
+branch now only logs *"legacy npm auth flow detected, but Azure Artifacts auth is
+no longer used by this workspace."* The `installVsts` parameter on the signature
+is vestigial — never read. So is `projectDirectory` in practice: every call site
+(`pre-build.mjs`, `update.mjs`) invokes `npmAuth()` with no arguments.
 
-- The default is **`local`**, so a bare `npm run build` produces a *local*
-  configuration build. Any pipeline step that shells `npm run build` and then
-  asserts on production-shaped output will be reading a local build unless it
-  passes the token explicitly.
-- Because it is a bare positional token, it must survive `npm run` argument
-  forwarding (`npm run build -- configuration:production`), and the `--`
-  separator is easy to omit. There is no validation and no allow-list: an
-  unrecognised or misspelled value is passed straight through to
-  `ng build --configuration <value>`, where Angular decides whether to fail.
-- A typo'd token (e.g. `config:production`) does not error — `find` returns
-  `undefined` and the script silently falls back to `local`. That is a
-  fail-quiet path in a build script, and it is the kind of thing that produces
-  "it worked on my machine" drift across a hackathon-scale rollout.
+**The hostname was redacted on transcription** — the literal is replaced with
+`<SONATYPE-NPM-HOST>` in the committed copy. It is a real internal registry
+hostname and falls under the standing no-internal-hostnames rule. Flagged for the
+same restore-or-placeholder decision still pending on `AppInfo.xml` and
+`appsettings.json`. If the kit adopts the placeholder approach recommended there,
+this string should resolve from `kit-params.md` too — a starter that hard-codes
+one company's registry host cannot be handed to anyone else.
 
-The `configuration` value is echoed to stdout before the build runs, which is
-the one mitigation: the log line `building with configuration: local` is
-evidence a gate could assert on.
+### ⚠ HIGH — `npmAuth` throws ENOENT on a missing `.npmrc`, killing first run
 
-**Not present in `build.mjs`:** no Sonatype registry configuration, no Kendo
-licence handling, no `npm ci`/`npm install` invocation, no error handling around
-`execute`, no exit-code management. Whatever the kit's Sonatype-only npm policy
-looks like in practice, it is not in the build script — the candidates are
-`install.mjs` and `npm-safe-package-installs.mjs`, both still outstanding.
+```js
+const npmrc = await fsPromises.readFile(npmrcPath, 'utf8');
+```
+
+Unguarded. No `existsSync`, no `try`/`catch`, no default. If
+`src/Starter.Web.Client/.npmrc` is absent — a fresh clone where `.npmrc` is
+gitignored, a CI agent that provisions the registry through environment config
+rather than a file, a developer who cleaned their tree — this rejects with
+`ENOENT`, and because it is awaited at the top of `preBuild(true)` with no
+handler above it, `npm start` dies immediately with a stack trace about a missing
+file rather than anything resembling "configure your npm registry".
+
+`npmAuth()` is the **first statement executed** by `pre-start.mjs` and by
+`update.mjs`. For a hackathon where several hundred people clone the starter and
+run `npm start`, this is the most likely first-contact failure in the whole
+client, and its error message points at the wrong problem. A three-line guard
+(`if (!fs.existsSync(npmrcPath)) { console.log('no .npmrc found...'); return; }`)
+removes it.
+
+The softer sibling: if `.npmrc` exists but does not mention Sonatype, `npmAuth`
+logs *"manual npm authentication is required for non-Sonatype registries."* and
+**returns normally**. The install then proceeds against whatever registry is
+configured and fails on 401s, several steps removed from the log line that
+explained why.
+
+### ⚠ HIGH — install failure is caught, `node_modules` is deleted, and the run continues
+
+Both `npmInstall` and `npmUpdate` end the same way:
+
+```js
+} catch (error) {
+    console.error(`Error installing packages: ${error.message}`);
+
+    // Attempt to remove node_modules
+    ...
+    await removePath(nodeModulesPath);
+}
+```
+
+The catch logs, deletes `node_modules`, and **does not rethrow and does not set a
+non-zero exit code**. Control returns to `preBuild`, which proceeds to
+`npm run clean`, then `npm run lint`, then `build.mjs` runs `ng build` — all
+against a tree whose `node_modules` was just removed. What the developer sees is
+a downstream module-resolution error; the real cause scrolled past several
+commands earlier.
+
+This is also the explanation for the drift-recovery order the kit documents
+(`npm run update` → `npm run install` → `npm run start`). That sequence is not a
+convention, it is a **workaround for this exact behaviour**: because a failed
+install silently destroys `node_modules` and keeps going, recovery has to be
+driven by hand, one command at a time, checking output between each. Fixing the
+error handling would make most of the documented dance unnecessary.
+
+For a kit whose first principle is *"gates are scripts, not opinions"* and whose
+convention is `RESULT: OK` (exit 0) / `RESULT: BLOCKED` (exit 2), a build harness
+that exits 0 after a failed dependency install is the sharpest internal
+inconsistency found in the starter so far.
+
+### ⚠ MEDIUM — `npmInstall` can never re-install, and `force` is unreachable
+
+```js
+if (fs.existsSync(nodeModulesPath) && !force) {
+    console.log('node_modules already exists, skipping install...');
+    return;
+}
+```
+
+`preBuild` calls `npmInstall()` with no arguments, so `force` is `undefined`.
+Once `node_modules` exists, **`npm ci` / `npm install` never runs again** — a
+changed `package.json` or `package-lock.json` is simply not picked up by
+`npm start` or `npm run build`. And `preBuild(start)` accepts only `start`, so
+there is no path from `pre-start.mjs` or `build.mjs` to set `force` at all. The
+only file that could pass it is `install.mjs`, still untranscribed.
+
+Combined with the previous finding, that is the whole drift story in two lines of
+code: stale dependencies are never refreshed automatically, and when a refresh is
+forced and fails, the tree is deleted without stopping the build.
+
+### ⚠ MEDIUM — `exec` buffering will fail real builds
+
+`execute` and `executeWithResult` are both built on
+`util.promisify(child_process.exec)`, which **buffers the child's entire stdout
+in memory** and rejects with `ERR_CHILD_PROCESS_STDIO_MAXBUFFER` past Node's
+1 MiB default. `npm ci` on an Angular workspace and a full `ng build` both emit
+well over 1 MiB. When it trips, the failure reported is a truncation error, not
+the build error — and per the finding above, `npmInstall` will then delete
+`node_modules` and carry on.
+
+The same choice costs all streaming output: nothing prints until the command
+completes, so a multi-minute `npm ci` looks like a hang. `spawn` with inherited
+stdio is the usual answer; `tools.mjs` already exports a `spawn`, but it is
+configured for the opposite purpose (below).
+
+### ⚠ MEDIUM — `executeWithResult` treats any stderr as failure
+
+```js
+if (stderr) {
+    throw new Error(`${stderr}`);
+}
+```
+
+stderr is not an error channel for most of the tools in this stack. `npm`, `ng`,
+`git`, and `dotnet` all write warnings, deprecation notices, and progress to
+stderr on **successful** exit-0 runs. `executeWithResult` throws on all of them,
+discarding the stdout it was called to return. Any gate or script built on it
+will report BLOCKED for a command that succeeded — a false-negative generator
+inside a kit that treats gate output as ground truth. The correct test is the
+exit code, which `exec` already surfaces by rejecting.
+
+`executeWithResult` is not called by any transcribed file; its callers are
+presumably among the four outstanding scripts.
+
+### ⚠ MEDIUM — `pre-start.mjs` writes an unencrypted dev private key into the source tree
+
+```js
+await execute(`dotnet dev-certs https --trust`);
+await execute(`dotnet dev-certs https --export-path ./cert.pem --format Pem --no-password`);
+```
+
+Three problems, ascending:
+
+1. `--trust` runs on **every** `npm start`. On Windows it is idempotent and
+   quiet; on macOS and Linux it prompts for credentials, which in a CI or
+   container context is an interactive hang rather than a clean failure.
+2. `--format Pem` makes `dotnet dev-certs` write **two** files — `cert.pem` and
+   `cert.key` — and `--no-password` means the key file is **unencrypted**. Both
+   land in `./`, which for `pre-start.mjs` is the client project directory, i.e.
+   inside the repository working tree.
+3. Nothing transcribed so far shows `cert.pem` / `cert.key` being gitignored.
+   **Needs checking against the client `.gitignore`** (not yet transcribed). If it
+   is not covered, every participant who commits after an `npm start` commits a
+   private key. It is only a localhost development key, so the blast radius is
+   small — but "a `.key` file committed by default" is the kind of thing that
+   trips org-wide secret scanning and costs a day.
+
+Recorded as a to-verify rather than a confirmed defect, since `.gitignore` may
+well cover it.
+
+### `spawn()` is fire-and-forget and cannot be gated on
+
+```js
+export function spawn(command, args, workingDir) {
+    const child = child_process.spawn(command, args, {
+        cwd: workingDir,
+        detached: true,
+        env: process.env,
+        shell: true,
+        stdio: 'ignore'
+    });
+    child.unref();
+}
+```
+
+`detached: true` + `stdio: 'ignore'` + `unref()` means the caller gets no output,
+no exit code, and no completion signal — the child deliberately outlives the
+parent. That is the right shape for "start a dev server and let it run", and the
+wrong shape for anything a gate must observe. No transcribed file calls it yet.
+`shell: true` with uninterpolated `command`/`args` is also a shell-metacharacter
+surface; low risk in a build script, but arguments must never come from file
+contents or CI variables without quoting.
+
+### Smaller observations
+
+- **`update.mjs` imports `npmInstall` and never uses it.** Four lines of code, one
+  of them dead. `preBuild` runs `npm run lint` on every build, so either lint does
+  not cover `scripts/**` or `no-unused-vars` is off — a small piece of evidence
+  about the real lint scope, which matters because the pipeline leans on lint as a
+  quality signal.
+- **`getFullPath` uses `entry.parentPath`**, which is Node ≥ 20.12 / ≥ 21.4
+  (`dirent.path` before that). An undeclared minimum-Node constraint: the kit pins
+  package versions in `pins.json`, but nothing transcribed so far pins the Node
+  major, and on Node 18 this returns `undefined/<name>` silently rather than
+  throwing.
+- **Ordering.** `preBuild` runs `npm run clean` *after* install and *before* lint;
+  `build.mjs` then re-creates `obj/Debug`. That ordering is why the `mkdir` in
+  `build.mjs` exists at all — `clean` removes the directory the .NET side expects
+  to be present.
+- **`appendLine`, `listFiles`, `listFolders`, `getFullPath`** have no callers among
+  the transcribed files. They are a utility surface for the four outstanding
+  scripts (most likely `clean.mjs` and `npm-clean.mjs`, which would need directory
+  walking).
+- **No top-level error handling anywhere.** None of `build.mjs`, `pre-start.mjs`,
+  or `update.mjs` wraps its top-level `await`s. An unhandled rejection in an ESM
+  entry point exits non-zero with a stack trace, which is at least honest — but it
+  means the *only* place failures are swallowed is the one place where it matters
+  most: dependency install.
 
 ---
 
@@ -9884,12 +10086,32 @@ not corrected:
 
 ## Transcription uncertainties (`Starter.Web.Client/scripts/`)
 
-- The batch contained five photos: `build.mjs`, `clean.mjs`, `install.mjs`,
-  `npm-clean.mjs`, `npm-safe-package-installs.mjs`. **Only `build.mjs` was read.**
-  The context window ended mid-batch and the remaining four images are no longer
-  retrievable, so the other four files are *not* transcribed and are not guessed
-  at. Re-send needed.
-- `build.mjs` line 11 is a single long line in the source (the `configuration`
-  const). Transcribed unwrapped; the photo showed it soft-wrapped across two
-  editor rows with no continuation character, so this is a wrap, not a line break.
-- Line 14 of the file is blank (13 content lines + trailing newline).
+- **Redaction applied.** `tools.mjs` line 91 tests `.npmrc` for a literal internal
+  Sonatype registry hostname. The committed copy substitutes
+  `<SONATYPE-NPM-HOST>`. This is the only redaction in the folder. The
+  restore-or-placeholder decision is still pending, together with `AppInfo.xml`
+  and `appsettings.json`.
+- `tools.mjs` line 52 reads `npm run ${safePackageInstalls[safePackage]} --ignore-scripts false`
+  in the photo — a **space** before `false`, not `=`. Transcribed as photographed.
+  If the source is actually `--ignore-scripts=false` the behaviour differs, so
+  this is worth re-checking against the real file rather than taking from the
+  transcription.
+- `tools.mjs` has **no blank line between lines 102 and 103** (`npmAuth`'s closing
+  brace and `export async function npmInstall`). Every other top-level function in
+  the file is separated by one. Preserved as-is; confirmed across the photo
+  overlap, so it is a source formatting slip, not a transcription artefact.
+- `tools.mjs` does not import `console` (it uses the global), while `pre-start.mjs`
+  does `import console from 'node:console'`. Inconsistent but harmless;
+  transcribed as photographed in both.
+- Line counts verified against the photo gutters: `tools.mjs` 180 content lines
+  (gutter ends at 181), `pre-build.mjs` 19, `pre-start.mjs` 10 (gutter 11),
+  `update.mjs` 4 (gutter 5), `build.mjs` 13 (gutter 14). All five parse as valid
+  ESM under `node --check`.
+- Photo overlaps used to join the four `tools.mjs` images: 42-55 / 57-67, 103-120,
+  and 136-140. Every join was verified on at least four common lines.
+- `build.mjs` line 11 is one long line in the source (the `configuration` const),
+  soft-wrapped in the photo with no continuation character.
+- **Still outstanding in this folder:** `clean.mjs`, `install.mjs`, `npm-clean.mjs`,
+  `npm-safe-package-installs.mjs`. The last is the important one — it holds the
+  `safePackageInstalls` map and therefore decides whether the Kendo licence patch
+  is automated.
