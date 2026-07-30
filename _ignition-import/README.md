@@ -148,7 +148,7 @@ pattern-match against.
 | `scripts/parity/selftest-scaffold-debt.PARTIAL.ps1` | ★★★ **fourth** self-test — four of six scanners now confirmed to have paired regression tests | **PARTIAL** — lines 1-65; 1 of 3 photos read; do not execute |
 | `scripts/parity/verify-gate-integrity.ps1` | ★★★★ **the meta-gate** — auto-discovers and runs every `selftest-*.ps1`; ★ **refuses to pass when it finds none** | transcribed from 2 photos — complete (86 content lines) |
 | `scripts/shared/field-contract.PARTIAL.ps1` | ★★ **the `opx-field-contract/v1` validator**; ★ its *authoring rule* reframes the loose-schema finding | **PARTIAL** — lines 1-63; 1 of 5 photos read; do not dot-source |
-| `scripts/shared/Invoke-StepReconciliation.PARTIAL.ps1` | ★★★★ **settles the highest-severity finding** — *"a step with no registered rules reconciles to OK"* | **PARTIAL** — lines 1-67 + fragment 274-336; **gap 68-273**; do not execute |
+| `scripts/shared/Invoke-StepReconciliation.PARTIAL.ps1` | ★★★★ **settles the highest-severity finding** — *"a step with no registered rules reconciles to OK"* | **PARTIAL** — 1-67, 274-336, 755-804 of **803**; gaps at 68-273 and 337-754 |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -4975,6 +4975,111 @@ Either way it is worth a direct check when the registry is available: a rule tha
 is written, tested against a real artefact path
 (`.modernization/portal/data/json/per-route-behavior-plan.json`), and silently
 not wired would be exactly the class of gap this review has been tracking.
+
+---
+
+### Tail (755-804) — RETRACTION: the engine already reports zero rules
+
+The file is **803 content lines**. The tail settles the last open point, and it
+does so against me.
+
+```powershell
+if ($ruleNames.Count -eq 0) {
+  Write-Host "  No reconciliation rules are registered for this step." -ForegroundColor DarkGray
+  Write-Host ""
+  Write-Host "RESULT: OK - nothing to reconcile for this step." -ForegroundColor Green
+  exit 0
+}
+```
+
+**RETRACTED.** Two entries above recommended that the engine report how many
+rules it loaded, on the grounds that *"a step that shells the engine and gets
+exit 0 cannot tell whether twelve rules passed or zero rules ran."*
+
+**It can.** The engine emits four distinct `RESULT:` strings:
+
+| Condition | Output |
+|---|---|
+| no rules registered | `RESULT: OK - nothing to reconcile for this step.` |
+| rules ran, all passed | `RESULT: OK - all reconciliation rules passed.` |
+| rules ran, non-blocking issues | `RESULT: OK (with N warning(s)) - no blocking reconciliation issues.` |
+| blocking violations | `RESULT: BLOCKED - N reconciliation issue(s) need attention (see Fix lines above).` |
+
+And it prints an explicit `"No reconciliation rules are registered for this
+step."` line before the verdict. The distinction I said was invisible is stated
+twice, in plain English, on the happy path.
+
+The machine-readable path carries it too:
+
+```powershell
+[pscustomobject]@{
+    step       = $Step
+    rulesRun   = $ruleNames
+    ...
+} | ConvertTo-Json -Depth 6
+```
+
+`-AsJson` emits **`rulesRun`** — the actual rule names — so any caller can test
+`rulesRun.Count -eq 0` programmatically. That is strictly better than the rule
+count I proposed adding.
+
+#### What survives of the highest-severity finding
+
+Tracking the whole chain honestly, because it moved three times:
+
+1. *`control-point-inventory.json` is a `hardStop` for nine steps but validated
+   only as a non-empty object.* → **Reframed.** `field-contract.ps1`'s authoring
+   rule shows the looseness is deliberate: contracts must pass on a legitimately
+   initialized artifact.
+2. *No reconciliation rule covers it before Step 17.* → **Confirmed**, and
+   documented by the kit as designed (`"A step with no registered rules
+   reconciles to OK"`).
+3. *And that is indistinguishable from success at the call site.* → **Wrong.**
+   Retracted here.
+
+What is left is a plain coverage statement, not a defect: **steps 8-16 have no
+reconciliation rules registered, and the tool says so every time it runs.** That
+is a backlog item with a documented two-step extension path
+(`Invoke-Recon-<Name>` + `$RuleRegistry`), openly reported by the engine itself —
+not a silent failure, and not the highest-severity finding in the kit. It should
+not have been rated as one past the point where `field-contract.ps1` explained
+the schema looseness; I carried the severity forward one file too long.
+
+### ★ Operator guidance on the BLOCKED path
+
+```powershell
+Write-Host "          These are content-truth problems, not shape problems: the file is valid JSON but disagrees with the workspace." -ForegroundColor DarkGray
+```
+
+Printed under every BLOCKED verdict. It pre-empts the exact wrong reaction — a
+developer seeing a reconciliation failure and going to look for malformed JSON.
+Together with the per-violation `Fix:` line, a blocked run tells you *what*
+disagrees, *why* it is not a syntax problem, and *how* to resolve it.
+
+### ★ Violations carry severity, and warnings do not block
+
+```powershell
+$tag = if ($v.Severity -eq 'block') { '[BLOCK]' } else { '[warn] ' }
+```
+
+Two severities, with `warn` reported but non-blocking and surfaced in the final
+verdict (`OK (with N warning(s))`). Same Major/Minor discipline as the `parity/`
+gates, and the same refusal to silently drop the non-blocking class.
+
+### Closing note on `shared/`
+
+Two of four files partially seen. Both are markedly higher quality than the
+review's early findings implied, and both corrected something I had asserted:
+`field-contract.ps1` explained the deliberate schema looseness, and this file
+disproved the visibility gap outright.
+
+The pattern across `.github/scripts/` is now consistent enough to state as a
+conclusion: **where this kit looks underspecified, the specification is usually
+one file further in.** The remaining recommendations against the gate layer —
+zero-input guards on four `scan-*` scripts, one empty-input case per self-test,
+the `\b` verb regex, `shared/` extraction — should each be re-verified against
+the actual file before being acted on, because three of the four largest findings
+in this review dissolved on contact with the source.
 
 ---
 
