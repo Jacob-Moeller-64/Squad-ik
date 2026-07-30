@@ -110,6 +110,8 @@ pattern-match against.
 | `starter/.../pages/test-datastore/test-datastore.component.html` | ⚠ **contradicts the other pages**: plain fields, `[(ngModel)]`, hand-rolled layout; adds `fusion-textarea` + `[disabled]` | transcribed from 1 photo — complete (54 lines, **no trailing newline**) |
 | `starter/.../pages/test-datastore/test-datastore.component.scss` | `:host` + `.panel-actions`; defines 1 of the 8 classes the template uses | transcribed from 1 photo — complete (14 content lines) |
 | `starter/.../pages/test-datastore/test-datastore.component.ts` | private signals behind public getters (for `[(ngModel)]`); the only `try`/`finally` in the client | transcribed from 2 photos — complete (74 lines, **no trailing newline**) |
+| `starter/.../services/my-entities/my-entities.service.ts` | ★★ **confirms `FusionHttpService`** — the only worked example of client→API calls; ⚠ cached GETs, inverted arg order | transcribed from 1 photo — complete (26 content lines) |
+| `starter/.../services/my-entities/my-entities.services.spec.ts` | ⚠ **empty file** — zero-byte, no frontend testing exemplar | recorded as blank per the source |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -1373,6 +1375,164 @@ The recommendation is unchanged and, if anything, better supported: the fix is a
 documented canonical-patterns statement in `angular.instructions.md`, not more
 starter pages. Three of the four divergences here are the kind a linter should
 catch and evidently does not.
+
+---
+
+## `src/app/services/my-entities/` — `FusionHttpService`, and two real traps
+
+`my-entities.service.ts` is 26 lines and is the most consequential client file
+after `home.component.ts`, because it is the only worked example of how a
+modernized app talks to its API. The spec file beside it is **empty**.
+
+```ts
+@Injectable({
+    providedIn: 'root'
+})
+export class MyEntitiesService {
+    private readonly _fusionHttp = inject(FusionHttpService);
+
+    async get(): Promise<MyEntity[]> {
+        return (await this._fusionHttp.get<MyEntity[]>('MyEntities', { useCache: false })) ?? [];
+    }
+```
+
+### CONFIRMED: HTTP goes through `FusionHttpService`, not `HttpClient`
+
+Tenth export confirmed from `@fusion/ngx-fusion`, and structurally the most
+important one. No `HttpClient`, no `provideHttpClient()`, no interceptor, no
+`firstValueFrom` — the whole Angular HTTP stack is replaced by a Fusion service
+with a promise-based API. Relative URLs (`'MyEntities'`) imply it resolves a base
+URL from Fusion config, which is presumably what `fusion.config.*.ts` supplies
+per environment.
+
+For the modernization steps this is a hard rule that nothing currently states:
+**a ported service must not inject `HttpClient`.** An agent modernizing an
+AngularJS `$http` or an Angular 12 `HttpClient` service will reach for
+`HttpClient` by default, and it will compile, run, and even work against a
+same-origin dev server — while bypassing whatever Fusion layers on top
+(base URL, auth headers, caching, `actionName` auditing). That is a silent,
+functional-looking wrong answer, which is the worst category.
+
+### ⚠ HIGH — `get` and `post`/`put` take their arguments in opposite orders
+
+```ts
+this._fusionHttp.get<MyEntity[]>('MyEntities', { useCache: false });          // url first
+this._fusionHttp.put(entity, `MyEntities/${entity.id}`, { actionName });      // BODY first
+this._fusionHttp.post(entity, 'MyEntities', { actionName });                  // BODY first
+```
+
+`get(url, options)` but `post(body, url, options)`. Within one service, in
+adjacent methods.
+
+This is also inverted relative to Angular's `HttpClient.post(url, body, options)`,
+which every agent and every developer in the building has memorised. TypeScript
+will catch the straightforward transposition — passing a string where an object
+body is expected — so this is not a silent-runtime-failure class defect. It is a
+friction and confidence defect: people will write it backwards, get a red
+squiggle, and conclude they have misunderstood the API rather than that the API
+is inconsistent.
+
+For the kit, the mitigation is cheap and does not require changing
+`@fusion/ngx-fusion`: state the signatures explicitly in
+`angular.instructions.md`, with these three lines as the reference. That is
+exactly the kind of thing an instructions file is for, and it is currently absent.
+
+### ⚠ HIGH — `FusionHttpService` caches GETs by default
+
+```ts
+this._fusionHttp.get<MyEntity[]>('MyEntities', { useCache: false })
+```
+
+The explicit `useCache: false` only makes sense if the default is `true`. So
+every GET issued through Fusion without that option is served from a cache whose
+TTL and invalidation rules are not visible anywhere in the starter.
+
+This is the finding with the most direct consequences for the pipeline, and it is
+worth being precise about why. The kit's central verification mechanism is
+behavioural parity: characterization tests and golden-master diffs against the
+legacy app (D-001 treats them as evidence). A modernized app whose reads are
+transparently cached will:
+
+- pass a first-run parity check and fail a re-run, or vice versa;
+- show stale data after a write that the legacy app showed immediately;
+- produce **intermittent** golden-master diffs, which are the most expensive kind
+  to debug because they look like flakiness rather than a defect.
+
+`MyEntitiesService.get()` opts out — but `save()` is followed in the component by
+another `get()`, so the author clearly hit this and worked around it locally.
+Nothing propagates that knowledge to anyone porting a different service.
+
+Two concrete recommendations, in priority order:
+
+1. State the default in `angular.instructions.md`, and make "reads that back a
+   parity assertion must pass `useCache: false`" an explicit rule.
+2. Consider a gate: grep ported services for `_fusionHttp.get(` without
+   `useCache`, and report it. This is mechanically checkable, unlike most of the
+   frontend rules, which makes it a rare candidate for a real gate rather than
+   guidance.
+
+### `actionName` is demonstrated and then never used
+
+`save(entity: MyEntity, actionName?: string)` threads an optional `actionName`
+into both write paths. `MyEntityComponent.submitEntity()` calls
+`this._myEntities.save(this.entityForm.value as MyEntity)` — **no second
+argument**. So the starter defines an audit/telemetry hook, plumbs it through,
+and then demonstrates calling it without.
+
+If `actionName` feeds server-side audit logging — plausible for a utility, and
+consistent with the `Fusion.Fx.Logging.Providers.FusionApi` package pinned in the
+API `.csproj` — then the one worked example teaches the non-compliant call. Worth
+resolving before the hackathon: either the parameter is required in practice, in
+which case the exemplar should pass it and the instructions should say so, or it
+is genuinely optional and that should be stated too.
+
+Small style note in the same line: `{ actionName: actionName }` rather than the
+shorthand `{ actionName }`. Another divergence a linter would normally flag
+(`object-shorthand`), joining the growing list.
+
+### ⚠ MEDIUM — the spec file is empty
+
+`my-entities.services.spec.ts` is a **zero-byte file**. The Angular CLI generates
+a working `should be created` spec for every service; this one has been emptied
+rather than removed.
+
+That matters more here than it would in an ordinary repo. `.squad/decisions.md`
+D-001 makes characterization tests *evidence* — they cannot be modified without a
+logged intentional-behaviour-change entry — and the pipeline has explicit testing
+steps driven by `testing-design-contract.instructions.md` and
+`tests-commenting.instructions.md` (the Gherkin-in-comments convention:
+`CaseId` / `Scenario` / `Description` / `Input` / `Expected`, then `Given` /
+`When` / `Then`). An agent asked to write frontend tests to that convention has
+**no worked example on the client side at all** — the starter's only spec files
+are this empty one and the three page specs, which are still untranscribed and
+may well be in the same state.
+
+An empty file is also worse than no file: it satisfies a "does a spec exist"
+check while providing zero coverage, and Karma will report it as a passing suite
+with zero tests.
+
+Recommendation: one real spec here, written to the kit's own Gherkin-comment
+convention, would serve as the frontend testing answer key the same way
+`PublicTextService` serves for the backend. Same argument as the
+`common-components` page, and cheaper.
+
+### Smaller observations
+
+- **`providedIn: 'root'`** — standard, correct, and worth contrasting with the
+  backend: `MyService` was flagged HIGH for holding a mutable
+  `Dictionary<Guid, MyEntity>` in a singleton. Root-provided is fine on the
+  client because this service is stateless.
+- **`?? []` on the GET** means `FusionHttpService.get<T>()` can resolve
+  null/undefined. Defensive and correct; also a signal that the return type is
+  nullable, which a ported service should handle the same way.
+- **Upsert by `entity.id` truthiness** — PUT when present, POST when not. Lines up
+  with `my-entity.component.ts`, where a new entity's form has `id: null` and
+  `edit()` populates it. Coherent across the two files.
+- **`save()` returns the new id** and `submitEntity()` discards it in favour of a
+  full refetch. Consistent with the read-after-write pattern noted elsewhere;
+  fine at starter scale, wasteful at list scale.
+- **The editor shows 3 unresolved diagnostics**, same `node_modules` signature as
+  the other files. Not a defect in the file.
 
 ---
 
@@ -10738,6 +10898,25 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (`services/my-entities`)
+
+- **Filename needs confirming.** The spec was reported as
+  `my-entities.services.spec.ts` — **"services" plural** — beside
+  `my-entities.service.ts` singular. Recorded under the name as given, but this
+  may be a typo in the message rather than in the repo. If the repo really does
+  spell it plural it is worth fixing: it still matches Angular's `**/*.spec.ts`
+  glob so nothing breaks, but it will not be found by anyone searching for the
+  service's own name.
+- The spec is recorded as a **zero-byte file**, per "there is a blank file called
+  …". Its emptiness is the finding; there was no photo of it to verify against.
+- `my-entities.service.ts` lines 12, 18, and 21 are long single lines whose tails
+  render alongside the following gutter number because of the photo's tilt. Each
+  was resolved by measuring the row slope; lines 13, 19, and 22 are `}`,
+  `id = entity.id;`, and `}` respectively.
+- `{ actionName: actionName }` is transcribed longhand exactly as photographed,
+  not normalised to the `{ actionName }` shorthand.
+- Line count verified against the gutter: 26 content lines (gutter 27).
 
 ## Transcription uncertainties (`pages/test-datastore`)
 - `test-datastore.component.ts` line 4 is a single ~190-character import. The
