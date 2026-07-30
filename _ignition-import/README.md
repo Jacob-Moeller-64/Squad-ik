@@ -138,6 +138,7 @@ pattern-match against.
 | `starter/Starter.Web.Client/AppInfo.xml` | ★ **already uses the `{Placeholder}` convention** — no redaction needed | transcribed from 2 photos — complete (77 lines, validates as XML) |
 | `starter/Starter.Web.Client/Starter.Web.Client.esproj` | `ShouldRunNpmInstall=false`; maps MSBuild onto the npm scripts | transcribed from 1 photo — complete (11 content lines) |
 | `scripts/parity/scan-api-dto-coverage.ps1` | ★★ **the first real gate** — legacy-anchored DTO field coverage; confirms `kit-params.md` `appName` resolution; ⚠ passes vacuously when nothing is scanned | transcribed from 4 photos — complete (222 content lines) |
+| `scripts/parity/scan-backend-parity.ps1` | ★★ endpoint-level sibling; quantified postmortem (35 mutations → 0, shipped green); ⚠ same vacuous pass, ⚠ `controller\|verb` key under-counts | transcribed from 5 photos — complete (241 content lines) |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -3272,6 +3273,225 @@ arrive: **does this script distinguish "I checked and found nothing wrong" from
 "I could not check"?** On the evidence of this file, that question is the highest
 -yield thing to ask of the remaining `parity/`, `P2-Modernize/verify-*` and
 `shared/verify-*` scripts.
+
+---
+
+## `parity/scan-backend-parity.ps1` (241 lines) — the sibling gate, and the pattern generalises
+
+The second `parity/` gate, and the stronger of the two. Same legacy-anchored
+philosophy, same `kit-params.md` resolution, same waiver registry, same `0`/`2`
+exit contract — applied to **endpoints** rather than DTO fields. Together the pair
+covers the two ways a modernization loses functionality silently:
+
+| Gate | Question |
+|---|---|
+| `scan-api-dto-coverage` | did the *fields* survive? |
+| `scan-backend-parity` | did the *endpoints* survive? |
+
+That is a coherent design, and both are anchored on the legacy side. Whoever
+wrote these understood the problem properly.
+
+### The postmortem is quantified, and it names three gates that passed
+
+```
+A modernization can rebuild the READ path (queries, grids, search) perfectly and render live
+data, while quietly dropping the entire WRITE path (Add / Edit / Delete / Link / Export). The
+UI still shows the buttons - they open placeholder modals - so the UI parity scanner (which
+checks the label is present and the click handler is non-empty) reports green. The UI->API
+wiring gate also passes, because the modern client only calls the GET endpoints that remain,
+so there are no "broken" calls. Nothing was comparing the LEGACY backend surface to the MODERN
+backend surface, so a real regression (e.g. 35 legacy mutation endpoints -> 0 modern) shipped
+green.
+```
+
+**35 mutation endpoints to zero, shipped green.** An entire write path deleted,
+with the UI still rendering its buttons, and the existing gates all passing —
+each for a defensible reason that the header spells out. This is the single best
+argument in the kit for why legacy-anchored verification is necessary, and it is
+sitting in a script header rather than in `AppMod-Process.instructions.md` where
+agents would read it.
+
+**Recommendation:** lift this paragraph into the instructions layer. It is the
+most persuasive thing in the repository and currently only reaches whoever opens
+this file.
+
+### The severity model is well calibrated, and explained
+
+```powershell
+$severity = if ($e.isMutation) { 'Major' } elseif ($StrictReads) { 'Major' } else { 'Minor' }
+```
+
+Mutations block (exit 2); missing GETs are reported as Minor but do not block,
+*because reads are legitimately consolidated during modernization while writes
+are not*. `-StrictReads` promotes them when an app wants strict read parity. The
+reasoning is in the header rather than implicit.
+
+Route shape is deliberately excluded from the match: *"route-template shape is
+reported but not required to match, because modern routes are often reshaped - a
+missing verb on a controller is the real defect."* That avoids a large class of
+false positives from `/api/foo/{id}` becoming `/api/foos/{id}`.
+
+Two thoughtful extras: `droppedControllers` surfaces controllers absent from
+modern **entirely** as a separate aggregate (printed in yellow), and the console
+summary reports legacy/modern endpoint and mutation counts side by side.
+
+---
+
+### ⚠ HIGH — the vacuous-pass gap is a *pattern*, not a one-file bug
+
+The `scan-api-dto-coverage` entry recorded that the gate cannot distinguish "no
+gaps" from "nothing scanned", and recommended surfacing `legacyViewsScanned` in
+the exit decision. This gate is **better instrumented** and still has the same
+hole:
+
+```powershell
+if ($majorGaps.Count -gt 0) { exit 2 } else { exit 0 }
+```
+
+`Get-Endpoints` finds nothing → `$legacy` empty → `$gaps` empty → **exit 0**. The
+counts that would reveal it (`legacyEndpointCount`, `legacyMutationCount`) are
+computed, written to the artefact, and printed — but the exit code ignores all of
+them, exactly as before.
+
+**And the documented invocation makes it silent.** The `.EXAMPLE` is:
+
+```
+powershell -NoProfile -ExecutionPolicy Bypass -File .github/scripts/parity/scan-backend-parity.ps1 -Quiet
+```
+
+`-Quiet` suppresses the entire summary block, including
+`Legacy endpoints : 0 (0 mutations)` — the one signal a human would catch. So in
+the invocation the script itself documents, a gate that scanned nothing is
+indistinguishable from a gate that found nothing wrong.
+
+Since this now appears in **both** parity gates, it should be treated as a
+systemic property of the layer rather than a defect in either file. The fix is
+the same three lines in each, and belongs in `shared/`:
+
+```powershell
+if ($legacy.Count -eq 0) {
+    Write-Host "  No legacy endpoints found under $LegacyRoot - gate could not run." -ForegroundColor Yellow
+    exit 2
+}
+```
+
+**This is the question worth asking of every remaining gate as it arrives**, and
+two for two so far the answer has been no.
+
+### ⚠ HIGH — the coverage key is `controller|verb`, which under-counts badly
+
+```powershell
+foreach ($e in $modern) { [void]$modernCoverage.Add(("{0}|{1}" -f $e.controller, $e.verb)) }
+...
+$key = "{0}|{1}" -f $e.controller, $e.verb
+if ($modernCoverage.Contains($key)) { continue }
+```
+
+Coverage is keyed on **controller + HTTP verb only** — not the action. So a legacy
+`OrdersController` with five POST actions (`Create`, `Approve`, `Reject`,
+`Submit`, `Archive`) is fully "covered" by a **single** modern POST on
+`OrdersController`. Four dropped write endpoints, gate green.
+
+This directly limits the gate against the failure it was built for. The header's
+own example — 35 mutations to **0** — is caught, because zero modern POSTs means
+no key match. But 35 mutations to **5** is not, and a partial write-path drop is
+the more likely real-world shape: teams port the obvious CRUD and quietly skip
+`Approve`, `Bulk-Import` and `Export`.
+
+The endpoint records already carry `method`, so the data is present. Options in
+increasing strictness:
+
+1. Report a per-controller verb-count delta (`legacy POSTs: 5, modern POSTs: 1`)
+   as a Minor gap — cheap, no false positives.
+2. Key on `controller|verb|method` with a name-similarity fallback, since method
+   names usually survive a port.
+
+Option 1 alone would have caught a 35→5 regression while staying quiet on
+legitimate consolidation.
+
+### ⚠ MEDIUM — attribute-driven extraction misses conventional MVC5 routing
+
+```powershell
+foreach ($m in [regex]::Matches($text, '(?im)\[\s*Http(Get|Post|Put|Delete|Patch)\b')) {
+```
+
+Endpoint discovery requires an explicit `[Http*]` attribute. The header is honest
+about this (*"extraction is attribute-driven ([Route], [Http*])"*), but the
+consequence deserves stating: **ASP.NET MVC5 controllers using convention-based
+routing have no such attribute** — a public method on a controller is an action by
+default, and GET actions in particular are almost never decorated.
+
+That matters here specifically because MVC5 is one of the kit's two reference
+legacy shapes (`mini-mvc5-angularjs`, `rehearsal-mvc5-angularjs`). For those apps
+the legacy surface is under-counted, and every under-count makes the gate more
+lenient, never stricter. `[HttpPost]` is conventionally applied even in MVC5, so
+mutations mostly survive discovery — but the legacy/modern endpoint totals
+printed in the summary will be misleadingly low, which also weakens the manual
+check that would otherwise catch the vacuous pass above.
+
+### ⚠ MEDIUM — `authPolicy` and `route` are looked for in the wrong direction
+
+```powershell
+$tail = $text.Substring($m.Index, [Math]::Min(600, $text.Length - $m.Index))
+$authMatch = [regex]::Match($tail, '(?i)\[\s*Authorize[^\]]*Policy\s*=\s*"([^"]+)"')
+```
+
+The window starts **at** the `[Http*]` attribute and looks 600 characters
+**forward**. But in idiomatic C#, `[Authorize]` and class-level `[Route]` appear
+**before** the verb attribute — including in this kit's own starter, where
+`MyEntitiesController` carries `[Authorize(Policy = "User")]` above the class.
+
+Consequences:
+
+- A class-level `[Authorize]` or `[Route]` is **never** seen, so `authPolicy` and
+  `route` come back empty for every endpoint in a conventionally-written
+  controller.
+- Worse, the 600-character window can overshoot into the *next* action, so an
+  endpoint can be attributed the following action's `[Authorize]` policy or route.
+
+`authPolicy` and `route` do not participate in the gap decision, so this does not
+change pass/fail — it is a **data-quality** defect in `backend-parity-scan.json`.
+That still matters: the artefact is the durable evidence, and anything downstream
+reasoning about authorisation coverage from it would be reading noise. Scanning a
+window *around* the attribute block (say 400 characters back and 600 forward, or
+better, splitting on method boundaries first) fixes both.
+
+### ⚠ LOW — one controller per file assumed, again
+
+```powershell
+$classMatch = [regex]::Match($text, '(?im)class\s+([A-Za-z0-9_]+?)Controller\b')
+```
+
+`Match`, not `Matches` — only the **first** controller class in a file is named,
+and every `[Http*]` attribute in that file is attributed to it. Same structural
+assumption recorded against the sibling gate, and survivable for the same reason:
+`dotnet.instructions.md` mandates one type per file. Legacy code, again, has no
+such guarantee — and partial classes split across files will each be scanned
+independently, which is fine, but a file with two small controllers will
+mis-attribute.
+
+### The two gates duplicate ~60 lines that `shared/` exists to hold
+
+`scan-api-dto-coverage.ps1` and `scan-backend-parity.ps1` contain near-identical
+copies of:
+
+- the `kit-params.md` → `appName` → `src\{app}.Web.Api` resolution (~19 lines),
+- the registry load with its `try`/`catch` (~12 lines),
+- `Test-DropAccepted` (~10 lines, differing only in the fields compared),
+- the output-directory creation and `ConvertTo-Json -Depth 6` write (~4 lines).
+
+The tree already lists a `.github/scripts/shared/` directory holding
+`field-contract`, `Invoke-StepReconciliation`, `verify-step-artifacts` and
+`verify-upgrade-invariants` — so the pattern of factoring shared logic exists and
+these two did not use it.
+
+That is worth more than a tidiness note, because of the finding above: **the
+vacuous-pass guard now has to be written twice, and will have to be written N
+times across the remaining ~89 scripts.** A single `shared/Gate-Common.ps1`
+exposing `Resolve-ModernApiRoot`, `Import-DropRegistry`, `Test-DropAccepted` and
+an `Exit-Gate` helper that refuses to return 0 on an empty input set would fix
+the whole class in one place. That is the structural recommendation, and it gets
+cheaper the earlier it happens.
 
 ---
 
@@ -12644,6 +12864,25 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (`scripts/parity/scan-backend-parity.ps1`)
+
+- **A one-line discrepancy was resolved by magnification, not by guessing.** The
+  first pass produced 240 lines against a 241-line gutter, with every anchor from
+  `param(` onward off by one. Cropping the header region settled it: there is a
+  blank line at **36**, between the `GENERIC:` paragraph and `.OUTPUTS`. After
+  inserting it, all eight photographed anchors match exactly — 37 `.OUTPUTS`,
+  48 `param(`, 62 `$ErrorActionPreference`, 119 `$mutationVerbs`,
+  121 `function Get-Endpoints`, 161 the legacy-scan `Write-Host`, 200 `$result`,
+  241 the `exit` line.
+- Nothing required redaction.
+- The regexes are again the least legible tokens, particularly the method-name
+  pattern on line 146 (`'(?im)(?:public|internal|protected)\s+(?:async\s+)?[A-Za-z0-9_<>,\[\]\.\s]+?\s+([A-Za-z0-9_]+)\s*\('`)
+  and the class pattern on line 133. The findings that depend on them — the
+  600-character forward window, the class-per-file assumption — should be
+  re-checked against the real file before being acted on.
+- **Not executed.** `pwsh` is unavailable here and this script has no `.sh`
+  counterpart, so this is a code reading.
 
 ## Transcription uncertainties (`scripts/parity/scan-api-dto-coverage.ps1`)
 
