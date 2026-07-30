@@ -125,6 +125,7 @@ pattern-match against.
 | `starter/.../src/index.html` | ⚠ theme-bootstrap bug, CSP-hash-pinned; Kendo `k-body` classes | transcribed from 1 photo — complete (35 content lines) |
 | `starter/.../src/main.ts` | standalone bootstrap | transcribed from 1 photo — complete (6 content lines) |
 | `starter/.../src/web.config` | the strongest security artefact in the starter; **3 corp domains redacted** | transcribed from 3 photos — complete (156 lines, validates as XML) |
+| `starter/Starter.Web.Client/tmpt/.npmrc` | ⚠⚠ **`strict-ssl=false`**; confirms `ignore-scripts=true` + the `@fusion:` scoped registry; **host redacted** | transcribed from 1 photo — complete (7 content lines) |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -2232,6 +2233,136 @@ elsewhere (`angular.json`, `package.json`) or these rules are aspirational.
   another instance of a value the kit should be resolving from `kit-params.md`.
 - Cache policy is sensible: a day on `assets` and `favicon.ico`, `no-store` on
   every non-hashed file.
+
+---
+
+## `Starter.Web.Client/tmpt/.npmrc` — seven lines, and the worst line in the kit
+
+```
+; begin auth token
+registry=https://<SONATYPE-NPM-HOST>/repository/npm-org/
+@fusion:registry=https://<SONATYPE-NPM-HOST>/repository/fusion-npm/
+engine-strict=true
+ignore-scripts=true
+strict-ssl=false
+; end auth token
+```
+
+The Sonatype host is redacted (same placeholder as `tools.mjs`). **No token is
+present in the file** — the `; begin auth token` / `; end auth token` markers
+delimit a region something else populates, and what sits between them here is
+plain configuration.
+
+### ⚠ HIGH (security) — `strict-ssl=false` disables TLS verification for every install
+
+This is the single most serious line found in the kit so far, and it deserves to
+be stated plainly.
+
+`strict-ssl=false` turns off certificate validation for **all** npm traffic. Every
+package tarball, every metadata request, every `npm ci` on every developer
+machine and every CI agent is fetched over a connection whose peer is not
+verified. Anything able to intercept that traffic can substitute package
+contents, and npm will install them without complaint.
+
+What makes it worth escalating rather than noting:
+
+1. **It is in a starter that every hackathon participant clones.** One bad
+   default replicated across a few hundred repositories, each running `npm ci` on
+   a corporate network, is a materially different risk from one team's local
+   workaround.
+2. **It directly undercuts the file's own security posture.** `ignore-scripts=true`
+   two lines above is a deliberate, well-judged supply-chain control — lifecycle
+   scripts off by default, re-enabled one allow-listed package at a time through
+   `installSafePackages()`. That control assumes you received the package you
+   asked for. `strict-ssl=false` removes exactly that assurance. The file hardens
+   against a malicious `postinstall` while disabling the check that the tarball
+   came from Sonatype at all.
+3. **The usual cause has a correct fix.** `strict-ssl=false` is almost always
+   added because a TLS-inspecting corporate proxy presents a certificate Node
+   does not trust. The supported remedies are `cafile=<path to corporate CA
+   bundle>` in `.npmrc`, or `NODE_EXTRA_CA_CERTS` in the environment. Both keep
+   verification on. Neither is more than a one-line change, and whoever
+   administers the Sonatype proxy will already have the CA bundle.
+
+Recommendation: replace `strict-ssl=false` with `cafile=`, and if that cannot be
+arranged before the hackathon, at minimum move the line out of the template and
+into a documented per-machine opt-out so it is a deliberate act rather than an
+inherited default.
+
+### CONFIRMED: `ignore-scripts=true`, and the `installSafePackages` inference was right
+
+The `services`-era entry on `tools.mjs` reasoned that
+`installSafePackages()`'s per-package `--ignore-scripts false` "only makes sense
+if `ignore-scripts=true` is set globally in `.npmrc`", and called that a good
+supply-chain posture the kit documents nowhere. **Both halves are confirmed.**
+The global setting is here, and it is still documented nowhere.
+
+That also sharpens the remaining Kendo question. The mechanism is now fully
+traced except for one file:
+
+```
+.npmrc: ignore-scripts=true          <- confirmed here
+   -> tools.mjs installSafePackages() runs `npm run <script> --ignore-scripts false`
+        for each key in safePackageInstalls
+      -> npm-safe-package-installs.mjs holds that map   <- STILL UNTRANSCRIBED
+```
+
+If `@progress/kendo-licensing` is a key in that map, the licence patch from
+`angular.instructions.md` is automated on every install and update. Everything
+except that one file now points that way.
+
+### CONFIRMED: two registries, and `@fusion/*` needs its own line
+
+```
+registry=…/repository/npm-org/
+@fusion:registry=…/repository/fusion-npm/
+```
+
+Public packages proxy through `npm-org`; the `@fusion/*` scope resolves from a
+separate `fusion-npm` repository. A modernized app that carries over only the
+default `registry=` line will fail to install `@fusion/ngx-fusion`,
+`@fusion/theme`, and `@fusion/ngx-fusion-auth-oauth-okta` — with a 404 that looks
+like a typo rather than a missing scoped-registry line. Worth one sentence in
+`angular.instructions.md`; it is the kind of thing that costs a participant an
+hour on day one.
+
+### `engine-strict=true` — the Node version *is* pinned after all
+
+The `scripts/` entry noted that `getFullPath` relies on `entry.parentPath`
+(Node ≥ 20.12 / ≥ 21.4) and recorded this as "an undeclared minimum-Node
+constraint" that `pins.json` does not cover. `engine-strict=true` means npm
+**enforces** whatever `engines` range `package.json` declares — installs hard-fail
+on a mismatched Node rather than warning.
+
+So the constraint is very likely declared and enforced; it simply is not visible
+in anything transcribed so far. `package.json` settles it, and this raises that
+file's priority: it now carries the Node/npm range, the `@fusion/*` versions, and
+the script definitions that `pre-build.mjs` shells into.
+
+### Where this file sits, and why that matters for the ENOENT finding
+
+The breadcrumb reads `src > Starter.Web.Client > tmpt > .npmrc` — so this is
+**not** at the client root. `tools.mjs`'s `npmAuth()` reads
+`path.join(projectDirectory, '.npmrc')` with `projectDirectory` defaulting to
+`'./'`, and every call site invokes `npmAuth()` with no arguments. It therefore
+looks for `.npmrc` at the **client root**, not in `tmpt/`.
+
+The natural reading — `tmpt` being a template directory whose contents are copied
+or rendered into place, with the `; begin auth token` / `; end auth token`
+markers marking where a token gets spliced in — supports the earlier HIGH:
+
+> `npmAuth` reads `.npmrc` with an unguarded `readFile`. No `.npmrc` means an
+> unhandled `ENOENT` on the first statement of `npm start`.
+
+If the root `.npmrc` is generated from this template, then a fresh clone that has
+not yet run whatever does the generating has no root `.npmrc`, and `npm start`
+dies with a missing-file stack trace pointing at the wrong problem. That is now a
+plausible *mechanism* rather than a hypothetical.
+
+**Not asserted:** a root `.npmrc` may well exist and simply not have been
+photographed — hidden files did not appear in the file-tree image. What would
+settle it is a listing of `Starter.Web.Client/` including dotfiles, or the
+`.gitignore`. Both are worth having.
 
 ---
 
@@ -11597,6 +11728,27 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (`tmpt/.npmrc`)
+
+- **Redaction applied.** The Sonatype host appears twice and is replaced with
+  `<SONATYPE-NPM-HOST>`, the same placeholder used in `tools.mjs`. The two
+  repository paths (`/repository/npm-org/`, `/repository/fusion-npm/`) are kept —
+  they are structural, and the second is the load-bearing `@fusion:` scope route.
+- **No credential was present to redact.** Lines 1 and 7 read `; begin auth token`
+  and `; end auth token`, and the five lines between them are plain config. Either
+  the token region is populated elsewhere or it was cleared before the photo; the
+  file as photographed contains no secret.
+- **The folder name is read as `tmpt`** from the breadcrumb
+  (`src > Starter.Web.Client > tmpt > .npmrc`). `tmpl` is a plausible alternative
+  at this resolution and would fit the template reading better. Recorded as
+  photographed; worth confirming, because the ENOENT finding depends on this file
+  not being at the client root.
+- Whether a second `.npmrc` exists at `Starter.Web.Client/` root is **unknown** —
+  dotfiles did not appear in the file-tree photo. A `ls -a` of that directory, or
+  the client `.gitignore`, would settle both this and the `cert.pem` /
+  `cert.key` question left open by `pre-start.mjs`.
+- Line count verified against the gutter: 7 content lines.
 
 ## Transcription uncertainties (env configs, `src/` root, `web.config`)
 
