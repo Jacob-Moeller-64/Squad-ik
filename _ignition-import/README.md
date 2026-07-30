@@ -100,6 +100,8 @@ pattern-match against.
 | `starter/Starter.Web.Client/scripts/pre-build.mjs` | the unconditional pre-build hook: auth → install → clean → lint | transcribed from 1 photo — complete (19 lines) |
 | `starter/Starter.Web.Client/scripts/pre-start.mjs` | `preBuild(true)` + `dotnet dev-certs` trust/export | transcribed from 1 photo — complete (10 content lines) |
 | `starter/Starter.Web.Client/scripts/update.mjs` | `npmAuth()` + `npmUpdate()` — the documented drift-recovery entry point | transcribed from 1 photo — complete (4 content lines) |
+| `starter/Starter.Web.Client/src/app/pages/common-components/common-components.component.ts` | ★★ **confirms `@fusion/ngx-fusion`** — the Fusion UI answer-key page | transcribed from 1 photo — complete (16 content lines) |
+| `starter/Starter.Web.Client/src/app/pages/common-components/common-components.component.html` | ⚠ the entire Fusion component catalogue: a grid with the word `Cell` in it | transcribed from 1 photo — complete (10 content lines) |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -718,6 +720,170 @@ Headline coverage:
    implies.
 6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
    `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## `Starter.Web.Client/src/` — the Angular app
+
+### Directory tree (from the reference photo)
+
+```
+Starter.Web.Client/
+├── .vscode/
+├── scripts/
+└── src/
+    ├── app/
+    │   ├── components/
+    │   │   └── .gitkeep                      <- EMPTY. no shared components ship.
+    │   ├── pages/
+    │   │   ├── common-components/            .html .scss .spec.ts .ts
+    │   │   ├── home/                         .html .scss .spec.ts .ts
+    │   │   ├── my-entity/                    .html .scss .spec.ts .ts
+    │   │   └── test-datastore/               (collapsed in photo)
+    │   ├── services/                         (collapsed in photo)
+    │   ├── app.component.html
+    │   ├── app.component.scss
+    │   ├── app.component.spec.ts
+    │   ├── app.component.ts
+    │   ├── app.config.ts
+    │   ├── fusion.config.base.ts
+    │   ├── fusion.config.dvl.ts
+    │   ├── fusion.config.prd.ts
+    │   ├── fusion.config.qa.ts
+    │   ├── fusion.config.ts
+    │   ├── fusion.config.uat.ts
+    │   ├── routes.config.ts
+    │   └── types.ts
+    ├── assets/icons/
+    ├── favicon.ico
+    └── index.html
+```
+
+Two structural facts read straight off this tree, before any file content.
+
+**1. Five Fusion configs, and the build default has no file.** `fusion.config.ts`
+plus `.base`, `.dvl`, `.qa`, `.uat`, `.prd`. `build.mjs` selects a configuration
+through its `configuration:` argv token and **defaults to `local`** — and there
+is no `fusion.config.local.ts`. The natural reading is that `fusion.config.ts` is
+itself the local/default file and `angular.json` `fileReplacements` swap in the
+suffixed variants per environment, with `.base` holding whatever the other five
+spread. That is a clean pattern and almost certainly what is happening; it needs
+`angular.json` to confirm, and it is worth confirming, because if `local` is not
+a declared Angular configuration then the *default* invocation of `npm run build`
+fails while every named environment works. Added to the outstanding list.
+
+**2. `app/components/` contains a single `.gitkeep`.** The starter ships **zero**
+reusable components. Everything is a page. This matters more than it looks —
+see the finding below.
+
+---
+
+### `pages/common-components/` — the Fusion component answer key, and it is nearly empty
+
+This is the page the kit's frontend-swap steps most need to be good, because it
+is the only place an agent can look to learn what Fusion UI markup is supposed to
+look like. `component.ts` (16 lines) and `component.html` (10 lines) are both
+transcribed; `.scss` and `.spec.ts` are outstanding.
+
+#### CONFIRMED: the Fusion Angular package scope is `@fusion/ngx-fusion`
+
+```ts
+import {
+    FusionGridCellComponent,
+    FusionGridContainerComponent,
+    FusionGridRowComponent,
+    FusionPageBaseComponent
+} from '@fusion/ngx-fusion';
+```
+
+First hard confirmation of the frontend half of the Fusion stack. Until now the
+only evidence was `fusion-mcp-restructure.instructions.md` asserting
+`provideNgxFusion()` / `provideNgxFusionAuthOAuthOkta()`, which — given that
+`fusion-auth-standards.md` was found to describe backend code that does not
+exist — was not something to take on trust. The scope is real and the naming
+convention is `Fusion<Thing>Component`.
+
+`FusionPageBaseComponent` is a **base class**, not a template dependency: it is
+imported, extended, and correctly left out of the `imports:` array.
+
+#### The grid primitives, and the mapping the kit should be encoding
+
+```html
+<fusion-grid-container>
+    <fusion-grid-row>
+        <fusion-grid-cell>
+            <h2 class="title-banner">Commonly Used Components</h2>
+        </fusion-grid-cell>
+    </fusion-grid-row>
+    <fusion-grid-row>
+        <fusion-grid-cell>Cell</fusion-grid-cell>
+    </fusion-grid-row>
+</fusion-grid-container>
+```
+
+Container → row → cell is a one-to-one match for Bootstrap's
+`container` → `row` → `col`, which is what both reference legacy apps use. That
+is exactly the kind of deterministic mapping the `component-map` canonical
+artifact exists to hold, and encoding it there would remove a whole class of
+per-run agent guesswork during the UI swap. Worth doing regardless of what else
+changes.
+
+#### ⚠ HIGH — "Commonly Used Components" demonstrates one component
+
+The page is called `common-components`, its heading reads *"Commonly Used
+Components"*, and its entire catalogue is: a grid, containing a cell, containing
+the literal string `Cell`.
+
+That is the whole file. No button, no input, no table, no date picker, no dialog,
+no form field, no icon usage — nothing that a real modernization would need to
+map a legacy AngularJS or MVC5 view onto. Combined with `app/components/`
+containing nothing but a `.gitkeep`, the starter's total demonstrated Fusion UI
+surface is **three grid components**.
+
+Why this is a HIGH rather than a cosmetic gap: the kit's frontend steps instruct
+agents to replace legacy UI with Fusion equivalents, and
+`AppMod-Process.instructions.md` leans on the *answer-key principle* — the idea
+that agents work from a known-good exemplar rather than inventing. For the
+backend that principle is honoured well (`PublicTextController` /
+`PublicTextService` are a genuinely good exemplar pair, XML docs and all). For
+the frontend the exemplar is a stub. Every participant's agent will therefore
+invent its own Fusion markup from the package's type signatures, and they will
+each invent something slightly different. In a company-wide hackathon that is
+precisely the drift outcome the kit exists to prevent, and it is concentrated in
+the one file named for the job.
+
+Fixing it is cheap relative to everything else in the backlog: filling this page
+with one worked example per commonly-used Fusion component — the way
+`PublicTextController` works for the API side — turns the highest-variance step
+in the pipeline into a copy-the-pattern step. If only one thing on the frontend
+list gets done before the hackathon, this is the one.
+
+#### Smaller observations
+
+- **`implements OnInit` with an empty class body.** `export class
+  CommonComponentsComponent extends FusionPageBaseComponent implements OnInit {}`
+  declares the interface but defines no `ngOnInit`. This only compiles if
+  `FusionPageBaseComponent` already provides one, which is presumably the case —
+  so the declaration is inert. Harmless, but agents pattern-matching this file
+  will copy `implements OnInit` onto components that then genuinely need an
+  `ngOnInit` they never write.
+- **`@Component` members are alphabetised** (`imports`, `selector`, `standalone`,
+  `templateUrl`, `styleUrls` — the last two are ordering-by-convention rather
+  than strict alpha). Consistent with a `member-ordering` lint rule. Not stated
+  anywhere in the instructions files; if it is enforced, `angular.instructions.md`
+  should say so, since agents will not infer it from one file.
+- **`standalone: true` is explicit** even though it has been the default since
+  Angular 19. Not wrong, just redundant — and it dates the template.
+- **`class="title-banner"`** is an app-level class, not a Fusion one, so the local
+  SCSS defines a heading convention. Needs `common-components.component.scss` to
+  know what it is; agents will otherwise drop `title-banner` onto pages with no
+  matching style.
+- **The editor shows 3 unresolved diagnostics** on this file, squiggled under both
+  import specifiers and the decorator body — the signature of `node_modules` not
+  being resolvable at the time the photo was taken. Recording it as an
+  observation, not a defect in the file: it is what a tree looks like after
+  `npmInstall` catches an error and deletes `node_modules`, but a machine that
+  simply has not installed yet looks identical. Not attributing a cause.
 
 ---
 
@@ -10083,6 +10249,26 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (`Starter.Web.Client/src/app/`)
+
+- The directory tree was photographed sideways (portrait shot of a landscape
+  screen). Folder nesting was read from the indent guides; `pages/` and
+  `services/` sit at the same level under `app/`, and `common-components`,
+  `home`, `my-entity`, `test-datastore` are all children of `pages/`. The user
+  confirmed the `pages/common-components` placement in the message text.
+- `test-datastore/` and `services/` were collapsed in the photo, so their contents
+  are unknown. `assets \ icons` is rendered with VS Code's compacted-single-child
+  notation, i.e. `assets/` contains only `icons/`.
+- `common-components.component.ts` line 16 is the class declaration and line 17 is
+  the trailing blank; the photo's tilt makes the 16/17 boundary ambiguous at the
+  left margin, but the 17-row gutter matches every other file's trailing-newline
+  pattern.
+- Indentation transcribed as 4 spaces to match the rest of the starter. The photo
+  is consistent with 4 but a 2-space source rendered at a tab width of 4 would
+  look the same; not independently verifiable from an image.
+- The `@Component` `imports:` array is one long line in the source, soft-wrapped
+  in the photo with no continuation character.
 
 ## Transcription uncertainties (`Starter.Web.Client/scripts/`)
 
