@@ -139,6 +139,7 @@ pattern-match against.
 | `starter/Starter.Web.Client/Starter.Web.Client.esproj` | `ShouldRunNpmInstall=false`; maps MSBuild onto the npm scripts | transcribed from 1 photo — complete (11 content lines) |
 | `scripts/parity/scan-api-dto-coverage.ps1` | ★★ **the first real gate** — legacy-anchored DTO field coverage; confirms `kit-params.md` `appName` resolution; ⚠ passes vacuously when nothing is scanned | transcribed from 4 photos — complete (222 content lines) |
 | `scripts/parity/scan-backend-parity.ps1` | ★★ endpoint-level sibling; quantified postmortem (35 mutations → 0, shipped green); ⚠ same vacuous pass, ⚠ `controller\|verb` key under-counts | transcribed from 5 photos — complete (241 content lines) |
+| `scripts/parity/scan-functional-parity-ledger.PARTIAL.ps1` | ★★ the **composition** gate — cross-references the other scans; ★ has the missing-input guard the siblings lack; ⚠ evidence inputs still degrade to "clean" | **PARTIAL** — lines 1-282 of N, from 5 photos; deliberately incomplete, do not execute |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -3492,6 +3493,265 @@ exposing `Resolve-ModernApiRoot`, `Import-DropRegistry`, `Test-DropAccepted` and
 an `Exit-Gate` helper that refuses to return 0 on an empty input set would fix
 the whole class in one place. That is the structural recommendation, and it gets
 cheaper the earlier it happens.
+
+---
+
+## `parity/scan-functional-parity-ledger.ps1` (lines 1-282 of N) — PARTIAL
+
+Third `parity/` gate, and the first **composition** gate seen: it does not scan
+source directly so much as cross-reference the other scanners' artefacts against
+a control census. Committed as `scan-functional-parity-ledger.PARTIAL.ps1` with a
+clearly delimited trailing note — the transcription stops mid-`switch` at line
+282 and the file **is deliberately syntactically incomplete and must not be
+executed**.
+
+It consumes five inputs:
+
+| Input | Produced by | Used for |
+|---|---|---|
+| `interaction-wiring-inventory.json` | Step 3 (`03-P1-generate-manifest.ps1`) | the control census itself |
+| `backend-parity-scan.json` | `scan-backend-parity.ps1` | `mutate` / `read` status |
+| `ui-parity-gap-scan.json` | a UI gate not yet transcribed | `filter` status |
+| `functional-parity-registry.json` | humans | waivers |
+| `src/**/routes.config.ts`, `src/**/*Controller.cs` | live | `navigate` / `export` status |
+
+### ★ RESOLVED — the missing-input guard I said was absent **exists**, here
+
+```powershell
+if (-not (Test-Path -LiteralPath $ledgerPath)) {
+    Write-Host "BLOCKED: interaction-wiring-inventory.json not found. Run Step 3 (03-P1-generate-manifest.ps1) first." -ForegroundColor Red
+    exit 2
+}
+```
+
+Both sibling entries recorded that the parity gates *"cannot distinguish 'no
+gaps' from 'nothing scanned'"* and recommended a guard that refuses to exit 0 on
+an empty input. **This gate already implements it** — and better than the version
+I proposed, because the message names the exact remediation step
+(`03-P1-generate-manifest.ps1`) rather than just reporting the absence.
+
+That materially changes the finding. It is not that nobody thought of the
+pattern; **the correct pattern lives in the same directory and was not applied
+consistently.** The fix for `scan-api-dto-coverage.ps1` and
+`scan-backend-parity.ps1` is therefore a copy-paste consistency exercise, not a
+design change — which is a much easier thing to land before a hackathon.
+
+Same story with `-Quiet`. This script's documented contract is:
+
+```
+.PARAMETER Quiet
+    Suppress per-gap detail lines. Still emits the RESULT: line and exit code.
+```
+
+That is exactly right, and it is exactly what `scan-backend-parity.ps1` does
+**not** do — there, `-Quiet` (the documented `.EXAMPLE` invocation) suppresses the
+whole summary including the `Legacy endpoints : 0` line. So the better contract
+also already exists and simply was not propagated.
+
+### ★ `open-dialog` is the model for how a gate should handle what it can't prove
+
+```powershell
+'open-dialog' {
+    # Cannot be verified statically. Must reach Verified at the Step 12/13 runtime
+    # checkpoint by observing the dialog render and confirming its own controls are
+    # ledgered. Reported as a Minor gap (not blocking) until that checkpoint runs.
+    $false
+}
+```
+
+The gate **declares its own blind spot**, refuses to claim success, classifies it
+Minor so it does not block, and names the later step where real verification
+happens. That is the precise discipline whose absence produced the vacuous-pass
+findings against the two sibling gates — present here, in the same file, from
+presumably the same author.
+
+The `effectClass` taxonomy generally is good design: seven families, each with a
+verification strategy matched to what is actually provable statically —
+`ui-only` needs no backend proof and says so; `navigate` checks
+`routes.config.ts`; `mutate`/`read` defer to `backend-parity-scan.json`; `filter`
+keys off the UI scan's `PlaceholderAction` count.
+
+### ★ The failure messages are remediation instructions
+
+```powershell
+'mutate' { "backend-parity-scan reports $missingMutCount missing mutation endpoint(s). Port the missing POST/PUT/DELETE/PATCH methods and re-run scan-backend-parity.ps1 to clear this." }
+'filter' { "ui-parity-gap-scan detected $placeholderActionCount PlaceholderAction control(s): filter/search buttons open placeholder modals instead of calling real query endpoints." }
+```
+
+Each names the upstream artefact, interpolates the actual count, explains the
+symptom in user-facing terms, and states the action that clears it. This is the
+best gate output in the kit — it is written for an agent that has to *fix* the
+problem, not just be told one exists.
+
+---
+
+### ⚠ HIGH — the guard protects the census but not the evidence
+
+Only `$ledgerPath` blocks. The three evidence inputs each degrade to their
+*"everything is fine"* value:
+
+```powershell
+$missingMutCount   = 0
+$missingQueryCount = 0
+if (Test-Path -LiteralPath $backendScanPath) { try { ... } catch { } }
+
+$placeholderActionCount = 0
+if (Test-Path -LiteralPath $uiScanPath) { try { ... } catch { } }
+```
+
+So if `backend-parity-scan.json` was never generated, `$missingMutCount` stays
+`0` — the same value it holds when the backend scan ran and found nothing wrong.
+`mutate` is then judged implemented on the strength of `$modernMutationCount > 0`
+alone. Identically, a missing `ui-parity-gap-scan.json` leaves
+`$placeholderActionCount = 0`, and every `filter` entry is marked implemented.
+
+This is the vacuous-pass family again, one level up, and it is **worse here than
+in the siblings** because aggregation is the entire purpose of the file: a
+composition gate that treats absent evidence as favourable evidence inverts its
+own contract. A scanner that never ran cannot vouch for anything.
+
+The fix is small and matches what the script already does for the ledger:
+
+```powershell
+if (-not (Test-Path -LiteralPath $backendScanPath)) {
+    Write-Host "BLOCKED: backend-parity-scan.json not found. Run scan-backend-parity.ps1 first." -ForegroundColor Red
+    exit 2
+}
+```
+
+Worth pairing with a staleness check — `$backendScanAge` is already read from
+`generatedUtc` and carried, so comparing it against the ledger's own timestamp
+would catch the other half of the problem: evidence that exists but predates the
+code it is vouching for.
+
+### ⚠ MEDIUM — three empty `catch { }` blocks
+
+```powershell
+} catch { }
+```
+
+Appears at the registry load, the backend-scan load and the UI-scan load. A
+**malformed** artefact is therefore indistinguishable from a **missing** one, and
+both resolve to zero problems. Given these files are machine-generated by other
+scripts in the same pipeline, a truncated write (interrupted run, full disk) is a
+realistic way to get invalid JSON — and it would silently unblock the gate.
+`Write-Verbose` at minimum; ideally the same BLOCKED treatment as above.
+
+### ⚠ HIGH — the mutation/query regex misses the kit's own starter idiom
+
+```powershell
+foreach ($m in [regex]::Matches($text, '(?i)\[Http(?:Post|Put|Delete|Patch)\]')) {
+foreach ($m in [regex]::Matches($text, '(?i)\[HttpGet\]')) {
+```
+
+Both patterns require a `]` **immediately** after the verb, so they match
+`[HttpPost]` but **not** `[HttpPost("Search")]`.
+
+The starter's own `MyEntitiesController.cs` — already transcribed in this import —
+uses `[HttpPost("Search")]`. Attribute-routed controllers with route templates
+are the modern idiom and are what the kit itself ships as the exemplar.
+
+Two things follow, and the second is the sharper one:
+
+1. **This gate fails closed, not open.** `$modernMutationCount` comes back `0`,
+   the `mutate` branch requires `$modernMutationCount -gt 0`, so every `mutate`
+   entry is judged unimplemented and blocks. Safer than the siblings' failure
+   direction, but it means a **correctly modernized app gets BLOCKED**, and under
+   the kit's own law (*"never soften or overrule a gate result"*) the only escape
+   is a waiver in `functional-parity-registry.json` — polluting the waiver
+   registry with entries that exist to work around a regex.
+2. **The sibling gate uses a different, correct pattern for the same job.**
+   `scan-backend-parity.ps1` matches `'(?im)\[\s*Http(Get|Post|Put|Delete|Patch)\b'`
+   — a `\b` boundary, which handles both forms. So two gates in one directory
+   disagree about how to detect an HTTP verb attribute, and the composition gate
+   is the one that is wrong. Aligning on the `\b` form is a one-character-class
+   change.
+
+### ⚠ MEDIUM — `export` detection can barely fail
+
+```powershell
+if ($text -match '(?i)export|download|FileContentResult|FileStreamResult|\.csv\b|\.xlsx\b|pdf') {
+    $hasExportEndpoint = $true
+}
+```
+
+Matched against the **entire file text**, case-insensitively, with no word
+boundary on `pdf` and none on `export`/`download`. Any controller containing the
+substring `pdf` anywhere — an identifier like `pdfService`, a `using` line, a
+comment, the word "exported" in a doc comment — flips the flag true for the whole
+repository.
+
+`export` gaps are Minor and non-blocking, so the blast radius is small. But as
+written this is a check that essentially cannot fail, which is worth knowing
+before anyone cites it as evidence.
+
+### ⚠ MEDIUM — `mutate` and `read` verdicts are global, not per-entry
+
+```powershell
+'mutate' { ($missingMutCount -eq 0 -and $modernMutationCount -gt 0) }
+'read'   { ($missingQueryCount -eq 0 -and $modernQueryCount -gt 0) }
+```
+
+Neither branch references `$entry`. Every `mutate` entry in the ledger therefore
+receives the **same** verdict, and the same generic `$reason` string.
+
+For a file whose stated purpose is that *"every interactive legacy control starts
+at Inventoried (Step 3) and must reach Verified before a step can close"*, that
+is a real limitation: the ledger cannot say *which* control is still missing, only
+that the mutation surface as a whole is incomplete. One missing legacy POST marks
+all N mutate controls unimplemented; fixing it flips all N at once. The
+per-control granularity the ledger promises is not delivered for the two most
+important classes.
+
+The data to do better exists — `backend-parity-scan.json`'s `gaps[]` carries
+`controller`, `verb`, `method` and `route` per gap — so matching a ledger entry's
+`resolvedTarget`/`label` against those would localise it. That is a genuine
+enhancement rather than a bug fix, and it is the thing that would make this file
+live up to its own description.
+
+### ⚠ MEDIUM — a pre-Phase-1 ledger silently disables the whole gate
+
+```powershell
+# Detect whether the ledger was generated with the Phase 1 effectClass schema.
+# If not, the scanner degrades gracefully: treats all entries as ui-only and warns.
+$hasEffectClassSchema = ($entries.Count -gt 0 -and ...)
+```
+
+…and `ui-only` always evaluates `$true`. So a ledger written before the
+`effectClass` field existed produces: every entry `ui-only` → every entry
+implemented → zero blocking gaps → **exit 0**.
+
+The degradation is deliberate, documented in the comment, and surfaced in the
+console line `Ledger : {0} entries (Phase-1 schema: {1})`. That is honest. But
+the consequence is that a **stale Step-3 artefact turns the gate off entirely**,
+and the only signal is a `False` in a status line that `-Quiet` suppresses. Given
+the kit's `+2` step-numbering history and its unfinished `step-registry.json`
+migration, stale artefacts from an earlier kit version are a realistic scenario.
+
+Emitting `WARNING:` on `$hasEffectClassSchema -eq $false` regardless of `-Quiet`
+would cost one line and preserve the graceful degradation.
+
+---
+
+### What the three parity gates look like together
+
+| | dto-coverage | backend-parity | functional-ledger |
+|---|---|---|---|
+| Legacy-anchored | ✅ | ✅ | ✅ (via the Step-3 census) |
+| Blocks on missing primary input | ❌ exit 0 | ❌ exit 0 | ✅ exit 2 |
+| Blocks on missing evidence input | n/a | n/a | ❌ treats as clean |
+| `-Quiet` keeps a result line | ❌ | ❌ | ✅ |
+| Declares its own blind spots | ❌ | partial (`-StrictReads`) | ✅ (`open-dialog`) |
+| Verb-attribute regex | n/a | `\b` (correct) | `\]` (misses templates) |
+| Waiver registry | ✅ | ✅ | ✅ (+ entry-level `waiver`) |
+
+The pattern is consistent and encouraging: **every good practice needed to fix
+these gates already exists in one of them.** The recommendation is therefore not
+"redesign the parity layer" but "normalise it against its own best example", and
+the `shared/` helper proposed in the `scan-backend-parity` entry is the natural
+vehicle — `Assert-InputArtifact`, `Exit-Gate`, and a single agreed
+`$HttpVerbAttributePattern` would close most of what has been found across all
+three.
 
 ---
 
@@ -12864,6 +13124,32 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (`scan-functional-parity-ledger.ps1`)
+
+- **This file is PARTIAL and the committed copy says so in a delimited trailing
+  comment.** Coverage is source lines **1-282** ("the first part"). Missing: the
+  close of the `$reason` switch, the `$blockingGaps.Add(...)` block, the loop
+  close, the `$result` assembly, the JSON write, the reporting block and the final
+  exit. It is syntactically incomplete by construction and must not be run.
+- Seventeen photographed gutter anchors were checked against the written file and
+  all match — 41 `[CmdletBinding()]`, 42 `param(`, 47 `$ErrorActionPreference`,
+  56 `$discoveryRoot`, 66 the BLOCKED guard, 71 `$ledgerDoc`, 97
+  `function Test-IsWaived`, 115 `$missingMutCount`, 134
+  `$placeholderActionCount`, 151 `$modernRoutePaths`, 167
+  `$modernMutationMethods`, 193 `$allEffectClasses`, 199 `$blockingGaps`, 201 the
+  entry loop, 220 `$isImplemented = switch`, 276 `$reason = switch`, 282
+  `'open-dialog'`.
+- Nothing required redaction.
+- The regex on line 157 (`"(?i)path\s*:\s*['\"](?<p>[^'\"]+)['\"]"`) uses a
+  double-quoted PowerShell string with doubled quotes inside; it was read at
+  magnification but is the least certain token in the file. The line-232 route
+  match and the line-235 slug normalisation are next least certain. The findings
+  that turn on the `\]` vs `\b` verb-attribute difference (lines 176/179) were
+  cross-checked against `scan-backend-parity.ps1` line 137, which uses the other
+  form — that contrast is the load-bearing observation and both were re-read.
+- **Not executed.** `pwsh` is unavailable here, and this file is incomplete
+  regardless.
 
 ## Transcription uncertainties (`scripts/parity/scan-backend-parity.ps1`)
 
