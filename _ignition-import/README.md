@@ -139,7 +139,8 @@ pattern-match against.
 | `starter/Starter.Web.Client/Starter.Web.Client.esproj` | `ShouldRunNpmInstall=false`; maps MSBuild onto the npm scripts | transcribed from 1 photo — complete (11 content lines) |
 | `scripts/parity/scan-api-dto-coverage.ps1` | ★★ **the first real gate** — legacy-anchored DTO field coverage; confirms `kit-params.md` `appName` resolution; ⚠ passes vacuously when nothing is scanned | transcribed from 4 photos — complete (222 content lines) |
 | `scripts/parity/scan-backend-parity.ps1` | ★★ endpoint-level sibling; quantified postmortem (35 mutations → 0, shipped green); ⚠ same vacuous pass, ⚠ `controller\|verb` key under-counts | transcribed from 5 photos — complete (241 content lines) |
-| `scripts/parity/scan-functional-parity-ledger.PARTIAL.ps1` | ★★ the **composition** gate — cross-references the other scans; ★ has the missing-input guard the siblings lack; ⚠ evidence inputs still degrade to "clean" | **PARTIAL** — lines 1-282 of N, from 5 photos; deliberately incomplete, do not execute |
+| `scripts/parity/scan-functional-parity-ledger.ps1` | ★★ the **composition** gate — cross-references the other scans; ★ has the missing-input guard the siblings lack; ⚠ evidence inputs still degrade to "clean" | transcribed from 7 photos — **complete** (376 content lines) |
+| `scripts/parity/scan-scaffold-debt.ps1` | ★★ detects surviving "wired in a later step" deferral markers; **drain semantics** via `-CurrentStep` | transcribed from 4 photos — complete (221 content lines) |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -3752,6 +3753,138 @@ the `shared/` helper proposed in the `scan-backend-parity` entry is the natural
 vehicle — `Assert-InputArtifact`, `Exit-Gate`, and a single agreed
 `$HttpVerbAttributePattern` would close most of what has been found across all
 three.
+
+---
+
+### COMPLETED — `scan-functional-parity-ledger.ps1` (376 lines)
+
+The remaining 94 lines close the `$reason` switch, build `$blockingGaps`,
+de-duplicate, assemble `$result`, and exit. Three things worth adding to the
+entry above.
+
+**⚠ CORRECTION — the `-Quiet` praise was premature.** The previous entry
+contrasted this file's documented contract (*"Suppress per-gap detail lines.
+Still emits the RESULT: line and exit code"*) favourably against
+`scan-backend-parity.ps1`. The **implementation does not honour it**:
+
+```powershell
+if ($majorGaps -gt 0) {
+    if (-not $Quiet) {
+        Write-Host ("RESULT: BLOCKED ({0} major gap(s) ...)" -f $majorGaps) -ForegroundColor Red
+    }
+    exit 2
+}
+if (-not $Quiet) {
+    Write-Host "RESULT: OK" -ForegroundColor Green
+}
+exit 0
+```
+
+Both `RESULT:` lines are inside `if (-not $Quiet)`. Only the exit code survives,
+which is exactly what the parameter documentation promises it will not do. So the
+better contract exists **on paper only**, and the doc/code mismatch is the finding
+rather than the good example I reported. Fixing it is moving two `Write-Host`
+calls outside their guards.
+
+**★ Sensible de-duplication, with honest counts.** `$blockingGaps` keeps every
+gap for counting, and a separate `$deduped` list keeps only the **first three per
+effectClass** for the artefact — because *"most entries of the same class share
+the same root cause"*. `$majorGaps`/`$minorGaps` are computed from the **full**
+list, so the counts stay accurate while the payload stays readable. That is the
+right way to truncate, and it is the opposite of the silent-cap pattern.
+
+**The `RESULT: BLOCKED` / `RESULT: OK` strings are confirmed here**, matching the
+kit's stated convention exactly — first direct sighting of both in a gate.
+
+---
+
+## `parity/scan-scaffold-debt.ps1` (221 lines) — the best-designed gate so far
+
+Detects **modernization deferral markers** that survive into shipped code: the
+`"Handlers call empty stub methods; Step 11 wires real behavior"` breadcrumbs
+that a scaffolded page leaves behind. Its own framing:
+
+> *"The dead-shell failure mode is a page migrated as a from-memory SCAFFOLD
+> whose controls, forms, and handlers are stubbed and whose real behavior is
+> deferred to 'a later step'. Those scaffolds routinely ANNOUNCE their own debt in
+> the code... No parity/runtime gate scanned for these surviving markers, so the
+> debt shipped silently."*
+
+Third postmortem-driven gate in the same directory.
+
+### ★★ Drain semantics — the single best idea in the kit's gate layer
+
+```powershell
+} elseif ($CurrentStep -gt 0 -and $null -ne $impliedStep -and $impliedStep -le $CurrentStep) {
+    $severity = 'overdue'    # owning step reached/passed but debt survives -> block
+} elseif ($Strict) {
+    $severity = 'overdue'    # closeout strictness: any surviving marker blocks
+}
+```
+
+The gate parses the **owning step number out of the marker text**
+(`step\s+(\d+)`) and compares it against `-CurrentStep`. A note saying
+*"Step 11 wires this"* is **tracked** (non-blocking) through Steps 3-10 and
+becomes **overdue** (blocking) the moment Step 11 is reached.
+
+That solves a problem no other gate in the kit addresses: scaffolding is
+legitimate *during* a migration and a defect *after* it, and a binary gate can
+only pick one. This one is time-aware. `-Strict` promotes everything at Phase-2
+close, so untimed markers are caught too.
+
+It is also the answer to a question raised repeatedly in this review — how to
+gate something that is acceptable now and unacceptable later — and it is
+reusable well beyond scaffold comments.
+
+### ★ The rule set documents its own false-positive history
+
+```
+# The word 'placeholder' is deliberately NOT a trigger: it is
+# a real input feature and appears in correct code, so matching it produced false positives on
+# known-good wrappers.
+```
+
+Nine regex rules, each described as *"unambiguous modernization-scaffold
+LANGUAGE, not app terms"*, with an explicit note about a rule that was tried and
+removed. `ScaffoldPlaceholder` (the literal CSS class `scaffold-placeholder`) is
+carved out as always-blocking regardless of step, with the reasoning stated: a
+rendered placeholder *is* shipped debt at any step.
+
+### ⚠ MEDIUM — the vacuous-pass shape persists, but this one fails better
+
+```powershell
+if ($overdue.Count -gt 0) { exit 2 } else { exit 0 }
+```
+
+Same terminal pattern. If `$files` comes back empty — wrong client root, a client
+that is not Angular, a `src/` that does not exist — there are no findings and the
+gate exits 0.
+
+**But it is the best-guarded of the four.** Unlike the two `scan-*-parity`
+scripts it `throw`s when the client root cannot be resolved at all:
+
+```powershell
+throw "Could not determine ModernClientRoot. Pass -ModernClientRoot or populate .modernization/.readme/kit-params.md with appName."
+```
+
+So the common misconfiguration is caught. What is not caught is a root that
+resolves but contains nothing matching `*.ts,*.html` — and `filesScanned` is
+already in the artefact, so the same three-line guard applies.
+
+### Smaller observations
+
+- **`break` after the first matching rule per line** — one finding per line, so
+  rule order in `$MarkerRules` determines which `Kind` is reported. `StepDeferral`
+  is first, which is the most specific, so the ordering is deliberate and correct.
+- **Text is truncated to 200 characters** before being recorded, which keeps the
+  artefact readable. Reasonable, and unlike a silent cap it cannot hide a finding.
+- **`.spec.ts` is excluded** from the scan. Defensible (test scaffolding is
+  expected), but worth knowing: a deferral marker parked in a spec file is
+  invisible to this gate, and the kit's specs are already the weakest part of the
+  starter.
+- **The accepted-marker registry matches on substrings** (`-like '*...*'` on both
+  file and text), which is looser than the parity gates' exact comparisons. A
+  broad `textContains` waiver could silence more than intended.
 
 ---
 
@@ -13125,13 +13258,28 @@ not corrected:
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
 
+## Transcription uncertainties (`scan-scaffold-debt.ps1`)
+
+- One line short on the first pass (220 vs 221); resolved by counting the header
+  against the photo rather than guessing — a blank line at **6**, before
+  `.DESCRIPTION`, matching the convention in the sibling scripts. All twelve
+  photographed anchors then match (7 `.DESCRIPTION`, 41 `param(`, 93 the first
+  `$MarkerRules` entry, 106 the array close, 123 `Test-MarkerAccepted`, 135
+  `$files`, 142 `$lines`, 186 `$tracked`, 190 `generatedUtc`, 208 the console
+  block, 221 the exit).
+- The nine marker regexes on lines 93-105 are the least legible tokens in the
+  file. Line 105's `ScaffoldPlaceholder` pattern contains PowerShell's doubled
+  single-quote escaping (`["''][^"'']*`), transcribed as photographed; the live
+  regex is `class\s*=\s*["'][^"']*\bscaffold-placeholder\b`.
+- **Not executed** — `pwsh` unavailable.
+
 ## Transcription uncertainties (`scan-functional-parity-ledger.ps1`)
 
-- **This file is PARTIAL and the committed copy says so in a delimited trailing
-  comment.** Coverage is source lines **1-282** ("the first part"). Missing: the
-  close of the `$reason` switch, the `$blockingGaps.Add(...)` block, the loop
-  close, the `$result` assembly, the JSON write, the reporting block and the final
-  exit. It is syntactically incomplete by construction and must not be run.
+- **RESOLVED — the file is now complete** (376 lines, from 7 photos total). The
+  `.PARTIAL.ps1` copy has been replaced. Ten further anchors in the second half
+  match the photographed gutters (283 `default`, 285 `$blockingGaps.Add`, 300
+  `$deduped`, 309 `$majorGaps`, 315 `$result`, 338 `note`, 341 the JSON write,
+  346 the console block, 366 the BLOCKED branch, 376 `exit 0`).
 - Seventeen photographed gutter anchors were checked against the written file and
   all match — 41 `[CmdletBinding()]`, 42 `param(`, 47 `$ErrorActionPreference`,
   56 `$discoveryRoot`, 66 the BLOCKED guard, 71 `$ledgerDoc`, 97

@@ -280,13 +280,97 @@ foreach ($entry in $entries) {
             'navigate'    { "Route not found in modern routes.config.ts. Declare the missing route or check the resolvedTarget value in the ledger." }
             'export'      { "No export/download endpoint or FileResult return type found in modern src/ controllers." }
             'open-dialog' { "Dialog cannot be verified statically. Must be confirmed at Step 12/13 runtime checkpoint: dialog renders and all its own controls are separately ledgered and verified." }
+            default       { "Not yet implemented in modern src/." }
+        }
+        $blockingGaps.Add([ordered]@{
+            controlId     = [string]($entry.PSObject.Properties['controlId'] | ForEach-Object { $_.Value })
+            label         = [string]($entry.PSObject.Properties['label']     | ForEach-Object { $_.Value })
+            effectClass   = $ec
+            surface       = [string]($entry.PSObject.Properties['surface']   | ForEach-Object { $_.Value })
+            severity      = if ($isMajor) { 'Major' } else { 'Minor' }
+            computedState = 'Inventoried'
+            reason        = $reason
+        }) | Out-Null
+    }
+}
 
-# ---------------------------------------------------------------------------
-# TRANSCRIPTION NOTE -- NOT PART OF THE SOURCE FILE.
-# This import covers source lines 1-282 only ("the first part").
-# The remainder of scan-functional-parity-ledger.ps1 has not been photographed:
-# the close of the $reason switch, the $blockingGaps.Add(...) block, the loop
-# close, the $result assembly, the JSON write, the reporting block and the
-# final exit. The file as committed here is deliberately syntactically
-# incomplete and must not be executed.
-# ---------------------------------------------------------------------------
+# De-duplicate: one representative blocking entry per effectClass (since most entries
+# of the same class share the same root cause -- e.g. all mutate entries are unimplemented
+# because the same 37 backend mutations are missing). Keep a representative sample + total.
+$deduped = New-Object System.Collections.Generic.List[object]
+$ecSeen  = @{}
+foreach ($gap in $blockingGaps) {
+    $key = [string]$gap['effectClass']
+    if (-not $ecSeen.ContainsKey($key)) { $ecSeen[$key] = 0 }
+    $ecSeen[$key]++
+    if ($ecSeen[$key] -le 3) { $deduped.Add($gap) | Out-Null }   # show first 3 per class
+}
+
+$majorGaps = @($blockingGaps | Where-Object { $_['severity'] -eq 'Major' }).Count
+$minorGaps = @($blockingGaps | Where-Object { $_['severity'] -eq 'Minor' }).Count
+
+# ---------------------------------------------------------------
+# Write output artifact
+# ---------------------------------------------------------------
+$result = [ordered]@{
+    generatedUtc         = (Get-Date).ToUniversalTime().ToString('o')
+    ledgerPath           = $ledgerPath
+    repoRoot             = $RepoRoot
+    totalEntries         = $entries.Count
+    hasEffectClassSchema = $hasEffectClassSchema
+    byEffectClass        = $summary
+    majorGaps            = $majorGaps
+    minorGaps            = $minorGaps
+    blockingGaps         = $deduped.ToArray()
+    registryPath         = $registryPath
+    acceptedDropCount    = $acceptedDrops.Count
+    inputs               = [ordered]@{
+        backendParityGeneratedUtc = $backendScanAge
+        missingMutations          = $missingMutCount
+        missingQueries            = $missingQueryCount
+        droppedControllers        = $droppedControllers
+        placeholderActions        = $placeholderActionCount
+        modernRoutePaths          = $modernRoutePaths.Count
+        modernMutationMethods     = $modernMutationCount
+        modernQueryMethods        = $modernQueryCount
+        hasExportEndpoint         = $hasExportEndpoint
+    }
+    note = 'Functional Parity Ledger: every interactive legacy control must reach Verified (or Waived) before its owning step can close. This scanner computes Implemented state per effectClass by cross-referencing the Step 3 inventory against live modern src/ artifacts. A mutate entry that is Inventoried means the legacy write functionality was never ported - Add/Edit/Delete still does not exist in the modernized app.'
+}
+
+$result | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $outputPath -Encoding UTF8
+
+# ---------------------------------------------------------------
+# Console output
+# ---------------------------------------------------------------
+if (-not $Quiet) {
+    Write-Host ""
+    Write-Host ("  {0,-12} {1,6} {2,8} {3,10} {4,7}" -f 'effectClass','total','implmntd','unimplmntd','waived')
+    Write-Host ("  " + ("-" * 52))
+    foreach ($k in $allEffectClasses) {
+        $s = $summary[$k]
+        if ($s.total -eq 0) { continue }
+        $color = if ($s.unimplemented -gt 0 -and $k -in @('mutate','read','filter')) { 'Red' }
+                 elseif ($s.unimplemented -gt 0) { 'Yellow' }
+                 else { 'Green' }
+        Write-Host ("  {0,-12} {1,6} {2,8} {3,10} {4,7}" -f $k, $s.total, $s.implemented, $s.unimplemented, $s.waived) -ForegroundColor $color
+    }
+    Write-Host ""
+    Write-Host ("  Major gaps (mutate/read/filter): $majorGaps") -ForegroundColor $(if ($majorGaps -gt 0) { 'Red' } else { 'Green' })
+    Write-Host ("  Minor gaps (navigate/export/dialog): $minorGaps") -ForegroundColor $(if ($minorGaps -gt 0) { 'Yellow' } else { 'Green' })
+    Write-Host ""
+    Write-Host "Output -> $outputPath"
+    Write-Host ""
+}
+
+if ($majorGaps -gt 0) {
+    if (-not $Quiet) {
+        Write-Host ("RESULT: BLOCKED ({0} major gap(s) -- legacy behaviors not yet ported to modern src/)" -f $majorGaps) -ForegroundColor Red
+    }
+    exit 2
+}
+
+if (-not $Quiet) {
+    Write-Host "RESULT: OK" -ForegroundColor Green
+}
+exit 0
