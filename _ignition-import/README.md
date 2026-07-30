@@ -128,6 +128,7 @@ pattern-match against.
 | `starter/Starter.Web.Client/tmpt/.npmrc` | ⚠⚠ **`strict-ssl=false`**; confirms `ignore-scripts=true` + the `@fusion:` scoped registry; **host redacted** | transcribed from 1 photo — complete (7 content lines) |
 | `starter/Starter.Web.Client/.npmrc` | the **root** copy `npmAuth()` actually reads — no token markers; **host redacted** | transcribed from 1 photo — complete (5 content lines) |
 | `starter/Starter.Web.Client/.dockerignore` | excludes `cert.pem`/`cert.key` from the image; reveals a `Dockerfile` exists | transcribed from 1 photo — complete (16 content lines) |
+| `starter/Starter.Web.Client/angular.json` | ★★ resolves the `local` config + fileReplacement scheme; ⚠ warning-only budgets, CLI cache off, lint covers `src/**` only | transcribed from 5 photos — complete (234 lines, validates as JSON) |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -2486,6 +2487,225 @@ is in force.
   configuration — but it does mean that if the token-bearing rendered `.npmrc`
   ever lands at the client root, it goes into the image layer. Worth a line in
   whatever documents the container build.
+
+---
+
+## `angular.json` (234 lines) — resolves three open questions, corrects one of mine
+
+Validates as JSON, and every anchor line matches the photographed gutters
+(44 `configurations`, 56 `fileReplacements`, 73 `qa`, 129 `dvl`, 158 `local`,
+167 `serve`, 213 `lint`, 225 `cli`, 234 closing brace).
+
+### RESOLVED — `local` is a real configuration, and the fileReplacement scheme is confirmed
+
+The `build.mjs` entry flagged that its `configuration:` token defaults to `local`
+while no `fusion.config.local.ts` exists, and warned that *"if `local` is not a
+declared Angular configuration then the default invocation of `npm run build`
+fails while every named environment works."*
+
+It is declared, in both `build` and `serve`, and it is the
+`defaultConfiguration` for both. The default build works.
+
+The mechanism is exactly as inferred. Four configurations do a file replacement:
+
+```json
+"fileReplacements": [
+    {
+        "replace": "src/app/fusion.config.ts",
+        "with": "src/app/fusion.config.prd.ts"
+    }
+]
+```
+
+…and **`local` has no `fileReplacements` at all**, so it uses the unsuffixed
+`fusion.config.ts` — the one whose `baseUrl` is `https://localhost:4200/`. That
+is a clean design and it is now fully evidenced.
+
+It also confirms `fusion.config.prd.ts` is genuinely wired into the `prd` build,
+which means the `devMode: true` inheritance recorded against it is live, not
+theoretical.
+
+### CORRECTED — lint covers `src/**`; it does not cover `scripts/**`
+
+```json
+"lint": {
+    "builder": "@angular-eslint/builder:lint",
+    "options": {
+        "lintFilePatterns": [
+            "src/**/*.ts",
+            "src/**/*.html"
+        ]
+    }
+}
+```
+
+Several earlier entries reasoned from style divergences that *"either lint does
+not cover `src/app/**` or the rules are off"*, and treated the accumulation as
+evidence that `npm run lint`'s reach was narrower than assumed. **That inference
+was half right and half wrong, and the wrong half matters.**
+
+- **Right:** `scripts/` is a *sibling* of `src/`, so `update.mjs`'s unused
+  `npmInstall` import is genuinely never linted. Nothing in the build harness is.
+- **Wrong:** `src/**/*.ts` **is** covered. So the divergences inside `src/app/`
+  are not explained by lint not looking.
+
+Taking the three cases precisely, now that the patterns are known:
+
+1. **`CommonModule` in `my-entity` and `test-datastore`** — this would *not* be
+   caught by `no-unused-vars`, because the symbol **is** referenced: it appears in
+   the `imports:` array. It is unnecessary in the Angular sense, not unused in the
+   TypeScript sense. The rule that catches it is
+   **`@angular-eslint/no-unused-standalone-imports`**. My earlier "a linter would
+   normally flag this" was loose; the specific rule is the actionable version, and
+   enabling it is a one-line change to the ESLint config.
+2. **Missing trailing newlines** (`test-datastore.component.{ts,html}`,
+   `angular.json` itself) — that is Prettier's `insert-final-newline` territory,
+   and `preBuild` runs `npm run clean` then `npm run lint`. There is **no format
+   check in the build path at all**. That is the real gap, and it explains every
+   whitespace and ordering divergence in one stroke.
+3. **Unsorted `imports:` arrays and inconsistent `@Component` member order** —
+   also formatting/convention, also ungated.
+
+So the corrected conclusion is sharper than the original: the client has a
+**linter but no formatter gate**, and the linter is missing the one Angular rule
+that would catch the most-repeated defect. `.eslintrc` / `eslint.config.js` and
+`.prettierrc` remain worth having, but the diagnosis no longer depends on them.
+
+### ⚠ MEDIUM — bundle budgets can never fail a build
+
+Every budget in all four deployed configurations is a **warning**:
+
+```json
+{ "type": "initial",            "maximumWarning": "1mb" },
+{ "type": "anyComponentStyle",  "maximumWarning": "4kb" }
+```
+
+There is no `maximumError` anywhere in the file. A build that doubles the initial
+bundle prints a warning and exits 0.
+
+For a kit whose first principle is *"gates are scripts, not opinions"* and whose
+convention is `RESULT: OK` (exit 0) / `RESULT: BLOCKED` (exit 2), a budget that
+cannot block is a gate that is not one. It is also the single cheapest real gate
+available on the frontend: adding `"maximumError": "2mb"` alongside the warning
+turns bundle growth into a hard stop, which matters when a few hundred people are
+each adding Fusion components to a starter they did not write.
+
+Worth pairing with the observation that `local` — the default configuration — has
+**no budgets at all**, so the everyday build never even warns.
+
+### ⚠ MEDIUM (efficiency) — the Angular CLI disk cache is disabled
+
+```json
+"cli": {
+    "analytics": false,
+    "cache": {
+        "enabled": false
+    },
+```
+
+`analytics: false` is correct and welcome. `cache.enabled: false` turns off
+Angular's persistent build cache, so **every build recompiles from scratch**.
+
+This is worth calling out because efficiency was raised directly as a concern for
+the hackathon. Stacked with what the build harness already does, the loop is slow
+by configuration rather than by necessity:
+
+| Setting | Effect |
+|---|---|
+| `cli.cache.enabled: false` | no incremental compilation between builds |
+| `npmInstall`'s `existsSync && !force` early return | dependencies never refresh, so the fix is a manual delete |
+| `exec` buffering in `tools.mjs` | no streaming output, so a slow build looks like a hang |
+| `preBuild` running `clean` + `lint` on every build | full lint pass before every `ng build` |
+
+Disabling the CLI cache is almost always a workaround for one stale-cache
+incident. The supported remedy is `ng cache clean` when it misbehaves, not
+switching it off permanently. Re-enabling it is a one-line change and is likely
+the largest single wall-clock win available to a participant.
+
+### zone.js is present — the app is not zoneless
+
+```json
+"polyfills": [
+    "@angular/localize/init",
+    "zone.js"
+]
+```
+
+Change detection is zone-based throughout. That makes the earlier
+`ChangeDetectionStrategy.OnPush` finding **more** significant, not less: with
+signals used on three of four pages and only `HomeComponent` marked `OnPush`,
+every other page runs full zone-triggered change detection and re-evaluates
+`test-datastore`'s four getters on each pass. Not a performance problem at this
+scale; a bad pattern to propagate at hackathon scale.
+
+`@angular/localize/init` is also loaded on every build and there **is** an
+`extract-i18n` target — but no `i18n` block in the project and no locale files
+anywhere in the transcribed tree. So localization is paid for in bundle weight
+and never used. Either wire it up or drop the polyfill.
+
+### The `test` target has no coverage configuration
+
+```json
+"test": {
+    "builder": "@angular-devkit/build-angular:karma",
+    "options": {
+        "polyfills": ["zone.js", "zone.js/testing"],
+        "tsConfig": "tsconfig.spec.json",
+```
+
+No `codeCoverage`, no `codeCoverageExclude`, no reporters configured. Combined
+with the placebo specs recorded earlier — one zero-byte file and one
+`describe('Dummy')` whose body is `return;` — the Dominion rubric's
+**coverage ≥ 80%** gate has *no wiring on the client at all*. Not a low number: no
+mechanism to produce a number.
+
+This is the third time the same gap has surfaced from a different direction
+(empty spec → dummy spec → no coverage config). It is the most consistently
+evidenced hole in the kit's frontend story, and unlike most of the others it is a
+gate the rubric already claims to enforce.
+
+### `src/web.config` is copied into `dist/`
+
+```json
+"assets": [
+    "src/favicon.ico",
+    "src/assets",
+    "src/web.config",
+```
+
+Directly relevant to the deployment question opened by `.dockerignore` and
+`default.conf`. The IIS configuration — including the Content-Security-Policy
+this review called the starter's strongest security artefact — **ships inside the
+build output**. If the container serves that output through nginx, the file is
+present and inert: nginx does not read `web.config`.
+
+That makes the question sharper rather than answering it. A reviewer who finds
+`web.config` in `dist/` will reasonably conclude the headers are deployed.
+`default.conf` remains the file that decides whether they actually are.
+
+### Smaller observations
+
+- **`@angular-devkit/build-angular:application`** is the modern esbuild-based
+  builder, not the legacy `:browser` one. Good, and worth stating as the target an
+  agent should produce when it writes an `angular.json` for a ported app.
+- **`node_modules/@fusion/theme/assets` → `/assets`** is a glob asset entry. A
+  ported app that hand-writes `angular.json` and omits it will build cleanly and
+  render with missing Fusion icons and fonts — a silent visual-only failure, and
+  another candidate for the `component-map` / instructions treatment.
+- **`dvl` is the only configuration shipping `sourceMap: true`** alongside
+  `outputHashing: "all"`, so source maps reach that deployed environment. Probably
+  deliberate for a dev tier; worth a conscious decision rather than an inherited
+  one.
+- **Five near-identical 28-line configuration blocks (~115 lines of the 234).**
+  `angular.json` has no inheritance mechanism, so the duplication is unavoidable —
+  but it means every budget or optimization change is a five-place edit, and drift
+  between the blocks is exactly what has already happened (`sourceMap` on `dvl`
+  only). Any kit guidance about editing `angular.json` should say "change all
+  five".
+- **`schematics.@schematics/angular:component.style: "scss"`** and
+  `inlineStyleLanguage: "scss"` — consistent with every component transcribed.
+- **`angular.json` itself has no trailing newline**, matching `test-datastore`'s
+  files and reinforcing the no-formatter-gate finding above.
 
 ---
 
@@ -11858,6 +12078,27 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (`angular.json`)
+
+- **An off-by-one between two photos was resolved, not guessed.** Photos 1 and 2
+  overlap on the `prd` block and appeared to disagree by one line on where
+  `"fileReplacements"` starts. Settled three ways: photo 1's direct gutter
+  reading, back-projecting the row slope on a magnified crop of photo 2, and
+  reconstructing the block structurally. All three give **line 56**. The written
+  file was then checked against fourteen photographed gutter anchors (44, 45, 56,
+  62, 73, 129, 156, 158, 165, 167, 213, 217, 225, 234) and every one matches.
+- The five configuration blocks are near-identical, so they were reproduced from
+  a template after reading each one's distinguishing lines (the `with:` target,
+  and `dvl`'s extra `sourceMap`). Photo coverage overlapped at 51-66, 106-112 and
+  151-167, so every block boundary was read directly.
+- **`"$schema"` is transcribed as `"./node_modules/@angular/cli/lib/config/schema.json"`.**
+  The photo is consistent with either `./` or `../` at that resolution; `./` is
+  the Angular CLI default for a project at the workspace root, which this is
+  (`"root": ""`). Flagged rather than treated as certain.
+- The file has **no trailing newline** — gutter ends at 234 with `}` on it, with
+  clear screen below, matching the `test-datastore` files.
+- File validates under `json.loads`.
 
 ## Transcription uncertainties (client-root `.npmrc`, `.dockerignore`)
 
