@@ -151,6 +151,7 @@ pattern-match against.
 | `scripts/shared/Invoke-StepReconciliation.PARTIAL.ps1` | ★★★★ **settles the highest-severity finding** — *"a step with no registered rules reconciles to OK"* | **PARTIAL** — 1-67, 274-336, 755-804 of **803**; gaps at 68-273 and 337-754 |
 | `scripts/shared/verify-step-artifacts.PARTIAL.ps1` | ★★★ layer 1 of the two-layer model; ★ **`-EnsureControlPlane` explains why the skeleton stops at 3 files** | **PARTIAL** — lines 1-66; 1 of 5 photos read; do not execute |
 | `scripts/shared/verify-upgrade-invariants.PARTIAL.ps1` | ★★★ the **fourth and last** `shared/` script — catches diamond / split-version breaks a clean build hides | **PARTIAL** — lines 1-66 + tail 251-307 of **306**; gap 67-250 |
+| `scripts/maintenance/audit-step-number-drift.PARTIAL.ps1` | ★★★ **corrects the "+2 drift" terminology** — it was a 26→24 *compression*; three checks + an explicit unjudgeable-residue enumeration | **PARTIAL** — lines 1-67; 1 of 5 photos read; do not execute |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -5589,6 +5590,98 @@ and the review of it can be stated in three lines:
 3. **One survives**: the behavioural-parity checkpoint is the single place in
    seven that skips silently — and the fix now has a working reference
    implementation in the same directory.
+
+---
+
+# `.github/scripts/maintenance/`
+
+## `audit-step-number-drift.ps1` (lines 1-67 of N) — PARTIAL
+
+The script cited repeatedly in this import as the reason the step-numbering drift
+was "already solved". Its header corrects a term I have used throughout.
+
+### ⚠ CORRECTED — it was a **26 → 24 compression**, not a "+2 renumber"
+
+```
+    Detects step-number drift left over from the 26-step -> 24-step renumbering across the
+    reusable toolkit ...
+    The kit was originally a 26-step flow and was later compressed to 24 steps.
+```
+
+Every earlier entry in this README describes the drift as *"the +2 drift"* with
+the mapping *"old N → new N−2, applied per-line not per-file."* **That shorthand
+is wrong in a way that matters.**
+
+The kit did not shift every number down by two — it **compressed** 26 steps into
+24, meaning two steps were merged or removed at specific points in the flow. A
+uniform −2 only applies to steps *after* both removal points. Steps before the
+first removal keep their number; steps between the two shift by one.
+
+That materially changes how a drift finding should be read. The **Step 9 or 12**
+observation recorded against `verify-step-artifacts.ps1` — flagged as a
+"partially applied renumber" because old 11 → new 9 while 12 stayed 12 — is
+**consistent with a compression** if both removals fall between the old steps 9
+and 12. It is not evidence of a half-finished migration. My inference relied on
+the uniform-shift model, and the uniform-shift model was mine, not the kit's.
+
+Retracting the drift claim in that entry. Whether Steps 9 and 12 are two
+legitimately distinct gates remains open, but the arithmetic no longer argues
+against it.
+
+### ★ It is data-driven, and that raises another file's priority
+
+```
+    Canonical step titles are read at runtime from AppMod-Artifact-Contract.json, so this script
+    stays data-driven and never hard-codes the step list.
+```
+
+`AppMod-Artifact-Contract.json` is the canonical step list — titles, numbers, and
+(from `verify-step-artifacts.ps1`) `requiredInputs` / `producedOutputs` /
+`readableName` per step. It is the spine of the whole pipeline.
+
+It is also **still only partially transcribed**, with roughly 30 entries recorded
+as `[CUT]` in this import and a re-shoot outstanding since early on. Its priority
+moves to the top of the non-script backlog: two separate scripts now demonstrably
+read it as their source of truth.
+
+### ★★ The three checks are well-chosen, and the fourth is an honest admission
+
+| Check | What it proves | Why it is safe to automate |
+|---|---|---|
+| **A** self-reference | `NN-....prompt.md` calls itself Step NN in both its H1 and frontmatter | filename is ground truth |
+| **B** reference resolution | every `/NN-slug` and ``run `NN-slug` `` resolves to a real file | disk is ground truth |
+| **C** title-anchored | when text says `Step N <Title>` and `<Title>` is a canonical `readableName`, `N` must match | the title carries the number's meaning |
+
+Check B is correctly identified as *"the highest-severity drift, because a
+developer who clicks one gets nothing"* — a dangling slash-command is worse than
+a stale number, because it fails silently at the moment of use.
+
+Check C is the interesting one. It only fires when a **title travels with the
+number**, which is what makes it decidable *"without needing to understand the
+surrounding prose."* That is a genuinely well-chosen invariant: it converts a
+natural-language problem into a lookup.
+
+And then the enumeration:
+
+> *Lists each reference with a classification tag so a maintainer can review the
+> residue that carries no title (bare "Step 14 or later") **which no automated
+> rule can safely judge.***
+
+This is the sixth instance in `.github/scripts/` of a tool **naming what it
+cannot decide** rather than guessing — and the most explicit. A bare `Step 14`
+with no title genuinely cannot be validated without reading the sentence, so the
+script surfaces it for human review instead of producing a false verdict in
+either direction.
+
+**That is also the exact class the Step 9-vs-11 observation falls into.**
+`selftest-parity-gate.ps1` asserts the *"Step 11/12 parity + deferral-drain
+gate"* with no canonical title attached, so Check C cannot fire on it and it
+lands in the enumeration — off by default, surfaced under `-IncludeEnumeration`,
+for a maintainer to judge. The audit script would not call it a violation, and it
+would be right not to.
+
+`-IncludeEnumeration` being off by default is the correct call for a routine
+gate: violations stay signal, residue stays available.
 
 ---
 
@@ -14961,6 +15054,20 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (`maintenance/audit-step-number-drift.ps1`)
+
+- **PARTIAL — 1 of the 5 photos in the batch was read.** Source lines **1-67**
+  (through `$ErrorActionPreference`); the whole body is unphotographed. Delimited
+  trailing note in the committed copy. Must not be executed.
+- All fifteen photographed anchors in range match (3 the synopsis line, 8 the
+  compression sentence, 14 the three-checks intro, 16/20/26/32 the four check
+  blocks, 36 the data-driven note, 39 `.PARAMETER RepoRoot`, 49 `.OUTPUTS`, 53
+  the first `.EXAMPLE`, 59 `[CmdletBinding()]`, 60 `param(`, 66/67 the two
+  preference lines).
+- Indentation in the comment help is 4-space for section bodies and 6-space for
+  the check sub-bullets, as photographed.
+- **Not executed** — `pwsh` unavailable and the file is incomplete.
 
 ## Transcription uncertainties (`shared/verify-upgrade-invariants.ps1`)
 
