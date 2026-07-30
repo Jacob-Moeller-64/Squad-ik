@@ -144,6 +144,7 @@ pattern-match against.
 | `scripts/parity/scan-ui-parity-gaps.PARTIAL.ps1` | ★★ produces `ui-parity-gap-scan.json` (the ledger's `filter` input); ★ **honesty rules**; ★ **discovery probe** — self-reporting rule-coverage gaps | **PARTIAL** — lines 1-454 of ~950+; **gap at 455-831**; do not execute |
 | `scripts/parity/selftest-backend-parity.ps1` | ★★★ **the gates are tested** — runs the real gate against synthetic fixtures, 8 assertions over 6 cases | transcribed from 3 photos — complete (170 content lines) |
 | `scripts/parity/selftest-functional-parity-ledger.PARTIAL.ps1` | ★★★ second self-test — confirms self-testing is the **convention**, not a one-off | **PARTIAL** — lines 1-121 + tail 284-341 (separate fragment); **gap 122-283**; file is 340 lines |
+| `scripts/parity/selftest-parity-gate.PARTIAL.ps1` | ★★★★ **anti-re-blinding guards** — asserts against the scanner's own SOURCE, not just its behaviour | **PARTIAL** — lines 1-66; 1 of 5 photos read; do not execute |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -4363,6 +4364,102 @@ The single gap remains the same in both, and is now precisely stated:
 
 That is the one test that would catch the vacuous-pass family, and both harnesses
 are one parameter away from being able to express it.
+
+---
+
+## `parity/selftest-parity-gate.ps1` (lines 1-66 of N) — PARTIAL
+
+The **third** self-test, and its header contains the most sophisticated idea in
+`.github/scripts/` — enough that the 66 lines transcribed are worth more than
+most complete files in this import.
+
+### The origin story, stated plainly
+
+```
+The original modernization failure mode was a parity gate that reported majorGaps=0 while
+the app was missing half its controls, because an app-specific allowlist hard-coded into the
+reusable scanner permanently suppressed the inert-control signal.
+```
+
+**A gate reported zero gaps while half the app was missing.** Not because the
+logic was wrong, but because an allow-list added to fix one app's noise became
+permanent blindness for every app after it. That is the precise failure this
+review has been circling from the outside — and the kit not only found it, it
+wrote a test to prevent its return.
+
+### ★★★★ Static anti-re-blinding guards — tests that read the gate's source
+
+Assertions 1-5 are behavioural (synthetic fixtures, real scanner, exit codes).
+Assertions **6-8 are different in kind**:
+
+```
+Static anti-re-blinding guards (regression locks on the reusable assets):
+  6. scan-ui-parity-gaps.ps1 ships an EMPTY inert allowlist default and carries no known
+     app-specific handler/label/feature tokens.
+  7. scan-ui-parity-gaps.ps1 still emits deferredInertControls and accepts -CurrentStep.
+  8. verify-step-artifacts.ps1 still contains the Step 11/12 parity + deferral-drain gate.
+```
+
+These do not run the gate. They **inspect the gate's own source text** and assert
+structural properties of it:
+
+- that the shipped allow-list is still *empty* — i.e. nobody has quietly
+  re-hard-coded an app's handler names into the reusable script;
+- that the honesty mechanism (`deferredInertControls`) and the drain mechanism
+  (`-CurrentStep`) still *exist*;
+- that a **different file entirely** (`shared/verify-step-artifacts.ps1`) still
+  contains the Step 11/12 enforcement.
+
+This is a regression lock against a class of change that behavioural tests
+cannot catch. A behavioural test passes if the gate correctly blocks the fixture
+you gave it; it says nothing about whether someone added
+`$inertControlAllowlist['SaveInvoice'] = '...'` to the shared scanner last
+Tuesday. Assertion 6 catches exactly that.
+
+Three things follow, and they matter for the hackathon:
+
+1. **This is the answer to "the kit will drift when 200 people edit it."** The
+   concern raised at the start of this work was that a shared kit degrades as
+   teams patch it for their own apps. Assertion 6 is a mechanical, executable
+   defence against the single most likely form of that degradation.
+2. **It generalises.** The same technique — a self-test that greps the reusable
+   asset for tokens that should never appear in it — applies to every shared
+   script in the kit, not just this one. It is cheap to write and it fails loudly.
+3. **It reaches across directories.** Assertion 8 asserts on
+   `shared/verify-step-artifacts.ps1`, which the partial confirms is resolved as
+   `$PSScriptRoot/../shared/verify-step-artifacts.ps1`. So the parity self-test
+   is also a guard on the artifact verifier — the first hard evidence of what
+   lives in `shared/`, and the first cross-directory coupling seen.
+
+### Note on the harness — this one runs in-process
+
+```
+# The scanner is invoked in-process with the call operator; its `exit` sets $LASTEXITCODE and
+# returns control here. Assertions read the JSON output file, never stdout, so console
+# truncation is irrelevant.
+```
+
+This differs from `selftest-backend-parity.ps1`, which deliberately shells out
+*"so `exit` is the reliable process exit code"*. Both files explain their choice;
+they simply disagree. In-process `& $scanner` does set `$LASTEXITCODE` in
+PowerShell, so the claim here is defensible — but the backend self-test's
+reasoning is the safer one, because an in-process `exit` inside a script invoked
+with `&` terminates *that script* and can behave differently under
+`-ExecutionPolicy`/dot-sourcing variations. **A third inconsistency between
+sibling files**, consistent with the pattern recorded throughout this review.
+
+### Position
+
+`parity/` now shows **three** self-tests plus a `verify-gate-integrity` script
+still unseen. The gate layer is not merely tested; it is tested against its own
+regression history, with the specific past failures named in the source. That is
+a materially stronger engineering posture than anything else in this import, and
+it deserves to be said clearly after a long sequence of defect findings.
+
+The outstanding recommendation is unchanged and now has a proven template:
+**add one empty-input case to each self-test.** Assertions 6-8 here prove the
+authors are willing to write unusual, high-value tests; the vacuous-pass case is
+ordinary by comparison.
 
 ---
 
@@ -13735,6 +13832,21 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (`selftest-parity-gate.ps1`)
+
+- **PARTIAL — 1 of the 5 photos in the batch was read.** Source lines **1-66**;
+  the file continues (the `Invoke-ScanCase` param block is cut mid-list). The
+  committed copy carries a delimited trailing note. Not runnable.
+- All eleven photographed anchors in range match (35 `[CmdletBinding()]`, 38
+  `$ErrorActionPreference`, 40 `$scanner`, 41 `$verifier`, 44 `$script:failures`,
+  46 `Assert-That`, 57 the harness comment, 61 `Invoke-ScanCase`, 63/66 its
+  params).
+- Line 41's `$verifier` is a chained `Join-Path … | Join-Path -ChildPath …`
+  expression resolving `$PSScriptRoot/../shared/verify-step-artifacts.ps1`;
+  transcribed as photographed. It is the first direct evidence of a file inside
+  `.github/scripts/shared/`.
+- **Not executed** — `pwsh` unavailable and the file is incomplete.
 
 ## Transcription uncertainties (`selftest-functional-parity-ledger.ps1`)
 
