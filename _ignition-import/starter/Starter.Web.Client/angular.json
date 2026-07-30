@@ -1,0 +1,234 @@
+{
+    "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+    "version": 1,
+    "newProjectRoot": "projects",
+    "projects": {
+        "web-client": {
+            "projectType": "application",
+            "schematics": {
+                "@schematics/angular:component": {
+                    "style": "scss"
+                }
+            },
+            "root": "",
+            "sourceRoot": "src",
+            "prefix": "app",
+            "architect": {
+                "build": {
+                    "builder": "@angular-devkit/build-angular:application",
+                    "options": {
+                        "outputPath": "dist",
+                        "index": "src/index.html",
+                        "browser": "src/main.ts",
+                        "polyfills": [
+                            "@angular/localize/init",
+                            "zone.js"
+                        ],
+                        "tsConfig": "tsconfig.app.json",
+                        "inlineStyleLanguage": "scss",
+                        "assets": [
+                            "src/favicon.ico",
+                            "src/assets",
+                            "src/web.config",
+                            {
+                                "glob": "**/*",
+                                "input": "node_modules/@fusion/theme/assets",
+                                "output": "/assets"
+                            }
+                        ],
+                        "styles": [
+                            "src/styles.scss"
+                        ],
+                        "scripts": []
+                    },
+                    "configurations": {
+                        "prd": {
+                            "budgets": [
+                                {
+                                    "type": "initial",
+                                    "maximumWarning": "1mb"
+                                },
+                                {
+                                    "type": "anyComponentStyle",
+                                    "maximumWarning": "4kb"
+                                }
+                            ],
+                            "fileReplacements": [
+                                {
+                                    "replace": "src/app/fusion.config.ts",
+                                    "with": "src/app/fusion.config.prd.ts"
+                                }
+                            ],
+                            "optimization": {
+                                "fonts": true,
+                                "scripts": true,
+                                "styles": {
+                                    "minify": true,
+                                    "inlineCritical": false,
+                                    "removeSpecialComments": true
+                                }
+                            },
+                            "outputHashing": "all"
+                        },
+                        "qa": {
+                            "budgets": [
+                                {
+                                    "type": "initial",
+                                    "maximumWarning": "1mb"
+                                },
+                                {
+                                    "type": "anyComponentStyle",
+                                    "maximumWarning": "4kb"
+                                }
+                            ],
+                            "fileReplacements": [
+                                {
+                                    "replace": "src/app/fusion.config.ts",
+                                    "with": "src/app/fusion.config.qa.ts"
+                                }
+                            ],
+                            "optimization": {
+                                "fonts": true,
+                                "scripts": true,
+                                "styles": {
+                                    "minify": true,
+                                    "inlineCritical": false,
+                                    "removeSpecialComments": true
+                                }
+                            },
+                            "outputHashing": "all"
+                        },
+                        "uat": {
+                            "budgets": [
+                                {
+                                    "type": "initial",
+                                    "maximumWarning": "1mb"
+                                },
+                                {
+                                    "type": "anyComponentStyle",
+                                    "maximumWarning": "4kb"
+                                }
+                            ],
+                            "fileReplacements": [
+                                {
+                                    "replace": "src/app/fusion.config.ts",
+                                    "with": "src/app/fusion.config.uat.ts"
+                                }
+                            ],
+                            "optimization": {
+                                "fonts": true,
+                                "scripts": true,
+                                "styles": {
+                                    "minify": true,
+                                    "inlineCritical": false,
+                                    "removeSpecialComments": true
+                                }
+                            },
+                            "outputHashing": "all"
+                        },
+                        "dvl": {
+                            "budgets": [
+                                {
+                                    "type": "initial",
+                                    "maximumWarning": "1mb"
+                                },
+                                {
+                                    "type": "anyComponentStyle",
+                                    "maximumWarning": "4kb"
+                                }
+                            ],
+                            "fileReplacements": [
+                                {
+                                    "replace": "src/app/fusion.config.ts",
+                                    "with": "src/app/fusion.config.dvl.ts"
+                                }
+                            ],
+                            "optimization": {
+                                "fonts": true,
+                                "scripts": true,
+                                "styles": {
+                                    "minify": true,
+                                    "inlineCritical": false,
+                                    "removeSpecialComments": true
+                                }
+                            },
+                            "outputHashing": "all",
+                            "sourceMap": true
+                        },
+                        "local": {
+                            "optimization": false,
+                            "extractLicenses": false,
+                            "sourceMap": true,
+                            "verbose": true
+                        }
+                    },
+                    "defaultConfiguration": "local"
+                },
+                "serve": {
+                    "builder": "@angular-devkit/build-angular:dev-server",
+                    "configurations": {
+                        "prd": {
+                            "buildTarget": "web-client:build:prd"
+                        },
+                        "qa": {
+                            "buildTarget": "web-client:build:qa"
+                        },
+                        "uat": {
+                            "buildTarget": "web-client:build:uat"
+                        },
+                        "dvl": {
+                            "buildTarget": "web-client:build:dvl"
+                        },
+                        "local": {
+                            "buildTarget": "web-client:build:local"
+                        }
+                    },
+                    "defaultConfiguration": "local"
+                },
+                "extract-i18n": {
+                    "builder": "@angular-devkit/build-angular:extract-i18n",
+                    "options": {
+                        "buildTarget": "web-client:build"
+                    }
+                },
+                "test": {
+                    "builder": "@angular-devkit/build-angular:karma",
+                    "options": {
+                        "polyfills": [
+                            "zone.js",
+                            "zone.js/testing"
+                        ],
+                        "tsConfig": "tsconfig.spec.json",
+                        "inlineStyleLanguage": "scss",
+                        "assets": [
+                            "src/favicon.ico",
+                            "src/assets"
+                        ],
+                        "styles": [
+                            "src/styles.scss"
+                        ],
+                        "scripts": []
+                    }
+                },
+                "lint": {
+                    "builder": "@angular-eslint/builder:lint",
+                    "options": {
+                        "lintFilePatterns": [
+                            "src/**/*.ts",
+                            "src/**/*.html"
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "cli": {
+        "analytics": false,
+        "cache": {
+            "enabled": false
+        },
+        "schematicCollections": [
+            "@angular-eslint/schematics"
+        ]
+    }
+}
