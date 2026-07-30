@@ -150,6 +150,7 @@ pattern-match against.
 | `scripts/shared/field-contract.PARTIAL.ps1` | ★★ **the `opx-field-contract/v1` validator**; ★ its *authoring rule* reframes the loose-schema finding | **PARTIAL** — lines 1-63; 1 of 5 photos read; do not dot-source |
 | `scripts/shared/Invoke-StepReconciliation.PARTIAL.ps1` | ★★★★ **settles the highest-severity finding** — *"a step with no registered rules reconciles to OK"* | **PARTIAL** — 1-67, 274-336, 755-804 of **803**; gaps at 68-273 and 337-754 |
 | `scripts/shared/verify-step-artifacts.PARTIAL.ps1` | ★★★ layer 1 of the two-layer model; ★ **`-EnsureControlPlane` explains why the skeleton stops at 3 files** | **PARTIAL** — lines 1-66; 1 of 5 photos read; do not execute |
+| `scripts/shared/verify-upgrade-invariants.PARTIAL.ps1` | ★★★ the **fourth and last** `shared/` script — catches diamond / split-version breaks a clean build hides | **PARTIAL** — lines 1-66; 1 of 5 photos read; do not execute |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -5437,6 +5438,78 @@ So the layering across `shared/` is:
 
 Recorded as the closing map of the directory. Three of the four layers report
 what they did not check; the fourth is the one that does not.
+
+---
+
+## `shared/verify-upgrade-invariants.ps1` (lines 1-66 of N) — PARTIAL
+
+The fourth and final `shared/` script, and the only one aimed at the **.NET
+upgrade** rather than the artifact chain. It completes the picture of the
+enforcement layer.
+
+### ★ It catches a failure class no other gate in the kit addresses
+
+```
+    A clean build does NOT prove dependency consistency. NuGet compiles each project against its
+    own referenced version, so a package that is referenced at two different versions across the
+    closure still builds green - but only the single highest version ships to the run folder. The
+    project that compiled against the other version then calls members that no longer exist and
+    faults at runtime (a diamond / split-version break), which the app's own error handling can
+    disguise as an ordinary error status. The build never reveals it.
+```
+
+That is a precise, correct description of NuGet diamond-dependency failure, and
+it is the **sixth** postmortem-shaped rationale found in `.github/scripts/`.
+Every other gate reviewed targets *modernization* correctness — did the behaviour
+survive, did the endpoints survive, did the fields survive. This one targets
+*build-graph* correctness, and the failure it describes is one that a green build,
+a passing test run, **and an HTTP 2xx probe** all fail to reveal.
+
+The last clause of the `-PublishDir` section is the sharpest statement of it:
+
+> *"A shipped-vs-compiled major mismatch is a runtime defect even when an HTTP
+> probe returned 2xx."*
+
+That directly answers a question this review raised much earlier, when
+`entrypoint.sh` and the runtime-verifier scripts suggested the kit's liveness
+checks were HTTP-probe based: the kit knows a 2xx is not proof, and has a
+separate deterministic check for the case where it lies.
+
+### ★ Test projects are classified separately, with the policy named
+
+```
+      Test projects are classified separately: the Step 7 test carry-forward policy keeps test-only
+      packages on their existing versions, so test-only version differences are reported as
+      informational and never block.
+```
+
+Two things worth recording. First, it is another instance of the
+**report-but-do-not-block** discipline seen throughout — a test-only split is
+surfaced as informational rather than silently ignored *or* treated as fatal.
+Second, it names the policy it defers to (*"the Step 7 test carry-forward
+policy"*), so the reason a difference is tolerated is traceable to a documented
+decision rather than being a hard-coded exception.
+
+That is the same shape as the waiver registries in `parity/`: the exception is
+allowed, named, and visible.
+
+### The two-invariant structure
+
+| Invariant | Scope | Requires |
+|---|---|---|
+| single-version closure | every `.csproj` under `-WorkspaceRoot`, resolving `Directory.Packages.props` central management | static only |
+| shipped-vs-compiled major | `-PublishDir` assemblies vs resolved product versions | a completed run/publish |
+
+The second is **opt-in by parameter** — and unlike the behavioural-parity
+checkpoint recorded above, that is unambiguous at the call site: a caller that
+omits `-PublishDir` knows it omitted it, because it is an argument rather than an
+artefact that may or may not exist on disk. The distinction matters, and it is
+worth noting that this file gets the opt-in shape right.
+
+`Directory.Packages.props` also appears here for the first time as something the
+kit *reads*. It is listed in the file tree at the repo root and is still
+untranscribed; its content now matters more, because it is the central version
+source this invariant resolves against.
 
 ---
 
@@ -14809,6 +14882,22 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (`shared/verify-upgrade-invariants.ps1`)
+
+- **PARTIAL — 1 of the 5 photos in the batch was read.** Source lines **1-66**
+  (through `$ErrorActionPreference`); the entire body is unphotographed here.
+  Delimited trailing note in the committed copy. Must not be executed.
+- All fourteen photographed anchors in range match (14 the "catches that class"
+  line, 16/23 the two invariant paragraphs, 28/31/34/37 the `.PARAMETER` blocks,
+  40 `.OUTPUTS`, 47 the first `.EXAMPLE`, 53 `[CmdletBinding()]`, 54 `param(`,
+  56 `$WorkspaceRoot`, 62 `$AsJson`, 65/66 the two preference lines).
+- The two `.EXAMPLE` lines are long single lines that soft-wrap in the photo;
+  reproduced unwrapped. The workspace path
+  `.modernization/OpXUtil/Backup/LegacyCode_NET10_Upgrade` and the `_run5100`
+  publish folder are as photographed — they are kit-internal paths, not hosts or
+  credentials.
+- **Not executed** — `pwsh` unavailable and the file is incomplete.
 
 ## Transcription uncertainties (`shared/verify-step-artifacts.ps1`)
 
