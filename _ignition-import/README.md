@@ -94,6 +94,8 @@ pattern-match against.
 | File | Role | Status |
 |---|---|---|
 | `starter/Starter.Library/Entities/MyEntity.cs` | reference domain entity | transcribed from 1 photo — complete (source lines 1-28) |
+| `starter/Starter.Web.Api/Controllers/PublicTextController.cs` | ✅ the exemplar controller — XML docs, `sealed`, async + `CancellationToken`, `ILogger<T>` | transcribed from 1 photo — complete (source lines 1-43) |
+| `starter/Starter.Web.Api/Controllers/MyEntitiesController.cs` | ⚠ the non-exemplar — no docs, not `sealed`, sync, no logger, **verb-based route** | transcribed from 1 photo — complete (source lines 1-66) |
 | `starter/Starter.Library/Starter.Library.csproj` | ★ build settings + the first real Fusion package versions seen in the import | transcribed from 1 photo — complete (source lines 1-21); **validates as XML** |
 | `starter/Starter.Library/Services/PublicTextService.cs` | ✅ reference service done **right** — XML docs, async + `CancellationToken`, stateless | transcribed from 1 photo — complete (source lines 1-22); 9 anchors verified |
 | `starter/Starter.Library/Services/MyService.cs` | ⚠ reference service — **scores HIGH against the kit's own compliance rubric** | transcribed from 1 photo — complete (source lines 1-43); 10 anchors verified |
@@ -699,6 +701,94 @@ Headline coverage:
    implies.
 6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
    `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## ★★ The two-tier pattern is systemic: `PublicText*` is the exemplar, `MyEntities*` is not
+
+The controllers repeat the services split **exactly**, which converts a
+two-file observation into a confirmed structural pattern across the whole starter.
+
+| Rule (kit's own source) | `PublicTextController` | `MyEntitiesController` |
+|---|---|---|
+| XML documentation (`AGENTS.md`) | ✅ class, ctor, and action | ✗ none |
+| `sealed` | ✅ | ✗ |
+| Async + `CancellationToken` (`dotnet.instructions.md`) | ✅ `async Task<ActionResult<T>>` | ✗ all `IActionResult`, sync |
+| Inject `ILogger<T>` (`dotnet.instructions.md`) | ✅ | ✗ absent |
+| Policy-based authz, no `Roles=` | ✅ `[AllowAnonymous]` | ✅ `[Authorize(Policy = "User")]` |
+| `[ProducesResponseType]` on every action | ✅ | ✅ |
+| RESTful routes | ✅ | ✗ **`[HttpPost("Search")]`** |
+
+So it is now **four files in a matched pair** — `PublicTextService` /
+`MyService`, `PublicTextController` / `MyEntitiesController` — where the
+`PublicText*` half satisfies the kit's standards and the `MyEntities*` half does
+not. The `MyEntities*` half is the larger, CRUD-complete, obviously-reusable one.
+
+**This is good news, not bad.** It means the fix is not authorship, it is
+*consistency*: the correct template for every gap already exists in the same
+folder, written by the same hand. Bringing `MyEntities*` up to `PublicText*`
+standard is mechanical.
+
+---
+
+## ⚠ Second self-scored violation: a verb-based route in the starter
+
+`MyEntitiesController` line 61:
+
+```csharp
+[HttpPost("Search")]
+```
+
+`AppMod-Acceptance-Criteria.md` line 46 lists **"Verb-based API routes"** under
+Medium, `dominion-requirements/SKILL.md` line 726 shows `// BAD - Verb-based URLs`,
+and line 1347 grades it:
+
+> | Verb-based URLs | **MEDIUM** |
+
+**Running total against the kit's own rubric, for the starter as shipped:**
+
+| Finding | File | Severity | Points |
+|---|---|---|---|
+| Instance state in singleton | `MyService.cs` + its `AddSingleton` registration | **HIGH** | −5 |
+| Verb-based URL | `MyEntitiesController.cs` (`POST /MyEntities/Search`) | **MEDIUM** | −2 |
+
+**Baseline compliance score for the starter ≈ 93/100** by `Score = 100 -
+(CRITICAL × 10) - (HIGH × 5) - (MEDIUM × 2)`. That is above the ≥ 80 deployment
+gate, so nothing blocks — but every team's Step 4 baseline report will open with
+two findings they did not write, in code the kit told them to treat as the
+reference.
+
+*In fairness on the route:* `POST /resource/Search` is a widely accepted REST
+pragmatism when filter payloads outgrow query strings, and this endpoint takes a
+`MyModelSearch` body. The kit's criteria list it flatly as a violation with no
+carve-out, so by its own rubric it counts — but the honest fix is a **rubric
+decision**, not necessarily a code change: either add a documented exception for
+POST-with-body search, or move it to `GET /MyEntities?name=…&description=…`.
+Deciding that once, centrally, is worth more than either edit.
+
+---
+
+## Two useful things `MyEntitiesController` does get right
+
+**Policy-based authorization, exactly as mandated.** `[Authorize(Policy = "User")]`
+— not `[Authorize(Roles = ...)]`, not `User.IsInRole()`. Both
+`fusion-restructure.instructions.md` and `modernization-starter-boundaries` require
+this, `AppMod-Acceptance-Criteria` lists role-centric authz as HIGH, and the
+starter complies. It also confirms `"User"` as a real policy name — matching the
+two named user-input gates (`User` and `Admin` group identifiers) in
+`modernization-starter-boundaries`.
+
+**A complete OpenAPI/Scalar surface.** Every action carries
+`[ProducesResponseType<T>(...)]` including the `ProblemDetails` 400 shape. That is
+the concrete backing for the Scalar-serves-at-`/scalar` claim in
+`fusion-mcp-restructure` — the response types are what make that documentation
+surface useful rather than empty.
+
+**One Fusion helper worth noting:** `this.ToAbsoluteUrl($"MyEntities/{entity.Id}")`
+in the `Created(...)` response. It is not a standard ASP.NET Core `ControllerBase`
+member, so it comes from Fusion — the first Fusion extension method observed in
+actual use, and a small proof that the starter really is composed on the Fusion
+base rather than plain ASP.NET Core.
 
 ---
 
