@@ -94,6 +94,7 @@ pattern-match against.
 | File | Role | Status |
 |---|---|---|
 | `starter/Starter.Library/Entities/MyEntity.cs` | reference domain entity | transcribed from 1 photo — complete (source lines 1-28) |
+| `starter/Starter.Web.Api/Extensions/FusionWebBuilderExtensions.cs` | ★★ **settles the auth dispute** — contains no auth, no Swagger, no middleware at all | transcribed from 1 photo — complete (source lines 1-20) |
 | `starter/Starter.Web.Api/Controllers/PublicTextController.cs` | ✅ the exemplar controller — XML docs, `sealed`, async + `CancellationToken`, `ILogger<T>` | transcribed from 1 photo — complete (source lines 1-43) |
 | `starter/Starter.Web.Api/Controllers/MyEntitiesController.cs` | ⚠ the non-exemplar — no docs, not `sealed`, sync, no logger, **verb-based route** | transcribed from 1 photo — complete (source lines 1-66) |
 | `starter/Starter.Library/Starter.Library.csproj` | ★ build settings + the first real Fusion package versions seen in the import | transcribed from 1 photo — complete (source lines 1-21); **validates as XML** |
@@ -701,6 +702,124 @@ Headline coverage:
    implies.
 6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
    `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## ★★★ SETTLED EMPIRICALLY: `fusion-auth-standards.md` describes code that does not exist
+
+`fusion-auth-standards.md` names two files and prescribes exactly what to put in
+them:
+
+> **Wire in `FusionWebBuilderExtensions.cs`:**
+> ```csharp
+> public static WebApplication UseFusionWebMiddleware(this WebApplication app)
+> {
+>     if (app.Environment.IsDevelopment()) { app.UseSwagger(); app.UseSwaggerUI(); }
+>     app.UseHttpsRedirection();
+>     app.UseAuthentication();
+>     app.UseAuthorization();
+>     return app;
+> }
+> ```
+> **Wire in `FusionApplicationBuilderExtensions.cs` or `Program.cs`:**
+> ```csharp
+> builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+>     .AddJwtBearer(options => { ... });
+> ```
+
+**Both files are now transcribed. Neither contains any of it.** A grep across the
+two for `AddAuthentication`, `AddJwtBearer`, `UseAuthentication`,
+`UseAuthorization`, `Swagger`, and `Scalar` returns **zero matches in both files**.
+
+Here is the entirety of `FusionWebBuilderExtensions.cs`:
+
+```csharp
+public static IFusionWebBuilder AddMyApplication(this IFusionWebBuilder fusionWebBuilder)
+{
+    fusionWebBuilder.AddMyLibrary();
+    return fusionWebBuilder;
+}
+```
+
+That is the whole file — one call, one return. No middleware pipeline, no
+`UseFusionWebMiddleware` method, no Swagger block. And its Library counterpart is
+`Configure<MyOptions>` plus two `AddSingleton` registrations, nothing more.
+
+**So authentication, authorization, OpenAPI, and Scalar all come from Fusion
+itself** — via `FusionWebBuilder.CreateBuilder(...)` and the appsettings config
+blocks (`Fusion.Web.Api.EnableApi`, `Fusion.Web.Security.IdentityProviders`,
+`Fusion.Security.Principal`), exactly as `fusion-mcp-restructure.instructions.md`
+describes and exactly as `dominion-requirements` implies when it forbids *"a
+parallel generic `AddJwtBearer` stack."*
+
+**This moves the finding from "outlier opinion" to "documented behavior that
+contradicts the shipped code."** The tally is now:
+
+| Position | Sources |
+|---|---|
+| Fusion owns auth; do not hand-roll | `appmod-fusion-target`, `g1-to-g2-playbook`, `fusion-g1-to-g2-modernization/SKILL.md`, `dominion-requirements`, `copilot.instructions.md`, `modernization-starter-boundaries`, **and now the starter source itself** |
+| Hand-write `AddJwtBearer` in these two files | `fusion-auth-standards.md` alone |
+
+**Recommendation, upgraded from "rewrite" to "rewrite urgently."** This is the
+single most dangerous file in the kit for the hackathon: it tells an agent to add
+a parallel authentication stack into a **protected starter control point**, in a
+file whose real contents are three lines. An agent that follows it will produce
+precisely the *"parallel generic `AddJwtBearer` stack"* that
+`dominion-requirements` marks as a violation — and it will do so while believing
+it is following the Fusion standard. Everything else in
+`fusion-auth-standards.md` (policy-based authz, secrets, PII, CORS, token
+validation, the severity table) is sound and worth keeping; only the two
+"Fusion pattern (use this)" code blocks need to go, replaced with a pointer to
+the Fusion config blocks.
+
+---
+
+## ⚠ A doc comment that describes a database the kit does not have
+
+Line 13:
+
+> `/// Wires up the application services, including the **PostgreSQL-backed entity repositories**.`
+
+There is no PostgreSQL anywhere in the starter. `AddMyLibrary()` registers
+`DefaultMyService` — an in-memory `Dictionary<Guid, MyEntity>` — and
+`DefaultPublicTextService`, which returns a hard-coded string.
+`Starter.Library.csproj` has no Npgsql or EF Core package. The
+`modernization-starter-boundaries` configuration guidance is written entirely
+around **SQL Server** (`SqlServer__Server`, `SqlServer__Database`, …), and
+`dotnet.instructions.md`'s data-access sections are `SqlClient` and Dapper.
+
+So this is a stale comment, almost certainly copied from a different project. It
+is small, but it is the *worst* kind of small for this kit specifically:
+
+- `copilot.instructions.md` instructs agents to **use `src/` as the working
+  reference**. An agent reading this comment while planning Step 8 data access
+  could reasonably conclude the target stack is PostgreSQL and wire Npgsql —
+  contradicting every SQL Server reference in the boundaries file.
+- It is exactly the failure mode the Evidence Contract exists to prevent:
+  documentation asserting a capability that no code provides. The kit forbids
+  agents from doing this; the starter does it.
+
+One-line fix: `/// Wires up the application services.`
+
+---
+
+## Also worth noting
+
+**Same namespace idiom, one level up.** `namespace Fusion.Fx.App.Web;` in a file
+under `Starter.Web.Api/Extensions/` — the Web-tier twin of the Library file's
+`namespace Fusion.Fx.App;`. Consistent, deliberate, and the same linter
+carve-out applies.
+
+**`using System;` on line 1 is redundant** under `ImplicitUsings=enable`. Trivial
+on its own, but a small irony given `AnalysisLevel=latest-all` +
+`TreatWarningsAsErrors=True`: unnecessary-using is exactly the class of
+suggestion that combination is designed to surface. Worth checking whether the
+starter actually builds clean under its own analyzer settings — another item for
+the "point the kit's gates at the kit" pass.
+
+**Documentation quality is on the good tier here** — XML `<summary>` on both the
+class and the method, matching `PublicText*` rather than `MyEntities*`. The
+content is wrong, but the form is right.
 
 ---
 
