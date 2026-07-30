@@ -149,6 +149,7 @@ pattern-match against.
 | `scripts/parity/verify-gate-integrity.ps1` | ★★★★ **the meta-gate** — auto-discovers and runs every `selftest-*.ps1`; ★ **refuses to pass when it finds none** | transcribed from 2 photos — complete (86 content lines) |
 | `scripts/shared/field-contract.PARTIAL.ps1` | ★★ **the `opx-field-contract/v1` validator**; ★ its *authoring rule* reframes the loose-schema finding | **PARTIAL** — lines 1-63; 1 of 5 photos read; do not dot-source |
 | `scripts/shared/Invoke-StepReconciliation.PARTIAL.ps1` | ★★★★ **settles the highest-severity finding** — *"a step with no registered rules reconciles to OK"* | **PARTIAL** — 1-67, 274-336, 755-804 of **803**; gaps at 68-273 and 337-754 |
+| `scripts/shared/verify-step-artifacts.PARTIAL.ps1` | ★★★ layer 1 of the two-layer model; ★ **`-EnsureControlPlane` explains why the skeleton stops at 3 files** | **PARTIAL** — lines 1-66; 1 of 5 photos read; do not execute |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -5080,6 +5081,95 @@ zero-input guards on four `scan-*` scripts, one empty-input case per self-test,
 the `\b` verb regex, `shared/` extraction — should each be re-verified against
 the actual file before being acted on, because three of the four largest findings
 in this review dissolved on contact with the source.
+
+---
+
+## `shared/verify-step-artifacts.ps1` (lines 1-66 of N) — PARTIAL
+
+Layer 1 of the two-layer model — *well-formed* — and the file
+`selftest-parity-gate.ps1` assertion 8 asserts against. Third of the four
+`shared/` scripts.
+
+It reads `AppMod-Artifact-Contract.json` for the per-step contract, resolves the
+app name from `kit-params.md` (or `-AppName`), and checks **presence and
+non-emptiness** of each declared artefact.
+
+### `-Mode Input | Output | Both` — the entry/closeout bracket
+
+> *"Every numbered prompt can call it at entry (-Mode Input) to confirm it
+> ingested what it needs, and at closeout (-Mode Output) to confirm it produced
+> what later prompts consume."*
+
+This is the mechanism behind the pipeline's gated structure, and it explains a
+pattern seen throughout the prompts: each step verifies its own preconditions
+before doing work, and its own postconditions before closing. `-Mode Both` is the
+default.
+
+Also restated here: *"Running with QA disabled never changes the result, because
+the contract only depends on DEV-authored and DEV-script artifacts."* Same
+QA-independence guarantee as `Invoke-StepReconciliation.ps1` — both halves of the
+reliability story hold on a `No QA` run.
+
+### ★ CORRECTED — my recommendation to extend `New-ControlPlaneSkeleton` was wrong
+
+```
+.PARAMETER EnsureControlPlane
+    When set, deterministically materializes a generic, app-agnostic skeleton for any missing
+    control-plane JSON (modernization-execution-contract.json, modernization-phase-assessment.json,
+    modernization-solution-design.json) so a No QA run is never blocked by a missing control file.
+    The skeleton is a placeholder the owning step enriches; it never fabricates application routes.
+```
+
+An early entry in this import recorded that `New-ControlPlaneSkeleton` covers
+three artefacts and recommended *"pointing it at `decisions.json`,
+`migration-plan.json`, `control-point-inventory.json`, `per-route-behavior-plan.json`"*
+as the fix for the schemas that assert no required fields.
+
+**That recommendation was wrong, and the reason is in the last sentence:
+*"it never fabricates application routes."***
+
+The three covered files — execution **contract**, phase **assessment**, solution
+**design** — are *process* artefacts. Their skeletons are structurally empty
+scaffolds that the owning step fills in, and materialising one asserts nothing
+about the application.
+
+The four I proposed adding are all *evidence* artefacts: discovered routes,
+discovered control points, recorded decisions, a derived migration plan.
+Generating a skeleton for any of those would be manufacturing evidence that no
+step has gathered — which is **precisely the "hallucinated-but-believable entry"
+that `Invoke-StepReconciliation.ps1` exists to catch.** The kit would be
+fabricating the exact class of artefact its own truth layer is designed to
+detect.
+
+Restated as the underlying principle, which the kit follows and I missed:
+
+> **Skeletons may be materialised for artefacts whose content is process
+> metadata. They must never be materialised for artefacts whose content is
+> discovered evidence.**
+
+That line is worth adding to the kit's own documentation, because it is the
+non-obvious rule that keeps `-EnsureControlPlane` safe, and nothing found so far
+states it in the general form.
+
+It also closes the loop on the schema correlation recorded earlier — that
+contracts with deterministic producers assert required fields and those without
+assert none. The split is not arbitrary: **process artefacts have deterministic
+producers and can be asserted; evidence artefacts do not and cannot.**
+
+### Running tally of corrections in `shared/`
+
+Three files, three findings of mine overturned:
+
+| File | What it corrected |
+|---|---|
+| `field-contract.ps1` | schema looseness is deliberate (authoring rule), not neglect |
+| `Invoke-StepReconciliation.ps1` | the engine *does* distinguish "no rules" from "all passed" |
+| `verify-step-artifacts.ps1` | extending the skeleton generator would fabricate evidence |
+
+That is a consistent enough pattern to treat as the headline result of reviewing
+this directory, and it is recorded here rather than buried: **the kit's design
+decisions are load-bearing more often than they look, and the reasoning is
+usually written down one file away from where the question arises.**
 
 ---
 
@@ -14452,6 +14542,18 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (`shared/verify-step-artifacts.ps1`)
+
+- **PARTIAL — 1 of the 5 photos in the batch was read.** Source lines **1-66**
+  (through the `-Mode` parameter); the rest of `param()`, the contract loader,
+  the skeleton materialiser, the check engine and the exit are unphotographed.
+  Delimited trailing note in the committed copy. Must not be executed.
+- All fourteen photographed anchors in range match (17/20/24/29/32/38 the
+  `.PARAMETER` blocks, 44 `.OUTPUTS`, 48 the first `.EXAMPLE`, 57
+  `[CmdletBinding()]`, 58 `param(`, 60 `$Step`, 63 `$StepId`, 65 the
+  `ValidateSet`, 66 `$Mode`).
+- **Not executed** — `pwsh` unavailable and the file is incomplete.
 
 ## Transcription uncertainties (`shared/Invoke-StepReconciliation.ps1`)
 
