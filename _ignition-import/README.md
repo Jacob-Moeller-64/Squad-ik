@@ -146,6 +146,7 @@ pattern-match against.
 | `scripts/parity/selftest-functional-parity-ledger.PARTIAL.ps1` | ★★★ second self-test — confirms self-testing is the **convention**, not a one-off | **PARTIAL** — lines 1-121 + tail 284-341 (separate fragment); **gap 122-283**; file is 340 lines |
 | `scripts/parity/selftest-parity-gate.PARTIAL.ps1` | ★★★★ **anti-re-blinding guards** — asserts against the scanner's own SOURCE, not just its behaviour | **PARTIAL** — lines 1-66; 1 of 5 photos read; do not execute |
 | `scripts/parity/selftest-scaffold-debt.PARTIAL.ps1` | ★★★ **fourth** self-test — four of six scanners now confirmed to have paired regression tests | **PARTIAL** — lines 1-65; 1 of 3 photos read; do not execute |
+| `scripts/parity/verify-gate-integrity.ps1` | ★★★★ **the meta-gate** — auto-discovers and runs every `selftest-*.ps1`; ★ **refuses to pass when it finds none** | transcribed from 2 photos — complete (86 content lines) |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -4542,6 +4543,135 @@ inconsistent `-Quiet` contracts, divergent verb regexes, permanent waivers — i
 either already solved in a sibling file or already locked down by one of these
 suites. The gap is singular, well-defined, and each harness is one parameter away
 from closing it.
+
+---
+
+## `parity/verify-gate-integrity.ps1` (86 lines) — the meta-gate, and it closes the loop
+
+The file this review has been asking for since the first gate. It is short, and
+it resolves the standing recommendation outright.
+
+### ★★★★ RESOLVED — the vacuous-pass guard exists, at the top of the stack
+
+```powershell
+if ($selfTests.Count -eq 0) {
+    Write-Host "  No gate self-tests found - nothing to verify (expected selftest-*.ps1)." -ForegroundColor Red
+    exit 2
+}
+```
+
+…and it is documented in `.OUTPUTS`:
+
+> *Exit 0 when every discovered self-test passes; exit 2 when any self-test fails
+> **or none are found**.*
+
+**The runner refuses to report success when it had nothing to check.** That is
+precisely the guard recorded as missing from `scan-api-dto-coverage.ps1`,
+`scan-backend-parity.ps1`, `scan-ui-parity-gaps.ps1` and `scan-scaffold-debt.ps1`
+— present here, deliberate, and documented.
+
+So the finding sharpens one final time. It was never "nobody thought of this."
+The pattern now appears in **two** places (`scan-functional-parity-ledger.ps1`'s
+missing-ledger BLOCKED, and this runner's zero-self-tests exit 2), and is absent
+from four. The recommendation reduces to: **propagate a pattern the kit already
+uses twice.** That is a strictly mechanical change with a working reference
+implementation in the same directory.
+
+### ★ Auto-discovery with no registration step
+
+```powershell
+# Root to search for selftest-*.ps1. Defaults to .github/scripts so every gate self-test
+# anywhere in the kit is auto-included as it is added - no registration step to forget.
+$selfTests = @(Get-ChildItem -Path $ScriptsRoot -Recurse -Filter 'selftest-*.ps1' ...)
+```
+
+It searches **all of `.github/scripts`**, not just `parity/`. Adding
+`selftest-<anything>.ps1` anywhere in the kit enrols it automatically. The comment
+names the failure being designed out — *"no registration step to forget"* — which
+is the same class of problem as the hard-coded allow-list: a manual step that
+silently degrades.
+
+This matters for the normalisation work recommended throughout this review. Any
+self-test written for the four unguarded scanners is picked up by this runner
+**for free**, with no manifest to update.
+
+### ★ It declares its own limits
+
+```
+This verifies gate LOGIC. It does not, and cannot, prove a specific app is behaviorally correct
+at runtime; that is the runtime interact-and-assert checkpoint's job.
+```
+
+Third instance of a script in this directory stating what it cannot prove and
+naming the mechanism that covers the remainder — after `open-dialog` in the
+ledger and the static-vs-runtime split in `scan-scaffold-debt.ps1`. Consistent
+enough now to call it a house style rather than a coincidence.
+
+### ★ Why gate self-tests are mandatory, stated in one sentence
+
+> *A failing self-test means the gate no longer discriminates correctly - either a
+> real defect would ship (false negative) or correct code would be blocked (false
+> positive) - so the edit must not land until the self-test is green.*
+
+Both directions, again, and an explicit merge-blocking policy. This is the
+sentence to put in `CLAUDE.md` / `AGENTS.md`: it converts "run the self-tests"
+from advice into a rule with a stated reason.
+
+### The `-Quiet` question is answered, and my earlier concern shrinks
+
+```powershell
+# Do NOT forward -Quiet: the runner needs the child's [PASS]/[FAIL] lines to count assertions;
+# -Quiet controls only the runner's own summary verbosity, captured output is not displayed
+# unless the self-test fails.
+```
+
+Two earlier entries flagged `-Quiet` inconsistencies in the self-tests and gates
+— notably that `scan-functional-parity-ledger.ps1` suppresses its own `RESULT:`
+line despite documenting otherwise. **The runner never forwards `-Quiet` to a
+child**, so within the sanctioned invocation path those inconsistencies do not
+bite: every self-test runs verbose, its `[PASS]`/`[FAIL]` lines are counted, and
+failures are echoed.
+
+The gate-level `-Quiet` defects still matter for direct/CI invocation of the
+scanners themselves, which is how the pipeline steps call them. But the
+*self-test* `-Quiet` inconsistency is effectively dead code. Recording the
+narrowing.
+
+Small note: assertion counting is done by grepping child stdout for `\[PASS\]`
+/ `\[FAIL\]`, so the `Assert-That` output format is a load-bearing contract
+across five files. Worth a comment in each `Assert-That`, since a cosmetic tweak
+to that string would silently zero the counts while every exit code stayed green.
+
+---
+
+### Closing position on `.github/scripts/parity/`
+
+Eight files transcribed (five scanners, four self-tests, this runner — some
+partial). The picture is now settled and worth stating once, plainly:
+
+**This is the strongest part of the kit.** It is postmortem-driven (five separate
+documented incidents), legacy-anchored, deterministic, waiver-honest,
+time-aware via drain semantics, self-reporting about its own blind spots,
+regression-tested against synthetic fixtures, guarded against re-blinding by
+static source assertions, and wired into a single auto-discovering runner that
+fails closed when it finds nothing.
+
+The defects found are real but almost all of one kind: **a good practice present
+in one file and absent from its siblings.** With `verify-gate-integrity.ps1` in
+hand, the remediation is fully specified and small:
+
+1. Add the zero-input guard to the four scanners that lack it — copy from this
+   file or from the ledger.
+2. Add one empty-input case to each `selftest-*.ps1` — the harnesses already
+   exist; the assertion fails today, which is the point.
+3. Align `selftest-parity-gate.ps1` to child-process invocation (3-to-1 house
+   convention).
+4. Unify the HTTP-verb attribute regex (`\b` form, per `scan-backend-parity.ps1`).
+5. Extract the duplicated resolution/registry/waiver scaffolding into
+   `.github/scripts/shared/`.
+
+Every one of those has a working reference implementation already in the
+directory. None of it requires new design.
 
 ---
 
@@ -13914,6 +14044,18 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (`verify-gate-integrity.ps1`)
+
+- Complete at **86 content lines** (gutter 87), from 2 photos with overlap at
+  lines 41-67. All thirteen photographed anchors match (29 `[CmdletBinding()]`,
+  37 `$ErrorActionPreference`, 39 the root default, 43 `$selfTests`, 50 the
+  zero-self-tests guard, 55 `$results`, 56 the loop, 61 `$psArgs`, 67
+  `$results.Add`, 75 `$failed`, 78 the success branch, 86 the close).
+- The two `Select-String -Pattern` literals are `'\[PASS\]'` and `'\[FAIL\]'`
+  — regex-escaped brackets inside single-quoted PowerShell strings, transcribed
+  as photographed. They are the load-bearing contract with every `Assert-That`.
+- **Not executed** — `pwsh` unavailable.
 
 ## Transcription uncertainties (`selftest-scaffold-debt.ps1`)
 
