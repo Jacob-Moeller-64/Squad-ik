@@ -144,7 +144,7 @@ pattern-match against.
 | `scripts/parity/scan-ui-parity-gaps.PARTIAL.ps1` | ★★ produces `ui-parity-gap-scan.json` (the ledger's `filter` input); ★ **honesty rules**; ★ **discovery probe** — self-reporting rule-coverage gaps | **PARTIAL** — lines 1-454 of ~950+; **gap at 455-831**; do not execute |
 | `scripts/parity/selftest-backend-parity.ps1` | ★★★ **the gates are tested** — runs the real gate against synthetic fixtures, 8 assertions over 6 cases | transcribed from 3 photos — complete (170 content lines) |
 | `scripts/parity/selftest-functional-parity-ledger.PARTIAL.ps1` | ★★★ second self-test — confirms self-testing is the **convention**, not a one-off | **PARTIAL** — lines 1-121 + tail 284-341 (separate fragment); **gap 122-283**; file is 340 lines |
-| `scripts/parity/selftest-parity-gate.PARTIAL.ps1` | ★★★★ **anti-re-blinding guards** — asserts against the scanner's own SOURCE, not just its behaviour | **PARTIAL** — lines 1-66; 1 of 5 photos read; do not execute |
+| `scripts/parity/selftest-parity-gate.PARTIAL.ps1` | ★★★★ **anti-re-blinding guards** — asserts against the scanner's own SOURCE, not just its behaviour | **PARTIAL** — lines 1-66 + fragment 291-353; gap 67-290; do not execute |
 | `scripts/parity/selftest-scaffold-debt.PARTIAL.ps1` | ★★★ **fourth** self-test — four of six scanners now confirmed to have paired regression tests | **PARTIAL** — lines 1-65; 1 of 3 photos read; do not execute |
 | `scripts/parity/verify-gate-integrity.ps1` | ★★★★ **the meta-gate** — auto-discovers and runs every `selftest-*.ps1`; ★ **refuses to pass when it finds none** | transcribed from 2 photos — complete (86 content lines) |
 | `scripts/shared/field-contract.PARTIAL.ps1` | ★★ **the `opx-field-contract/v1` validator**; ★ its *authoring rule* reframes the loose-schema finding | **PARTIAL** — lines 1-63; 1 of 5 photos read; do not dot-source |
@@ -5170,6 +5170,70 @@ That is a consistent enough pattern to treat as the headline result of reviewing
 this directory, and it is recorded here rather than buried: **the kit's design
 decisions are load-bearing more often than they look, and the reasoning is
 usually written down one file away from where the question arises.**
+
+---
+
+### Fragment 291-353 — it does more than presence checking
+
+The `.SYNOPSIS` describes this script as checking *"presence and non-emptiness"*.
+The breadcrumb shows a function the summary does not mention:
+**`Get-StepSemanticReadinessFindings`** (line 249). So layer 1 is not purely
+structural — there is a semantic-readiness pass inside it, sitting between the
+field contract and the reconciliation engine.
+
+That is worth knowing because the two-layer model recorded throughout this review
+(schema = well-formed, reconciliation = true) is really **two and a half**: the
+artefact verifier also asks whether a step is *semantically ready*, not merely
+whether its files exist.
+
+### ★ Step-range resolution — a real correctness detail
+
+```powershell
+function Resolve-CaseOwnerStepNumbers {
+  # Returns ALL step numbers a case covers. Handles range notation like "Step10-13" -> [10,11,12,13].
+  # Used by the Step 6 downstream coverage check so a catalog entry with a phase range
+  # credits every step in that range, not just the first one.
+```
+
+A testcase whose owning phase reads `"Step10-13"` credits **all four** steps.
+Without this, steps 11-13 would appear uncovered and the Step 6 coverage check
+would report false gaps — the false-positive direction this kit consistently
+guards against.
+
+The resolution order is a three-tier fallback with the reasoning stated:
+
+1. explicit `owningStep` / `ownerStep` field → that is the one and only step;
+2. otherwise parse `ownerPhase`;
+3. otherwise parse `materializationPhase` — *"needed when ownerPhase is a
+   human-readable name like 'Backend - Modernization Formation' while
+   materializationPhase holds the explicit step notation like 'Step 7 then
+   carry-forward…'."*
+
+That is the same **two-producer tolerance** named in
+`Invoke-StepReconciliation.ps1`'s `Get-RouteEntrySet`: two different producers
+write the same logical field in different shapes, and the consumer probes both
+rather than assuming one. Third sighting of the pattern, and the first with a
+worked example of *why* the shapes differ — one field is a human label, the other
+is machine notation.
+
+Field-name tolerance is broad throughout: `owningStep`/`ownerStep`,
+`ownerPhase`/`materializationPhase`, and in the reconciliation fragment
+`testFile`/`TestFile`/`filePath`/`file` and `caseId`/`id`/`caseID`/`Id`. The kit
+consistently accepts casing and synonym variation from LLM-authored artefacts
+rather than failing on it — a deliberate accommodation of non-deterministic
+producers, and a sensible one.
+
+### ⚠ MINOR — empty `catch {}` in the step parsers
+
+Three of them in this fragment (lines 303, 330, 352). An unparseable step number
+resolves the same as an absent one: the function returns `0` / an empty list, and
+the case is treated as covering no step.
+
+Given the surrounding fallback chain the practical impact is small — a malformed
+`owningStep` falls through to the phase parsers, which is the intended path
+anyway. But it is the same shape flagged in `scan-functional-parity-ledger.ps1`:
+a malformed value is indistinguishable from a missing one. `Write-Verbose` in
+each would cost nothing and make a genuinely corrupt catalog entry visible.
 
 ---
 
@@ -14545,9 +14609,14 @@ not corrected:
 
 ## Transcription uncertainties (`shared/verify-step-artifacts.ps1`)
 
-- **PARTIAL — 1 of the 5 photos in the batch was read.** Source lines **1-66**
-  (through the `-Mode` parameter); the rest of `param()`, the contract loader,
-  the skeleton materialiser, the check engine and the exit are unphotographed.
+- **PARTIAL, in two fragments with a known interior gap.** `…PARTIAL.ps1` holds
+  source lines **1-66**; `…FRAGMENT-291-353.ps1` holds **291-353**. **Lines
+  67-290 are not transcribed** — that range holds the rest of `param()`, the
+  contract loader, the skeleton materialiser, and the head of
+  `Get-StepSemanticReadinessFindings` (line 249) and `Resolve-CaseOwnerStepNumber`
+  (line 277), both located from the editor breadcrumb. The engine body and exit
+  are also unseen.
+- Only **1 of the 5 photos** in each of the two batches for this file was read.
   Delimited trailing note in the committed copy. Must not be executed.
 - All fourteen photographed anchors in range match (17/20/24/29/32/38 the
   `.PARAMETER` blocks, 44 `.OUTPUTS`, 48 the first `.EXAMPLE`, 57
