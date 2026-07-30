@@ -147,6 +147,7 @@ pattern-match against.
 | `scripts/parity/selftest-parity-gate.PARTIAL.ps1` | ★★★★ **anti-re-blinding guards** — asserts against the scanner's own SOURCE, not just its behaviour | **PARTIAL** — lines 1-66; 1 of 5 photos read; do not execute |
 | `scripts/parity/selftest-scaffold-debt.PARTIAL.ps1` | ★★★ **fourth** self-test — four of six scanners now confirmed to have paired regression tests | **PARTIAL** — lines 1-65; 1 of 3 photos read; do not execute |
 | `scripts/parity/verify-gate-integrity.ps1` | ★★★★ **the meta-gate** — auto-discovers and runs every `selftest-*.ps1`; ★ **refuses to pass when it finds none** | transcribed from 2 photos — complete (86 content lines) |
+| `scripts/shared/field-contract.PARTIAL.ps1` | ★★ **the `opx-field-contract/v1` validator**; ★ its *authoring rule* reframes the loose-schema finding | **PARTIAL** — lines 1-63; 1 of 5 photos read; do not dot-source |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -4672,6 +4673,96 @@ hand, the remediation is fully specified and small:
 
 Every one of those has a working reference implementation already in the
 directory. None of it requires new design.
+
+---
+
+# `.github/scripts/shared/` — the enforcement layer
+
+First file from the directory this review has asked for since the beginning.
+
+## `shared/field-contract.ps1` (lines 1-63 of N) — PARTIAL
+
+The implementation of the `opx-field-contract/v1` dialect, which until now had
+only been reconstructed from the nine schema files that consume it.
+
+### CONFIRMED — the dialect exists because of PowerShell 5.1
+
+```
+    This is intentionally NOT JSON
+    Schema (Draft 7+): the kit must run on Windows PowerShell 5.1, where `Test-Json -Schema`
+    is unavailable. The dialect is deliberately small - presence (required), type,
+    non-emptiness, enums, nested fields, and array-element contracts - so a junior maintainer
+    can read and extend it without learning a large spec.
+```
+
+Exactly the reason inferred earlier from the schema files, now stated in the
+source — and with a second justification the inference missed: **readability for
+a junior maintainer**. For a kit that a few hundred people will extend during a
+hackathon, "small enough to read" is a defensible reason to prefer a custom
+dialect over a standard one, independent of the 5.1 constraint.
+
+The nine dialect keys are confirmed exactly as documented from the schemas:
+`type`, `required`, `fields`, `notEmpty`, `enum`, `minItems`, `arrayOf`,
+`rootPath`.
+
+### ★★ The authoring rule — and a partial reframe of this review's highest-severity finding
+
+```
+    Authoring rule (important): a field contract MUST pass on a legitimately INITIALIZED
+    artifact. Many state and control-plane files are created with empty strings or empty
+    arrays before any step enriches them. Only mark `notEmpty` on a field that is non-empty
+    even at init, or the gate will false-positive on a valid, freshly-reset workspace.
+```
+
+An earlier entry recorded a "perfect correlation" across the nine schemas — every
+one with a deterministic producer asserts required fields; every one without
+asserts none — and rated `control-point-inventory.json` (a `hardStop` for nine
+steps, validated only as a non-empty object) the **highest-severity finding in
+the kit**.
+
+That looseness is now shown to be **deliberate and reasoned**, not neglect. A
+contract that demands populated fields would fire on every freshly-reset
+workspace, and a gate that blocks a legitimately-initialized repo is the
+false-positive failure this kit repeatedly designs against. The schemas are loose
+*on purpose*, at the point in the lifecycle where looseness is correct.
+
+**The finding narrows but does not disappear.** The authoring rule justifies not
+marking `notEmpty` at schema level; it says nothing about the separate question
+recorded alongside it — that `control-point-inventory.json` is consumed only by
+`Test-Path` and has **no reconciliation rule until Step 17**, despite being a
+hard stop from Step 8. Schema looseness and reconciliation absence are different
+layers, and the kit's own two-layer model (well-*formed* vs *true*) says so: a
+deliberately permissive contract at layer 1 makes a layer-2 rule **more**
+necessary, not less.
+
+Restated precisely: *the schema is correctly loose; the gap is that nothing
+tightens later.* `Invoke-StepReconciliation.ps1` is the file that settles whether
+that is true, and it remains the single highest-value untranscribed file in the
+kit.
+
+### Smaller observations
+
+- **`Set-StrictMode -Version Latest`** at module scope, and
+  `Test-HasJsonProperty` exists specifically to be StrictMode-safe: it uses the
+  `PSObject.Properties` indexer rather than `.Name -contains` *"so an EMPTY object
+  ({} from ConvertFrom-Json) does not throw PropertyNotFoundStrict under
+  StrictMode."* That is a real 5.1 trap, correctly handled, with the reason
+  recorded.
+- **`Get-JsonKind` enumerates ten numeric CLR types** (`int`, `long`, `double`,
+  `decimal`, `single`, `int16`, `byte`, `uint16`, `uint32`, `uint64`) because
+  PowerShell 5.1's `ConvertFrom-Json` can produce several of them. Tedious and
+  correct — and the comment *"Order matters: scalar checks first, then
+  dictionary/object, then generic enumerable"* explains the one thing a reader
+  would otherwise get wrong, since a string is also `IEnumerable`.
+- **`# Anything else (rare) is treated as an object so nested checks can still run
+  safely.`** A fail-soft default in a validator, chosen so an unrecognised value
+  does not abort the whole validation pass. Consistent with the false-positive
+  discipline seen throughout.
+- **`.NOTES` declares the public surface** — `Get-JsonKind`,
+  `Test-ArtifactFieldContract`, `Test-JsonFileAgainstContract` — and states
+  *"Pure functions only - dot-sourcing this file has no side effects."* That is
+  the right contract for a shared library and the thing that makes it safe for
+  every gate to dot-source.
 
 ---
 
@@ -14044,6 +14135,19 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (`shared/field-contract.ps1`)
+
+- **PARTIAL — 1 of the 5 photos in the batch was read.** Source lines **1-63**;
+  the file continues (`Test-HasJsonProperty`'s body is cut after its `param`).
+  Delimited trailing note in the committed copy. Must not be dot-sourced.
+- All ten photographed anchors in range match (13 the authoring rule, 21 the
+  dialect key list, 31 `.NOTES`, 36 `Set-StrictMode`, 38 `Get-JsonKind`, 44 the
+  null check, 51 the PSCustomObject check, 55 the fail-soft return, 58
+  `Test-HasJsonProperty`, 63 its `param`).
+- **Indentation in this file is 2-space**, unlike the 4-space `parity/` scripts —
+  transcribed as photographed.
+- **Not executed** — `pwsh` unavailable and the file is incomplete.
 
 ## Transcription uncertainties (`verify-gate-integrity.ps1`)
 
