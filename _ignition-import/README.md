@@ -144,7 +144,7 @@ pattern-match against.
 | `scripts/parity/scan-ui-parity-gaps.PARTIAL.ps1` | ★★ produces `ui-parity-gap-scan.json` (the ledger's `filter` input); ★ **honesty rules**; ★ **discovery probe** — self-reporting rule-coverage gaps | **PARTIAL** — lines 1-454 of ~950+; **gap at 455-831**; do not execute |
 | `scripts/parity/selftest-backend-parity.ps1` | ★★★ **the gates are tested** — runs the real gate against synthetic fixtures, 8 assertions over 6 cases | transcribed from 3 photos — complete (170 content lines) |
 | `scripts/parity/selftest-functional-parity-ledger.PARTIAL.ps1` | ★★★ second self-test — confirms self-testing is the **convention**, not a one-off | **PARTIAL** — lines 1-121 + tail 284-341 (separate fragment); **gap 122-283**; file is 340 lines |
-| `scripts/parity/selftest-parity-gate.PARTIAL.ps1` | ★★★★ **anti-re-blinding guards** — asserts against the scanner's own SOURCE, not just its behaviour | **PARTIAL** — lines 1-66 + fragment 291-353; gap 67-290; do not execute |
+| `scripts/parity/selftest-parity-gate.PARTIAL.ps1` | ★★★★ **anti-re-blinding guards** — asserts against the scanner's own SOURCE, not just its behaviour | **PARTIAL** — 1-66, 291-353, 610-669; ⚠ **the runtime checkpoint every static gate defers to is opt-in** |
 | `scripts/parity/selftest-scaffold-debt.PARTIAL.ps1` | ★★★ **fourth** self-test — four of six scanners now confirmed to have paired regression tests | **PARTIAL** — lines 1-65; 1 of 3 photos read; do not execute |
 | `scripts/parity/verify-gate-integrity.ps1` | ★★★★ **the meta-gate** — auto-discovers and runs every `selftest-*.ps1`; ★ **refuses to pass when it finds none** | transcribed from 2 photos — complete (86 content lines) |
 | `scripts/shared/field-contract.PARTIAL.ps1` | ★★ **the `opx-field-contract/v1` validator**; ★ its *authoring rule* reframes the loose-schema finding | **PARTIAL** — lines 1-63; 1 of 5 photos read; do not dot-source |
@@ -5234,6 +5234,117 @@ Given the surrounding fallback chain the practical impact is small — a malform
 anyway. But it is the same shape flagged in `scan-functional-parity-ledger.ps1`:
 a malformed value is indistinguishable from a missing one. `Write-Verbose` in
 each would cost nothing and make a genuinely corrupt catalog entry visible.
+
+---
+
+### Fragment 610-669 — ⚠ HIGH: the chain of deferrals terminates in an opt-in gate
+
+This is the one finding in `shared/` that **survives** contact with the source,
+and it is the most consequential in the directory.
+
+Throughout this review, static gates have honestly declared their limits and
+deferred to a runtime checkpoint. `scan-functional-parity-ledger.ps1`'s
+`open-dialog` branch: *"Must reach Verified at the Step 12/13 runtime
+checkpoint."* `verify-gate-integrity.ps1`: *"This verifies gate LOGIC. It does
+not, and cannot, prove a specific app is behaviorally correct at runtime; that is
+the runtime interact-and-assert checkpoint's job."* That discipline was recorded
+here as a strength — a gate that names what it cannot prove.
+
+**Here is what that checkpoint does when it has not run:**
+
+```powershell
+# When the spec hasn't run yet (no file) this gate is skipped, not blocked - the spec
+# is an opt-in runtime proof, not a mandatory artifact.
+$behavioralCheckpointPath = Join-Path $RepoRoot '.modernization/ignition-artifacts/discovery/behavioral-parity-checkpoint.json'
+if (Test-Path -LiteralPath $behavioralCheckpointPath) {
+```
+
+The behavioral-parity checkpoint is emitted only when
+`E2E_BEHAVIORAL_PARITY_ENABLED=1` and the Playwright spec has been run. **If the
+file is absent, the gate is skipped and the step closes.**
+
+So the deferral chain terminates in something optional:
+
+| Layer | Says |
+|---|---|
+| static parity gates | "cannot be verified statically — the runtime checkpoint covers it" |
+| `verify-gate-integrity` | "gate LOGIC only — runtime is the checkpoint's job" |
+| **the runtime checkpoint** | **skipped when the spec has not run** |
+
+Every static gate can be green, `verify-gate-integrity` can be green, and the
+behavioural question — *does the filter actually filter, does the dropdown have
+options, does the command do anything* — can go **entirely unasked**, with no
+output saying so.
+
+Unlike the earlier vacuous-pass findings, this one is not resolved one file
+further in. This **is** the file the others point at.
+
+**Why it matters more than the scanner-level cases.** The kit's own text names
+this as the failure class static analysis cannot reach:
+
+> *"A runtime behavioral effect was promised by the behavior plan but not observed
+> — filter did not change rows, dropdown had no options, command triggered no
+> effect, or grid showed no real rows. **This is the failure mode static gates
+> cannot see.**"*
+
+A hackathon participant who never sets `E2E_BEHAVIORAL_PARITY_ENABLED=1` gets a
+fully green pipeline with that entire class unverified — and `@playwright/test`
+is already a dependency in the starter with **no `e2e` script wired**, recorded
+earlier in this import. The two findings meet here: the harness is installed, the
+script is missing, and the gate that would consume its output skips silently.
+
+**The fix is small and matches the kit's own patterns.** Not "make the spec
+mandatory" — opt-in is defensible while E2E is being stabilised. Rather: make the
+absence *visible*, exactly as `Invoke-StepReconciliation.ps1` does for zero rules:
+
+```powershell
+else {
+    Add-ReadinessFinding -Severity 'warn' -Message ("Step {0}: behavioral-parity checkpoint has not been run - runtime behavioural effects are UNVERIFIED for this step." -f $Step) `
+        -Remediation "Run the behavioral-parity spec with E2E_BEHAVIORAL_PARITY_ENABLED=1, or record an explicit acceptance that this step ships without runtime behavioural proof."
+}
+```
+
+A warning, not a block. The kit already has a warn severity that surfaces in the
+final verdict without failing it. That converts silence into a recorded,
+auditable *"this was not checked"* — which is the whole difference between an
+opt-in gate and an invisible one.
+
+### CONFIRMED — the scaffold-debt drain gate lives here
+
+```powershell
+$scaffoldScanPath = Join-Path $RepoRoot '.modernization/ignition-artifacts/discovery/scaffold-debt-scan.json'
+...
+if ($impliedStep -gt 0 -and $impliedStep -le $Step) {
+```
+
+`selftest-parity-gate.ps1` assertion 8 asserts that *"verify-step-artifacts.ps1
+still contains the Step 11/12 parity + deferral-drain gate"* — here it is. The
+drain logic is duplicated deliberately: `scan-scaffold-debt.ps1` drains at scan
+time via `-CurrentStep`, and this re-drains at step-close time by reading the
+scan artefact. Two enforcement points, one rule.
+
+The same skip-if-absent shape applies (*"Fires only when the scaffold-debt scan
+artifact exists"*), but with much lower stakes — a missing scan artefact means
+the scan step was skipped, which its own gate would catch.
+
+### ⚠ To verify — Step **9** or 12, against a comment saying **11**/12
+
+```powershell
+if (($Step -eq 9 -or $Step -eq 12) -and ($VerificationMode -eq 'Output' -or $VerificationMode -eq 'Both')) {
+```
+
+The self-test asserts a *"Step 11/12"* gate; the code fires on Step **9** or 12.
+
+Under the `+2` renumbering recorded early in this import (old N → new N−2), old
+Step 11 becomes new Step 9 — and old 12 would become 10, not stay 12. So this
+reads as a **partially applied renumber**: one operand migrated, the other did
+not, and the self-test's description still uses the pre-migration numbering.
+
+That is exactly the drift `step-registry.json` and `audit-step-number-drift` exist
+to eliminate, and it is the first concrete instance found in executable code
+rather than in filenames. It may equally be that Steps 9 and 12 are two
+legitimately different gates. **`audit-step-number-drift` settles it**, and this
+raises that script from Tier 4 to worth-having-soon.
 
 ---
 
