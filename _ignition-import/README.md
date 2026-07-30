@@ -94,6 +94,9 @@ pattern-match against.
 | File | Role | Status |
 |---|---|---|
 | `starter/Starter.Library/Entities/MyEntity.cs` | reference domain entity | transcribed from 1 photo — complete (source lines 1-28) |
+| `starter/Starter.Web.Api/Models/PublicTextResponse.cs` | ✅ `sealed record`, XML `<summary>` + `<param>` | transcribed from 1 photo — complete (7 lines) |
+| `starter/Starter.Web.Api/Models/MyModel.cs` | input DTO — correct `[Required]` + `required` pairing, no docs | transcribed from 1 photo — complete (11 lines) |
+| `starter/Starter.Web.Api/Models/MyModelSearch.cs` | search filter DTO — all-nullable, no docs | transcribed from 1 photo — complete (8 lines) |
 | `starter/Starter.Web.Api/Extensions/FusionWebBuilderExtensions.cs` | ★★ **settles the auth dispute** — contains no auth, no Swagger, no middleware at all | transcribed from 1 photo — complete (source lines 1-20) |
 | `starter/Starter.Web.Api/Controllers/PublicTextController.cs` | ✅ the exemplar controller — XML docs, `sealed`, async + `CancellationToken`, `ILogger<T>` | transcribed from 1 photo — complete (source lines 1-43) |
 | `starter/Starter.Web.Api/Controllers/MyEntitiesController.cs` | ⚠ the non-exemplar — no docs, not `sealed`, sync, no logger, **verb-based route** | transcribed from 1 photo — complete (source lines 1-66) |
@@ -702,6 +705,50 @@ Headline coverage:
    implies.
 6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
    `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## The three model DTOs — pattern confirmed a fifth time, plus two genuinely good details
+
+`PublicTextResponse.cs` carries XML `<summary>` **and** `<param>` documentation
+and is a `sealed record`; `MyModel.cs` and `MyModelSearch.cs` carry no
+documentation and are `sealed class`. That is the fifth consecutive
+`PublicText*` / `My*` pair to split the same way. No new analysis needed — it
+simply confirms the finding is systemic across every layer of the starter
+(service, controller, DTO).
+
+Two details worth recording on their own merits:
+
+**1. `MyModel` gets input validation exactly right.** It carries *both*
+annotations, which is the correct belt-and-braces for an API input model and a
+distinction agents frequently get wrong:
+
+```csharp
+[Required]
+public required string Name { get; set; }
+```
+
+`[Required]` (DataAnnotations) drives **runtime** model-binding validation and
+the automatic 400 + `ProblemDetails` response that `[ApiController]` produces —
+which is what makes `MyEntitiesController`'s
+`[ProducesResponseType<ProblemDetails>(400)]` declarations truthful. `required`
+(C# 11) is a **compile-time** guarantee for any code constructing the model
+directly. They solve different problems; using only one leaves a real gap. This
+is a good pattern for the kit to teach explicitly.
+
+**2. `MyModelSearch` is correctly all-nullable.** Both `Name` and `Description`
+are `string?`, matching `DefaultMyService.GetEntities(string? name, string?
+description)` where absent means "no filter." The contrast with `MyModel`'s
+`required string Name` is deliberate and correct — an input model demands a name,
+a search filter must not.
+
+**One shape difference that is not a defect:** `PublicTextResponse` is a
+positional `record` while the `My*` models are classes. For an immutable
+*response* payload a record is the better modern idiom; for a mutable *input*
+model bound by MVC, a class with settable properties is the conventional choice.
+So this particular split is defensible rather than another instance of the
+two-tier problem — worth noting so the cleanup pass does not "fix" it by
+converting the input models to records.
 
 ---
 
