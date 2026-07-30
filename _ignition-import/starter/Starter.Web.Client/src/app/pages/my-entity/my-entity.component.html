@@ -1,0 +1,43 @@
+<fusion-grid-container>
+    <fusion-grid-row>
+        <fusion-grid-cell>
+            <h2 class="title-banner">My Entities</h2>
+        </fusion-grid-cell>
+    </fusion-grid-row>
+    <fusion-grid-row>
+        <fusion-grid-cell [smallColumns]="5">
+            <form [formGroup]="entityForm" (ngSubmit)="submitEntity()">
+                <fusion-block-grid-container size="full">
+                    <fusion-block-grid-row [smallColumns]="1" [mediumColumns]="2" [xPadding]="true" [yPadding]="true">
+                        <fusion-block-grid-cell>
+                            <fusion-textbox label="Name" formControlName="name" />
+                        </fusion-block-grid-cell>
+                        <fusion-block-grid-cell>
+                            <fusion-textbox label="Description" formControlName="description" />
+                        </fusion-block-grid-cell>
+                    </fusion-block-grid-row>
+                    <fusion-block-grid-row [yPadding]="true">
+                        <fusion-block-grid-cell>
+                            <fusion-button type="submit" theme="raised" label="Submit"></fusion-button>
+                        </fusion-block-grid-cell>
+                    </fusion-block-grid-row>
+                </fusion-block-grid-container>
+            </form>
+        </fusion-grid-cell>
+        <fusion-grid-cell [smallColumns]="2" />
+        <fusion-grid-cell [smallColumns]="5">
+            @if (entities().length) {
+                @for (entity of entities(); track entity.id) {
+                    <fusion-grid-row>
+                        <fusion-grid-cell [smallColumns]="10">
+                            <span>{{ entity.name }}</span>
+                        </fusion-grid-cell>
+                        <fusion-grid-cell [smallColumns]="2">
+                            <fusion-button type="button" theme="raised" label="Edit" (click)="edit(entity)"></fusion-button>
+                        </fusion-grid-cell>
+                    </fusion-grid-row>
+                }
+            }
+        </fusion-grid-cell>
+    </fusion-grid-row>
+</fusion-grid-container>

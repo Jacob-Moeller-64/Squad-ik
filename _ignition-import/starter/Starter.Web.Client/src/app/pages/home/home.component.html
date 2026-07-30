@@ -1,0 +1,74 @@
+<fusion-grid-container>
+    <fusion-grid-row>
+        <fusion-grid-cell>
+            <h1>Welcome to Fusion Framework</h1>
+        </fusion-grid-cell>
+        <fusion-grid-cell
+            [smallColumns]="12"
+            [mediumColumns]="6"
+        >
+            <p>
+                Lorem ipsum dolor sit amet consectetur adipisicing elit. Eaque, impedit nemo corporis esse est sed
+                accusantium culpa tempore <a href="#">harum odit</a> rerum in, doloribus nihil. Facere dignissimos suscipit
+                reiciendis provident esse?
+            </p>
+            <p>
+                Totam quod facere assumenda placeat voluptate, dolorum esse unde nobis magni, dolor sed tempora officia. Ab
+                cupiditate et repellendus? Veniam eum maxime corporis, error ratione consequatur eius natus voluptatum?
+                Quisquam?
+            </p>
+            <fusion-button
+                appearance="outline"
+                color="primary"
+                label="Call Sample API"
+                (click)="loadPublicText()"
+                type="button"
+            ></fusion-button>
+            @if (publicText()) {
+                <p class="sample-api-result">{{ publicText() }}</p>
+            }
+        </fusion-grid-cell>
+        <fusion-grid-cell
+            [smallColumns]="12"
+            [mediumColumns]="6"
+        >
+            <p>
+                Lorem ipsum dolor sit amet consectetur adipisicing elit. Quos tempore et veniam unde officiis quibusdam quam
+                molestias alias deserunt, similique rem ipsum nulla voluptatum magnam error omnis nihil. Magni, doloremque.
+            </p>
+            <p>
+                Optio nihil, quam adipisci quae vel ab dicta fuga voluptatibus ad aspernatur tempore similique consequuntur
+                fugit aliquid tenetur laborum eveniet iusto maxime atque! Magnam obcaecati, dolore ipsum enim reiciendis
+                quam?
+            </p>
+            <fusion-button
+                appearance="outline"
+                color="primary"
+                label="View the Docs"
+                type="button"
+            ></fusion-button>
+        </fusion-grid-cell>
+    </fusion-grid-row>
+    <fusion-grid-row>
+        <fusion-grid-cell>
+            <h2>What's new in version 2?</h2>
+        </fusion-grid-cell>
+        <fusion-grid-cell
+            ><p>
+                Lorem ipsum dolor sit amet consectetur adipisicing elit. Beatae quas pariatur autem necessitatibus
+                voluptatem. Eaque soluta quia eos qui minima vero perspiciatis nihil labore, consequuntur voluptatum adipisci
+                laborum ipsam nam.
+            </p>
+            <p>
+                Consequatur sunt voluptas minima veritatis, laboriosam aliquid iste totam impedit adipisci nulla expedita
+                earum dolorem perferendis deserunt corrupti aut illum eum. Explicabo qui numquam quaerat quo perferendis
+                facere adipisci sed.
+            </p>
+            <p>
+                Numquam accusantium tenetur deleniti maxime ipsa reprehenderit fuga quis harum, voluptatum officiis possimus,
+                praesentium ipsum velit rerum. Esse et sit, magni magnam itaque impedit facilis reprehenderit hic mollitia
+                perspiciatis quae!
+            </p></fusion-grid-cell
+        >
+    </fusion-grid-row>
+</fusion-grid-container>

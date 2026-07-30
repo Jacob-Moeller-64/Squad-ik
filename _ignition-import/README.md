@@ -102,6 +102,11 @@ pattern-match against.
 | `starter/Starter.Web.Client/scripts/update.mjs` | `npmAuth()` + `npmUpdate()` — the documented drift-recovery entry point | transcribed from 1 photo — complete (4 content lines) |
 | `starter/Starter.Web.Client/src/app/pages/common-components/common-components.component.ts` | ★★ **confirms `@fusion/ngx-fusion`** — the Fusion UI answer-key page | transcribed from 1 photo — complete (16 content lines) |
 | `starter/Starter.Web.Client/src/app/pages/common-components/common-components.component.html` | ⚠ the entire Fusion component catalogue: a grid with the word `Cell` in it | transcribed from 1 photo — complete (10 content lines) |
+| `starter/.../pages/home/home.component.ts` | ★★ **the frontend answer key** — OnPush + `inject()` + `signal()`, calls the public endpoint | transcribed from 1 photo — complete (28 content lines) |
+| `starter/.../pages/home/home.component.html` | Fusion grid + `fusion-button` + `@if`; `appearance`/`color` button vocabulary | transcribed from 2 photos — complete (74 content lines) |
+| `starter/.../pages/home/home.component.scss` | one rule, `.sample-api-result` | transcribed from 1 photo — complete (4 content lines) |
+| `starter/.../pages/my-entity/my-entity.component.ts` | reactive forms + signals CRUD page | transcribed from 2 photos — complete (69 content lines) |
+| `starter/.../pages/my-entity/my-entity.component.html` | ⚠ block-grid, `fusion-textbox`, `@for`; `theme` button vocabulary | transcribed from 1 photo — complete (43 content lines) |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -830,6 +835,14 @@ changes.
 
 #### ⚠ HIGH — "Commonly Used Components" demonstrates one component
 
+> **SUPERSEDED — downgraded to MEDIUM.** This finding generalised from the only
+> page transcribed at the time. `home` and `my-entity` demonstrate eight Fusion
+> components plus the base class, including forms and buttons, so the starter's
+> UI surface is *not* three grid components. What survives is narrower: the page
+> **named** for the job is a stub while the real examples live on pages whose
+> names do not advertise them. Full correction in the
+> `pages/home` / `pages/my-entity` section below.
+
 The page is called `common-components`, its heading reads *"Commonly Used
 Components"*, and its entire catalogue is: a grid, containing a cell, containing
 the literal string `Cell`.
@@ -884,6 +897,202 @@ list gets done before the hackathon, this is the one.
   observation, not a defect in the file: it is what a tree looks like after
   `npmInstall` catches an error and deletes `node_modules`, but a machine that
   simply has not installed yet looks identical. Not attributing a cause.
+
+---
+
+## `pages/home/` and `pages/my-entity/` — the real frontend answer key
+
+Five files: `home.component.{html,ts,scss}` and `my-entity.component.{html,ts}`.
+`my-entity.component.scss` and both `.spec.ts` files are still outstanding.
+
+### CORRECTED: the starter's Fusion UI surface is not three components
+
+The previous entry rated the thin `common-components` page a **HIGH** on the
+grounds that the starter's total demonstrated Fusion UI surface was three grid
+components. **That was wrong, and it was wrong because it generalised from the
+one page I had.** `home` and `my-entity` demonstrate:
+
+| Component | Demonstrated in | Attributes seen |
+|---|---|---|
+| `FusionGridContainerComponent` | both | — |
+| `FusionGridRowComponent` | both | — |
+| `FusionGridCellComponent` | both | `[smallColumns]`, `[mediumColumns]` |
+| `FusionBlockGridContainerComponent` | my-entity | `size="full"` |
+| `FusionBlockGridRowComponent` | my-entity | `[smallColumns]`, `[mediumColumns]`, `[xPadding]`, `[yPadding]` |
+| `FusionBlockGridCellComponent` | my-entity | — |
+| `FusionButtonComponent` | both | `appearance`, `color`, `theme`, `label`, `type`, `(click)` |
+| `FusionTextboxComponent` | my-entity | `label`, `formControlName` |
+| `FusionPageBaseComponent` | all three | base class, provides `ngOnInit` |
+
+Eight components and a base class, covering layout, forms, and actions. The
+starter is in far better shape than the previous entry claimed.
+
+**What survives, at MEDIUM rather than HIGH, is a discoverability problem.** The
+page *named* `common-components`, titled *"Commonly Used Components"* — the one
+place an agent told to "find the Fusion component examples" will look first — is
+a stub containing a grid with the word `Cell` in it. The actual worked examples
+are on two pages whose names do not advertise them. The fix is smaller than
+before: either fill `common-components` in, or delete it so agents fall through
+to the pages that do the job. Leaving a stub named after the thing an agent is
+looking for is worse than not having the page.
+
+Also retracted: `app/components/` being empty is not evidence of a missing UI
+surface. Every page composes Fusion components directly, so there is simply
+nothing app-specific to share yet. That is a reasonable state for a starter.
+
+### `home.component.ts` is the frontend exemplar the kit needed
+
+```ts
+export class HomeComponent extends FusionPageBaseComponent {
+    private readonly _publicTextService = inject(PublicTextService);
+
+    protected readonly publicText = signal('');
+
+    protected async loadPublicText(): Promise<void> {
+        const response = await this._publicTextService.get();
+        this.publicText.set(response.message);
+    }
+}
+```
+
+This is the frontend counterpart to `PublicTextController` / `PublicTextService`,
+and it is deliberate: it calls the same public endpoint. It demonstrates
+`ChangeDetectionStrategy.OnPush`, `inject()` over constructor DI, `signal()` for
+template state, `protected` for template-facing members, `private readonly _`
+prefix for dependencies, and `async`/`await` over manual subscription. That is a
+complete, modern, opinionated Angular pattern in nine lines. The answer-key
+principle **is** honoured on the frontend — just not on the page named for it.
+
+Confirmed along the way: `FusionPageBaseComponent` defines `ngOnInit`, since
+`MyEntityComponent` writes `override ngOnInit()`. That retroactively confirms the
+earlier reading that `common-components`' `implements OnInit` with an empty class
+body compiles.
+
+Also filled in from the import paths: the `services/` folder (collapsed in the
+tree photo) is laid out `services/<name>/<name>.service.ts` —
+`services/public-text/public-text.service`, `services/my-entities/my-entities.service`
+— and there is a single flat `src/app/types.ts` for shared types.
+
+### ⚠ HIGH — `fusion-button` is used with two incompatible attribute vocabularies
+
+```html
+<!-- home.component.html -->
+<fusion-button appearance="outline" color="primary" label="Call Sample API" (click)="loadPublicText()" type="button"></fusion-button>
+
+<!-- my-entity.component.html -->
+<fusion-button type="submit" theme="raised" label="Submit"></fusion-button>
+```
+
+`appearance` + `color` on one page, `theme` on the other, for the same component
+in the same starter. Both look equally authoritative. Either
+`@fusion/ngx-fusion` accepts both (one current, one legacy) or one of these is
+already wrong and silently ignored.
+
+This is the highest-value defect found in the client so far, and it is worth
+being precise about why. The kit's whole anti-drift mechanism is *give the agent
+one right answer to copy*. Here the starter gives two. An agent that reads
+`home` emits `appearance`/`color`; an agent that reads `my-entity` emits `theme`;
+neither can tell it chose wrong, no gate catches it, and the two styles will land
+in different participants' repos in the same hackathon. That is drift generated
+by the answer key itself.
+
+The fix is cheap — pick the current API, normalise both call sites, and state it
+in `angular.instructions.md`. It needs the `@fusion/ngx-fusion` component
+definition to decide which one is canonical; that is the next thing worth
+photographing if it is reachable.
+
+### ⚠ MEDIUM — two grid systems with no stated rule for choosing
+
+`fusion-grid-*` and `fusion-block-grid-*` are distinct component families, and
+`my-entity` nests the second inside the first:
+
+```html
+<fusion-grid-cell [smallColumns]="5">
+    <form [formGroup]="entityForm" (ngSubmit)="submitEntity()">
+        <fusion-block-grid-container size="full">
+            <fusion-block-grid-row [smallColumns]="1" [mediumColumns]="2" [xPadding]="true" [yPadding]="true">
+```
+
+The observable convention is *grid for page layout, block-grid for form layout* —
+block-grid is the one with `[xPadding]`/`[yPadding]`/`size`. Nothing in any
+transcribed instructions file mentions either family, let alone the distinction.
+An agent doing a UI swap has no rule to apply and will pick by coin-flip. One
+sentence in `angular.instructions.md` closes it.
+
+### The Bootstrap → Fusion mapping is now fully mechanical
+
+`[smallColumns]="12" [mediumColumns]="6"` is `col-12 col-md-6`. Combined with
+container → row → cell, the legacy Bootstrap grid maps onto Fusion with no
+judgement required:
+
+| Bootstrap | Fusion |
+|---|---|
+| `.container` | `<fusion-grid-container>` |
+| `.row` | `<fusion-grid-row>` |
+| `.col-N` | `<fusion-grid-cell [smallColumns]="N">` |
+| `.col-md-N` | `[mediumColumns]="N"` |
+
+This strengthens the earlier recommendation: put it in the `component-map`
+canonical artifact and the UI swap stops being a per-run guess. Both reference
+legacy apps use Bootstrap, so it is directly exercisable against them.
+
+Caveat worth recording: `home.component.html`'s first cell carries no column
+attributes at all, so `<fusion-grid-cell>` has an undocumented default width.
+And `my-entity` uses `<fusion-grid-cell [smallColumns]="2" />` — a self-closing
+**empty spacer cell** — to make 5 + 2 + 5 = 12. Agents will copy that as the way
+to do gutters.
+
+### Angular 17+ built-in control flow, confirmed
+
+```html
+@if (entities().length) {
+    @for (entity of entities(); track entity.id) {
+```
+
+`@if` / `@for` with a mandatory `track`, not `*ngIf` / `*ngFor`. This pins the
+target Angular at ≥ 17 and gives the frontend port a hard rule: legacy
+`ng-repeat` and `*ngFor` become `@for (… ; track …)`. Nothing in the transcribed
+instructions says so, and an agent trained on older Angular will emit `*ngFor`,
+which still compiles — so this will drift silently unless it is stated.
+
+### Smaller observations
+
+- **`my-entity.component.ts` imports `CommonModule` and does not need it.** With
+  built-in control flow and no `ngClass`/`ngStyle`/pipes in its template, it is
+  dead weight — and it appears both in the import statement and the `imports:`
+  array. `home.component.ts` correctly omits it. Agents pattern-matching
+  `my-entity` will carry `CommonModule` into every component they generate.
+- **Two change-detection policies in one starter.** `HomeComponent` sets
+  `ChangeDetectionStrategy.OnPush`; `MyEntityComponent` does not. With signals
+  throughout, `OnPush` is the correct default. No rule is stated either way.
+- **Two member-visibility conventions.** `Home` marks template-facing members
+  `protected`; `MyEntity` leaves `entities`, `entityForm`, `edit`, `refresh`, and
+  `submitEntity` public. Same inconsistency shape as the button attributes, lower
+  stakes.
+- **`edit()` uses `setValue`, which is strict.**
+  `this.entityForm.setValue(entity)` throws at runtime unless `entity`'s keys
+  match the form group exactly. The server-side `MyEntity` is
+  `Id`/`Name`/`Description`, so it lines up today — but `patchValue` is the call
+  that stays correct when either side gains a field, and this is an exemplar
+  agents will copy onto their own entities.
+- **`this.entityForm.value as MyEntity`** suppresses the fact that a typed
+  `FormGroup`'s `.value` is a `Partial<>`. The `required` validator on `name`
+  plus the early return make it safe here; the cast is still the pattern being
+  taught.
+- **No frontend error handling anywhere.** `loadPublicText`, `refresh`, and
+  `submitEntity` all `await` network calls with no `try`/`catch` and no user-facing
+  failure path. `dotnet.instructions.md` mandates `Fusion.Fx.IErrorService` on the
+  backend; there is no stated Angular equivalent, and the starter models none.
+  For a modernization kit this is a real gap — legacy apps being ported usually
+  have *some* error surface, and parity work will have nowhere to put it.
+- **`submitEntity` refetches the whole collection after saving** rather than using
+  the save response. Fine at this scale; recording it as the demonstrated pattern
+  since it will be copied onto larger lists.
+- **`home.component.scss` is four lines** — a single `.sample-api-result` rule
+  (`margin-top: 1rem; font-weight: 600`). Note it styles the API-result paragraph,
+  **not** the `title-banner` class used by `common-components` and `my-entity`.
+  `title-banner` is therefore defined globally (`styles.scss`) or by Fusion
+  itself; still unresolved.
 
 ---
 
@@ -10249,6 +10458,35 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (`pages/home`, `pages/my-entity`)
+
+- **One line was resolved by re-cropping, not by inference.** Two photos of
+  `my-entity.component.ts` appeared to disagree on which control carries
+  `Validators.required`. Magnifying the overlap settles it: **`name`** has it,
+  `description` does not. Recording the method because the first reading of the
+  second photo was wrong.
+- `fusion-button`'s conflicting attribute sets (`appearance`/`color` vs `theme`)
+  were verified by magnifying the `my-entity` line separately. Both are as
+  photographed; this is a source inconsistency, not a transcription artefact.
+- `home.component.html` uses Prettier's whitespace-sensitive HTML wrapping —
+  `<fusion-grid-cell` … `><p>` at lines 56-57 and `</p></fusion-grid-cell` … `>`
+  at lines 71-72. Reproduced exactly, including the dangling `>` lines, because
+  reflowing them would change rendered whitespace.
+- The lorem-ipsum paragraph text was transcribed literally at the photographed
+  line breaks. It is filler and carries no meaning, but the line count depends on
+  it, so the breaks are preserved.
+- Indentation transcribed as 4 spaces throughout, measured from the photo pixel
+  offsets (≈4 character widths per level) and consistent with the rest of the
+  starter. A 2-space source rendered at tab width 4 would look identical; not
+  independently verifiable from an image.
+- Line counts verified against the photo gutters: `home.component.html` 74
+  (gutter 75), `home.component.ts` 28 (29), `home.component.scss` 4 (5),
+  `my-entity.component.html` 43 (44), `my-entity.component.ts` 69 (70).
+- **Still outstanding in these folders:** `my-entity.component.scss`, and the
+  `.spec.ts` for all three pages — the spec files matter, because the kit's
+  characterization-test rules (D-001) will need to know what the starter's test
+  conventions actually are.
 
 ## Transcription uncertainties (`Starter.Web.Client/src/app/`)
 
