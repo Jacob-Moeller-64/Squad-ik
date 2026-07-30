@@ -1,0 +1,8 @@
+@use '@fusion/theme' as ffx with (
+    $dark-logo-url: null,
+    $light-logo-url: null
+);
+@use '@fusion/theme/auth-negotiate' as ffx-auth-negotiate;
+
+@include ffx.main();
+@include ffx-auth-negotiate.main();

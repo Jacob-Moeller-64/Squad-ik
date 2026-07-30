@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Starter.Web.Client</title>
+        <!-- TODO: if there is a path to the base of this app then set it here, eg: <base href="/logs/">, in the package file add --serve-path=/logs/ to the start script -->
+        <base href="/" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
+        <link
+            rel="icon"
+            type="image/x-icon"
+            href="favicon.ico"
+        />
+        <script>
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                window.document.documentElement.classList.add('dark-theme');
+            } else {
+                window.document.documentElement.classList.remove('light-theme');
+            }
+        </script>
+    </head>
+    <!-- These classes are necessary for correct styling, do not remove them -->
+    <body class="k-body ffx-body">
+        <app-root>
+            <div class="ffx-app-root-loading-wrapper">
+                <span class="k-icon k-i-loading ffx-app-root-loading-icon"></span>
+                <h2 class="ffx-app-root-loading">Loading&hellip;</h2>
+            </div>
+        </app-root>
+        <noscript>Please enable JavaScript to continue using this application.</noscript>
+    </body>
+</html>

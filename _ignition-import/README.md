@@ -117,6 +117,14 @@ pattern-match against.
 | `starter/.../src/app/fusion.config.base.ts` | ⚠ **2 live Okta values REDACTED**; `devMode`/`isDebug` true in base; Okta Management API scopes | transcribed from 1 photo — complete (38 content lines) |
 | `starter/.../src/app/app.component.{html,ts}` | the Fusion app shell — `fusion-app` / `fusion-header` / `fusion-footer` | transcribed from 2 photos — complete (7 / 11 content lines) |
 | `starter/.../src/app/app.component.spec.ts` | ⚠ `describe('Dummy')` with an assertion-free `it` — the frontend test suite is a placebo | transcribed from 1 photo — complete (11 content lines) |
+| `starter/.../src/app/fusion.config.prd.ts` | ⚠⚠ **CONFIRMS production inherits `devMode: true`** and localhost redirect URIs | transcribed from 1 photo — complete (10 content lines) |
+| `starter/.../src/app/fusion.config.{dvl,qa,uat}.ts`, `fusion.config.ts` | env overrides; **dvl redacted** (2 live + 4 commented identifiers) | transcribed from 4 photos — complete (52 / 9 / 9 / 9 lines) |
+| `starter/.../src/app/routes.config.ts` | ★★ **confirms Kendo is a real dependency**; Fusion `menu` metadata per route | transcribed from 1 photo — complete (50 content lines) |
+| `starter/.../src/app/types.ts` | `MyEntity` + `PublicTextResponse` — resolves the `setValue` caution | transcribed from 1 photo — complete (9 content lines) |
+| `starter/.../src/styles.scss` | ⚠ **resolves the undefined-class question** — defines no app classes at all | transcribed from 1 photo — complete (8 content lines) |
+| `starter/.../src/index.html` | ⚠ theme-bootstrap bug, CSP-hash-pinned; Kendo `k-body` classes | transcribed from 1 photo — complete (35 content lines) |
+| `starter/.../src/main.ts` | standalone bootstrap | transcribed from 1 photo — complete (6 content lines) |
+| `starter/.../src/web.config` | the strongest security artefact in the starter; **3 corp domains redacted** | transcribed from 3 photos — complete (156 lines, validates as XML) |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -1771,6 +1779,11 @@ happens.
 
 ### ⚠ HIGH — `devMode: true` and `isDebug: true` are in the *base* config
 
+> **CONFIRMED.** `fusion.config.prd.ts` overrides `isDebug` but not `auth`, and
+> the spread is shallow — so production inherits `auth.devMode: true`, the base
+> client ID, and `https://localhost:5001/...` redirect URIs. `qa`, `uat` and the
+> default config inherit the same. Full detail in the `fusion.config.*` section.
+
 ```ts
 devMode: true,
 …
@@ -1899,6 +1912,326 @@ nothing and prevents an afternoon of confusion.
 - **`api.baseUrl: ''`** in base, so the API is same-origin by default and the
   environment configs presumably override it. Consistent with the relative
   `'MyEntities'` / `'PublicText'` URLs in the two services.
+
+---
+
+## The five `fusion.config.*` files — CONFIRMED: production inherits `devMode: true`
+
+All five environment configs plus `routes.config.ts` and `types.ts` are now
+transcribed. Four files carried live corporate identifiers; all are redacted (see
+the uncertainties section).
+
+### ⚠ HIGH (confirmed) — `fusion.config.prd.ts` overrides `isDebug` but not `auth`
+
+This was recorded as a must-check against `fusion.config.base.ts`. It is now
+confirmed, and the mechanism is worse than the flag suggested.
+
+```ts
+export const fusionConfig: FusionConfig = {
+    ...fusionConfigBase,
+    api: {
+        baseUrl: '/api'
+    },
+    isDebug: false
+};
+```
+
+Ten lines. `isDebug: false` **is** overridden — so the author knew the base was
+dev-shaped and remembered to fix the top-level flag. But the spread is
+**shallow**, and `devMode` lives one level down, inside `auth`. Nothing replaces
+`auth`, so production inherits the *entire* base auth block:
+
+| Setting | Value production actually gets | From |
+|---|---|---|
+| `auth.devMode` | **`true`** | base — not overridden |
+| `auth.clientId` | the base (non-prod) client ID | base |
+| `auth.issuer` | the base tenant | base |
+| `auth.redirectUri` | **`https://localhost:5001/login/callback`** | base |
+| `auth.logoutUrl` | **`https://localhost:5001/logout/callback`** | base |
+| `auth.scopes` | all seven `okta.*` Management API scopes | base |
+
+A production build whose OAuth redirect URI is `localhost:5001` cannot complete a
+sign-in against a real host. So either `prd` is not actually used, or something
+outside these files rewrites `auth` at deploy time, or production authentication
+is broken. All three possibilities are worth knowing, and none of them is
+visible in the source.
+
+Compare `fusion.config.dvl.ts`, which replaces the **whole** `auth` object —
+`authenticateOnStart`, `clientId`, `cookies`, `devMode`, `issuer`, `logoutUrl`,
+`pkce`, `redirectUri`, `scopes`, `signInAttempts`, all of it. So the pattern the
+starter demonstrates *once* is "replace `auth` entirely", and the pattern it
+demonstrates for **production** is "don't touch it".
+
+`qa`, `uat` and the default `fusion.config.ts` are the same nine-line shape as
+`prd` minus the `isDebug` line — they override only `api.baseUrl`, so they too
+inherit `devMode: true`, the base client ID, and the localhost redirects.
+
+**The structural fix is the finding.** Shallow-spread inheritance over a nested
+config object is a footgun that will be copied into every modernized app, because
+`fusion.config.*.ts` is exactly the kind of file an agent clones and edits.
+Either:
+
+1. put the *safe* values in `base` (`devMode: false`, `isDebug: false`, no
+   client ID, no redirect URIs) and make every environment opt **up**; or
+2. deep-merge in a helper (`mergeFusionConfig(base, overrides)`) so a nested key
+   cannot be silently inherited; or
+3. at minimum, have `prd` spell out the full `auth` block the way `dvl` does.
+
+Option 1 is the cheapest and the most robust: a config file that forgets a line
+should fail closed.
+
+### `fusion.config.dvl.ts` also carries a commented-out duplicate auth block
+
+Lines 23-32 are a commented copy of the same ten settings pointing at a different
+tenant and a different internal host — a previous environment left in place. It
+is dead weight in the one file an agent will read to learn how environments work,
+and it doubles the number of Okta identifiers in the repo. Deleting it costs
+nothing (git has the history) and removes the ambiguity about which block is
+live.
+
+Also `// const apiBaseUrl = ...` on line 5, commented, unused.
+
+---
+
+## `routes.config.ts` — and Kendo is confirmed as a real dependency
+
+```ts
+import { codeIcon, formElementIcon, homeIcon } from '@progress/kendo-svg-icons';
+```
+
+**This is the first hard evidence that Kendo is actually used**, not just
+referenced by `angular.instructions.md`'s licence patch. `index.html` corroborates
+it independently: `<body class="k-body ffx-body">` and
+`<span class="k-icon k-i-loading …">` are Kendo classes, and the comment above
+them reads *"These classes are necessary for correct styling, do not remove
+them"*.
+
+That closes a loop opened several batches ago. The chain is now:
+`@progress/kendo-svg-icons` is a real dependency → `angular.instructions.md`
+documents a `\b174733\d{4}\b` regex patch against
+`node_modules/@progress/kendo-licensing` → `tools.mjs`'s `installSafePackages()`
+re-runs suppressed lifecycle scripts for allow-listed packages →
+`npm-safe-package-installs.mjs` holds that allow-list. **That last file is still
+untranscribed and is the only thing standing between hypothesis and confirmation**
+that the Kendo licence activation is automated on every install. It remains the
+highest-value untranscribed file in the client.
+
+### The Fusion route shape
+
+```ts
+export const routes: FusionRoutes = {
+    routes: [
+        {
+            path: 'home',
+            component: HomeComponent,
+            menu: {
+                icon: homeIcon,
+                label: 'Home',
+                routerLink: 'home'
+            }
+        },
+```
+
+This explains the `provideRouter(routes.routes, …)` / `useValue: routes` pairing
+in `app.config.ts`: Angular gets the array, Fusion gets the whole object and reads
+the `menu` metadata off each route to build navigation. So **adding a page to a
+modernized app means adding a `menu` block, not just a route** — a rule an agent
+will not infer from Angular knowledge, and one nothing states.
+
+Two smaller things:
+
+- **Eager and lazy routes are mixed with no rule.** `home` and
+  `common-components` use `component:`; `test-datastore` and `my-entity` use
+  `loadComponent: () => import(…)`. Same file, four routes, two strategies. This
+  is the same shape as every other divergence recorded in this review.
+- **No route guards at all.** No `canActivate` anywhere. Protection presumably
+  comes from Fusion's auth layer plus `withDisabledInitialNavigation()`, but the
+  starter demonstrates no way to protect a route, and `MyEntitiesController` on
+  the backend carries `[Authorize(Policy = "User")]`. An agent porting a legacy
+  app with per-page authorisation has no worked example to follow.
+- `// This stays at the bottom` above the `**` wildcard is a good comment; the
+  wildcard `redirectTo: 'home'` means unknown URLs silently land on home rather
+  than showing a 404 — worth knowing for parity work, since most legacy apps do
+  show something.
+
+---
+
+## `types.ts` — nine lines, and it resolves an earlier caution
+
+```ts
+export interface MyEntity {
+    id: string | null;
+    name: string | null;
+    description: string | null;
+}
+```
+
+The `my-entity` entry above flagged `this.entityForm.setValue(entity)` as strict
+and therefore fragile. The form group is
+`{ id, name, description }` all `FormControl<string | null>`, and `MyEntity` is
+`{ id, name, description }` all `string | null`. **They match exactly**, so
+`setValue` is correct today. The caution was appropriately hedged ("lines up
+today"); recording the resolution so it is not carried forward as an open issue.
+The `patchValue` recommendation still holds as the more durable choice, but it is
+a preference, not a defect.
+
+Worth noting the client type is **looser than the server's**: C# `MyEntity` has
+`Id` as a non-nullable `Guid` and `Name` as `required string`, while the client
+allows `null` for both. That asymmetry is correct for a form-backed model — but
+it means the API can reject a payload the client type accepts, and there is no
+shared contract enforcing it. For the kit, this is an argument for the
+`endpoint-inventory` artifact to carry nullability, not just names.
+
+---
+
+## `src/styles.scss` — RESOLVES the undefined-class question, in the worst way
+
+```scss
+@use '@fusion/theme' as ffx with (
+    $dark-logo-url: null,
+    $light-logo-url: null
+);
+@use '@fusion/theme/auth-negotiate' as ffx-auth-negotiate;
+
+@include ffx.main();
+@include ffx-auth-negotiate.main();
+```
+
+Eight lines. It defines **no application classes at all** — it is purely a Fusion
+theme entry point.
+
+This has been an open question for several batches: `title-banner` (used by
+`common-components` and `my-entity`), and `datastore-page`, `panel-row`, `panel`,
+`subtitle`, `value-wrapper`, `value`, `loading` (used by `test-datastore`, whose
+own SCSS defines only `panel-actions`). The answer is that **none of them are
+defined in application code.** They are either provided by `@fusion/theme` or
+they are dead selectors that style nothing.
+
+The starter provides no way to tell which. That is the concerning part: an agent
+doing a UI port will copy `class="title-banner"` onto new pages because the
+exemplar does, and it will either work (Fusion theme class) or silently do
+nothing (dead). Both outcomes look identical in code review.
+
+**Recommendation:** whoever owns `@fusion/theme` can answer this in five minutes,
+and the answer belongs in `angular.instructions.md` as a short list of
+theme-provided class names an app may use. Until then, treat every custom class
+in the starter as unverified.
+
+A second useful fact: `@fusion/theme/auth-negotiate` is a separate theme entry
+point that must be `@include`d alongside the main one. A ported app that writes
+its own `styles.scss` and forgets this line will render the auth screens
+unstyled — a subtle, visual-only failure that the dual-port parity gate would
+catch but a code review would not.
+
+---
+
+## `index.html` — and a real bug in the theme bootstrap
+
+### ⚠ MEDIUM — the light-mode branch removes the wrong class
+
+```js
+if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    window.document.documentElement.classList.add('dark-theme');
+} else {
+    window.document.documentElement.classList.remove('light-theme');
+}
+```
+
+The branches are asymmetric and the `else` is almost certainly wrong. In dark
+mode it **adds** `dark-theme`; in light mode it **removes** `light-theme` — a
+class nothing ever added. The `else` is a no-op, and `dark-theme` is never
+removed.
+
+On a fresh page load this happens to work, because the document starts with
+neither class. It breaks the moment anything re-runs the logic or toggles the
+system theme without a reload: `dark-theme` sticks. Given `fusion.config.base.ts`
+sets `theme: 'system'`, following the OS setting is the intended behaviour, so
+this is on the path that matters.
+
+The likely intent is `remove('dark-theme')` or `add('light-theme')`. Which one
+depends on how `@fusion/theme` defines its selectors, so this needs confirming
+rather than patching blind.
+
+Why it is worth flagging beyond the bug itself: the kit's **visual-parity gate**
+diffs screenshots of legacy and modern apps. A theme class that can stick across
+navigations is exactly the kind of thing that produces a parity diff that
+reproduces on one machine and not another — the intermittent failure mode that
+costs the most time to chase.
+
+**And it is CSP-pinned.** `web.config` hashes this exact script:
+
+```
+script-src 'self' 'sha256-7daDqN4VRQh0Jed62Nemj1b+0JoyPt9aRhwwK3+CGhk='
+```
+
+So fixing the bug **breaks the Content-Security-Policy** unless the hash is
+recomputed in the same commit. That is a genuine trap, and the source does
+comment it (*"sha256 hash is for the script in index.html to update the theme
+class"*) — but the comment is in `web.config`, and the person editing
+`index.html` will not be looking there. A matching comment above the script in
+`index.html` would cost one line.
+
+### Smaller observations
+
+- The `<base href="/">` TODO comment documents the sub-path deployment case
+  (`--serve-path=/logs/`), which is real, useful, and the kind of thing a
+  modernized app deployed under a path prefix will need.
+- `<noscript>` message present; `Loading&hellip;` spinner uses Kendo's
+  `k-i-loading` icon inside `<app-root>` so there is a pre-bootstrap loading
+  state. Both good, both worth preserving in ports.
+
+---
+
+## `src/web.config` (156 lines) — the client's IIS configuration
+
+Three corporate domains in the CSP `connect-src` are redacted. The file is
+otherwise transcribed verbatim and validates as XML.
+
+### The CSP is the most security-conscious artefact in the starter
+
+`default-src 'self'` with explicit `connect-src`, `font-src`, `img-src`,
+`script-src` and `style-src`, a hash-pinned inline script rather than
+`'unsafe-inline'` for scripts, and `Referrer-Policy: strict-origin-when-cross-origin`.
+That is a materially better posture than most internal apps ship with, and it
+deserves saying plainly after a long run of findings.
+
+Three gaps worth noting rather than treating as defects:
+
+- **`style-src` allows `'unsafe-inline'`.** Angular injects component styles
+  inline, so this is effectively required without nonce plumbing. Expected, but
+  it is the one weak directive and a reviewer will ask.
+- **No `frame-ancestors`,** so clickjacking protection depends on an
+  `X-Frame-Options` header set elsewhere (not in this file).
+- **No `object-src 'none'`** and no `base-uri 'self'`; both are cheap additions
+  that CSP linters flag.
+
+### `<location path="firebase">` is vestigial
+
+Under *"Disable cache on non-hashed files"*, alongside `index.html`,
+`manifest.webmanifest`, `ngsw-worker.js`, `ngsw.json`, `safety-worker.js` and
+`worker-basic.min.js` — all Angular service-worker artefacts — sits a
+`firebase` path. Nothing else in the starter references Firebase. It is almost
+certainly carried over from an older template. Harmless, but it is the kind of
+thing an agent asked to "modernize the deployment config" will spend time
+reasoning about.
+
+Note also that the six service-worker paths are configured while nothing
+transcribed so far enables `@angular/service-worker`. Either the PWA setup is
+elsewhere (`angular.json`, `package.json`) or these rules are aspirational.
+
+### Smaller observations
+
+- **`anonymousAuthentication enabled="true"`** here, versus
+  `windowsAuthentication enabled="true"` in the **API's** `web.config` (flagged
+  earlier). That combination is coherent — the SPA is served anonymously and the
+  API authenticates — and it retroactively softens the earlier concern about the
+  API's Windows auth: the two files are describing different tiers, not
+  contradicting each other.
+- The commented rewrite condition contains a literal `{REPLACE WITH CLIENT URL}`
+  placeholder. It is inside a comment so it cannot break a build, but it is
+  another instance of a value the kit should be resolving from `kit-params.md`.
+- Cache policy is sensible: a day on `assets` and `favicon.ico`, `no-store` on
+  every non-hashed file.
 
 ---
 
@@ -11264,6 +11597,41 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (env configs, `src/` root, `web.config`)
+
+- **Redactions applied.** `fusion.config.dvl.ts`: the live `clientId` and
+  `issuer`, the two `starterkit…` callback hosts, and the four commented-out
+  identifiers (a second tenant and a second internal host) → `<OKTA_CLIENT_ID_DVL>`,
+  `<OKTA_ISSUER_URL_DVL>`, `<STARTER-DVL-HOST>`, `<OKTA_ISSUER_URL_CORP>`,
+  `<INTERNAL-APP-HOST>`. `web.config`: three corporate domains in the CSP
+  `connect-src` → `*.REDACTED-CORP-DOMAIN-{1,2,3}.invalid`. `*.gstatic.com` is a
+  public Google host and was kept.
+- **Placeholder style differs in `web.config` deliberately.** The `<…>` form used
+  elsewhere is invalid inside an XML attribute value and broke well-formedness;
+  the bracket-free form keeps the file parseable. Verified with a real XML parse.
+- **The CSP `sha256-…` hash is NOT redacted.** It is a hash of the public inline
+  theme script in `index.html`, not a secret, and it is load-bearing evidence for
+  the finding that editing that script breaks CSP.
+- A sweep for Okta client-ID patterns, both Okta tenants, all three corporate
+  domains, the OpenShift host fragments, and `integrator-…` across
+  `_ignition-import/` returns clean.
+- `web.config` is highly repetitive (seven identical eleven-line `no-store`
+  `<location>` blocks). Photo coverage overlapped at lines 51-67 and 90-115, so
+  every block boundary was read at least once; the blocks were then reproduced
+  mechanically. Line 156 (`</configuration>`) matches the gutter.
+- `fusion.config.dvl.ts` line 51 is `isDebug: true,` **with a trailing comma**
+  before the closing brace — as photographed, and unlike `fusion.config.base.ts`.
+- `routes.config.ts` lines 19 and 28 are long single-line `loadComponent` arrow
+  functions; their tails render alongside the next gutter number.
+- Line counts verified against the gutters: `fusion.config.dvl.ts` 52 (gutter 53),
+  `prd` 10 (11), `qa`/`uat`/`fusion.config.ts` 9 (10), `routes.config.ts` 50 (51),
+  `types.ts` 9 (10), `index.html` 35 (36), `main.ts` 6 (7), `styles.scss` 8 (9),
+  `web.config` 156 (157).
+- **Still outstanding, highest value first:** `npm-safe-package-installs.mjs`
+  (decides whether the Kendo licence patch is automated), `package.json`,
+  `angular.json`, `.npmrc`, `.gitignore`, `clean.mjs`, `install.mjs`,
+  `npm-clean.mjs`, and the three page `.spec.ts` files.
 
 ## Transcription uncertainties (`src/app/` root)
 
