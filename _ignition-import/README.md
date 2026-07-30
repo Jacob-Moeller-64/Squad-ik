@@ -94,6 +94,8 @@ pattern-match against.
 | File | Role | Status |
 |---|---|---|
 | `starter/Starter.Library/Entities/MyEntity.cs` | reference domain entity | transcribed from 1 photo — complete (source lines 1-28) |
+| `starter/Starter.Web.Api/appsettings.json` | ★★ the full Fusion platform config — **heavily redacted, see the security finding** | transcribed from 4 photos — complete (206 lines, validates as JSONC) |
+| `starter/Starter.Web.Api/entrypoint.sh` | container entrypoint — OpenShift `PORT` handling | transcribed from 1 photo — complete (13 lines); no redactions needed |
 | `starter/Starter.Web.Api/appsettings.Development.json` | ★ empirical proof the API surface is **config-driven and Development-gated** | transcribed from 1 photo — complete (11 lines, **validates as JSON**) |
 | `starter/Starter.Web.Api/AppInfo.xml` | deployment descriptor — 12 environments, Azure DevOps pipelines | transcribed from 2 photos — complete (89 lines, **validates as XML**); **2 values redacted** — see below |
 | `starter/Starter.Web.Api/Models/PublicTextResponse.cs` | ✅ `sealed record`, XML `<summary>` + `<param>` | transcribed from 1 photo — complete (7 lines) |
@@ -707,6 +709,147 @@ Headline coverage:
    implies.
 6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
    `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## 🔒🔒 SECURITY FINDING: the starter ships live corporate identifiers into every clone
+
+`appsettings.json` is the first file in this import that contains material the
+standing rule names **explicitly** as never-commit. Redacted before committing:
+
+| Value | Count | Why |
+|---|---|---|
+| Okta **ClientId** (`0oa…`) | 1 | the standing rule names "Okta tenant IDs/client IDs" verbatim |
+| Okta tenant URL | 5 | same rule |
+| AD group identifiers (`DOMAIN\\Group`) | 5 | internal identity topology |
+| Corporate DNS domains | 10 | internal hostnames |
+| OpenShift cluster hostname | 1 | internal hostname |
+| Internal CIDR ranges (`10.x.x.x/24`) | 6 | internal network topology |
+
+**Structure, key names, and all non-sensitive values are intact** — the config
+*shape* is what matters for kit analysis, and none of it is lost. The one
+remaining match on a sensitive-looking pattern is the Fusion config **key**
+`DominionEnergyDomains`, which is a key name rather than a value (same category
+as env-var names, which the rule permits).
+
+### Why this matters beyond my transcription
+
+This is not just a transcription problem — **it is a real exposure in the kit
+itself**, and it is directly on-point for a company-wide hackathon:
+
+1. **The starter is cloned by every participant.** These values ship in
+   `src/Starter.Web.Api/appsettings.json` to every team, in a file nobody is told
+   to sanitize.
+2. **A live Okta ClientId is committed.** It is commented `// Fusion Prototype`,
+   so it is plausibly a non-production app registration — but it is a real client
+   identifier in a template, and Step 2's rename does not touch it. `AppInfo.xml`
+   shows the discipline that *should* apply here: `{ServiceAccount}`,
+   `{TeamADGroup}`, `{ApplicationRepoUrl}` are all placeholders. `appsettings.json`
+   uses none.
+3. **The kit's own rubric would flag parts of this.**
+   `AppMod-Acceptance-Criteria.md` lists *"Hardcoded connection strings, API URLs,
+   or environment-specific endpoints"* as **High**, and `fusion-auth-standards.md`
+   requires client secrets to come from Key Vault or environment variables. No
+   secret is present here — but the Okta tenant, ClientId, and six internal CIDRs
+   are exactly "environment-specific endpoints" hardcoded into a reusable asset.
+4. **The blast radius is a public push.** A hackathon participant who pushes their
+   modernized app to a personal or public repo exposes the Okta tenant, the client
+   ID, the corporate DNS estate, and the internal network ranges in one commit.
+
+**Recommended fix, matching the discipline `AppInfo.xml` already uses:**
+replace each with a placeholder (`{OktaDomain}`, `{OktaClientId}`,
+`{AdminGroup}`, `{CorpDomains}`, `{KnownNetworks}`) resolved from
+`kit-params.md` at Step 2 rename time, exactly as `appName` already is. That is
+consistent with the naming law (*"Store app identity only in
+`kit-params.md`"*), costs one rename-script change, and removes the exposure
+entirely. **I would put this above the auth-standards rewrite on the pre-hackathon
+list** — it is smaller, and its downside is unbounded in a way a bad code pattern
+is not.
+
+Say the word if you want the real values restored in this repo; they are your
+identifiers and it is your call, but the default here is redaction.
+
+---
+
+## Structural facts added by `appsettings.json` — the Fusion platform config surface
+
+206 lines, and the single most informative file about how a Fusion app is actually
+configured. It closes several loops.
+
+**Config-gating confirmed end to end.** Base settings carry
+`Fusion:Web:Api:EnableApi = true` and an `OpenApi.Title` — but **no
+`EnableOpenApi` key**. That flag exists only in `appsettings.Development.json`.
+So the API is always on; the *documentation surface* is Development-only, by
+configuration, with no code involved. That is precisely the behaviour
+`fusion-auth-standards.md`'s "Swagger: Development Only" rule wants, achieved by
+a mechanism its code blocks never mention.
+
+**The full Okta identity model, in two halves:**
+
+- `Fusion:Security:Principal:IdentityProviders` — `Type: "OktaOpenId"`, with
+  `UserInfoUrl`, `UserProfileUrl`, an `IdentifierClaimIssuer`, and
+  `UserIdClaimType` set to the SOAP `nameidentifier` claim URI. Plus
+  `CachePrincipalTransforms`, `CacheUserProfiles`, and `TransformClaims`, all
+  `true`.
+- `Fusion:Web:Security:IdentityProviders` — `Type: "OAuth.OktaWebApi"` with
+  `Audience`, `ClientId`, `OktaDomain`, and a notable
+  `"AuthorizationServerId": null, // so that the issuer is just the OktaDomain`.
+
+Two providers, two layers: principal/profile resolution and web API token
+validation. This is the concrete shape of the thing
+`fusion-auth-standards.md` tries to hand-write.
+
+**The role and policy model resolves the earlier user-input-gate finding.**
+`modernization-starter-boundaries` said an agent must ask the user for the
+authoritative group identifiers for `User`, `Admin`, and app-specific roles like
+`TestAdmin`. This file shows exactly where they go — five `Fusion:Security:Roles`
+mappings (group → role), and three
+`Fusion:Web:Security:Authorization:Policies` entries (`TestAdmin`, `Admin`,
+`User`), each `RequiresAuthenticatedUser: true` with a `Roles` array. Plus a
+`DefaultPolicy` requiring an authenticated user. That is the full chain from AD
+group to `[Authorize(Policy = "User")]` on `MyEntitiesController`.
+
+**Platform features not documented anywhere else in the import:**
+
+- **`MaliciousInput`** — an enabled input filter with **17 blocked patterns**
+  (`<script`, `<iframe`, `javascript:`, `.write(`, `.addEventListener`, …). A
+  Fusion-owned XSS guard. Worth knowing before an agent adds its own sanitizer.
+- **`MaintenanceMode`** — with `IgnoreEndpoints` for
+  `/Fusion/CanBypassMaintenanceMode` and `/Fusion/MaintenanceMode`, and
+  `IgnoreRoles: ["Admin"]`.
+- **`RequestBodyBuffer`**, **`ForwardedHeaders`** (proxy/ingress trust),
+  **`Cors.AllowedDomains`** including `capacitor://localhost` for iOS web views.
+- **`PathBase: "/api"`** — so the controllers' `[Route("[controller]")]` resolve
+  as `/api/MyEntities`. That reconciles the `ToAbsoluteUrl($"MyEntities/{id}")`
+  call seen in the controller.
+- **A commented-out `Logging:FusionApi:Queue` block** — a queue-backed log sink
+  with circuit-breaker delay, file-share persistence, and poison handling. Not
+  active, but it shows the production logging path exists.
+- **Per-assembly log levels** with `Starter.Library` and `Starter.Web.Api` at
+  `Trace`, everything else at `Warning`/`Information`. A modernization agent must
+  rename those two keys during Step 2, or the app silently loses its own logging.
+
+**`Fusion:Application:Id` is a placeholder with a TODO:**
+`"00000000-0000-0000-0000-000000000000"` with
+`// TODO: Replace with ID from Fusion App Management`. Good practice — and a
+useful contrast with the identifiers that were *not* left as placeholders.
+
+---
+
+## `entrypoint.sh` — 13 lines, clean
+
+```sh
+#!/usr/bin/env sh
+set -eu
+# OpenShift patterns often provide PORT. Prefer explicit ASPNETCORE_URLS if set.
+```
+
+`set -eu` (fail fast on error and undefined variable), `${VAR:-}` guards so the
+`set -u` does not trip on unset optionals, precedence given to an explicit
+`ASPNETCORE_URLS`, fallback to `PORT`, then to `8080`, and `exec` so .NET becomes
+PID 1 and receives container signals directly. That is a correct, idiomatic
+container entrypoint — no findings, and it confirms OpenShift as the deployment
+target alongside `AppInfo.xml`'s Azure DevOps pipelines.
 
 ---
 
