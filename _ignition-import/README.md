@@ -142,6 +142,7 @@ pattern-match against.
 | `scripts/parity/scan-functional-parity-ledger.ps1` | ★★ the **composition** gate — cross-references the other scans; ★ has the missing-input guard the siblings lack; ⚠ evidence inputs still degrade to "clean" | transcribed from 7 photos — **complete** (376 content lines) |
 | `scripts/parity/scan-scaffold-debt.ps1` | ★★ detects surviving "wired in a later step" deferral markers; **drain semantics** via `-CurrentStep` | transcribed from 4 photos — complete (221 content lines) |
 | `scripts/parity/scan-ui-parity-gaps.PARTIAL.ps1` | ★★ produces `ui-parity-gap-scan.json` (the ledger's `filter` input); ★ **honesty rules**; ★ **discovery probe** — self-reporting rule-coverage gaps | **PARTIAL** — lines 1-454 of ~950+; **gap at 455-831**; do not execute |
+| `scripts/parity/selftest-backend-parity.ps1` | ★★★ **the gates are tested** — runs the real gate against synthetic fixtures, 8 assertions over 6 cases | transcribed from 3 photos — complete (170 content lines) |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -4117,6 +4118,129 @@ Two smaller notes:
   the record set as long as it carries a test id or a handler. Whether the
   *matcher* can then pair it with a legacy control is decided in the untranscribed
   455-831 range, so the risk is reduced but not yet closed.
+
+---
+
+## `parity/selftest-backend-parity.ps1` (170 lines) — the gates have tests
+
+This is the most important discovery in `.github/scripts/` so far, and it revises
+the tone of several earlier entries. **The kit tests its own gates.**
+
+```
+.SYNOPSIS
+    App-agnostic self-test for the legacy-anchored backend functionality-parity gate
+    (scan-backend-parity.ps1). Proves the gate HONESTLY catches dropped mutation endpoints and
+    cannot be silently re-blinded.
+```
+
+*"Cannot be silently re-blinded"* is the operative phrase. This exists because a
+gate that was working can be quietly broken by a later edit — a widened
+allow-list, a loosened regex, a mishandled empty case — and nothing would notice.
+That is a category of risk this review has raised repeatedly, and the kit already
+has the standard answer to it: an executable regression test.
+
+### How it works
+
+`Invoke-BackendCase` writes **synthetic legacy and modern controller trees** into
+a temp directory, runs the **real** `scan-backend-parity.ps1` as a child process,
+and reads the JSON artefact back:
+
+```powershell
+$null = & powershell @psArgs 2>&1
+$code = $LASTEXITCODE
+...
+if (Test-Path -LiteralPath $out) { $json = Get-Content -LiteralPath $out -Raw | ConvertFrom-Json }
+return [pscustomobject]@{ Result = $json; ExitCode = $code }
+```
+
+Three details worth calling out:
+
+- **It runs the gate as a separate process**, with the reason stated in a
+  comment: *"so `exit` is the reliable process exit code; assertions read the JSON
+  output file, never stdout."* That is exactly right — testing a gate means
+  testing its **exit code**, and an in-process dot-source would swallow it.
+- **`finally { Remove-Item ... }`** cleans the temp tree on every path, so a
+  failing assertion cannot leave fixtures behind.
+- **The fixtures are minimal but realistic** — a legacy `FileKeysController` with
+  GET/POST/PUT/DELETE, a read-only modern port (the failure mode), and a
+  full-parity modern port (the control case).
+
+### The six cases are exactly the right six
+
+| # | Asserts |
+|---|---|
+| 1 | 3 dropped mutations are counted (`missingMutationCount = 3`) |
+| 2 | dropped mutations **block** (exit 2) |
+| 3 | the *covered* GET is **not** falsely flagged (`missingQueryCount = 0`) |
+| 4 | full parity yields zero gaps and exit 0 |
+| 5 | an `acceptedDrops` registry entry downgrades an intentional drop, exit 0 |
+| 6 | `-StrictReads` escalates a missing GET to blocking |
+| 7 | an entirely-dropped controller is surfaced in `droppedControllers[]` |
+
+Case 3 is the one that matters most and is the easiest to omit: it tests for a
+**false positive**, not a false negative. That is the same
+*"a gate that fails a control that is actually present is as dishonest as one
+that passes a missing control"* principle found in `scan-ui-parity-gaps.ps1`,
+here enforced executably rather than stated in a comment.
+
+Case 5 is the second-best: it proves the waiver mechanism actually works, which
+means a team can trust `acceptedDrops` without reading the gate's source.
+
+### ⚠ What the self-test does **not** cover — the vacuous pass
+
+None of the seven assertions exercises the empty-input path. There is no case
+that runs the gate against a legacy tree containing **no** matching controllers
+and asserts the outcome.
+
+That is the gap recorded against `scan-backend-parity.ps1` — an app whose
+controllers do not match `*Controller*.cs`, or that uses convention-based MVC5
+routing, produces an empty legacy set, zero gaps, and **exit 0**. The self-test
+would pass unchanged if that behaviour were correct or incorrect, because it
+never asks.
+
+The fix is now much smaller than previously described. The harness already
+exists; it is one more `Invoke-BackendCase` call:
+
+```powershell
+# --- Test 7: an empty legacy tree must NOT be reported as clean ---
+$t7 = Invoke-BackendCase -LegacyControllers @{} -ModernControllers @{ 'FileKeysController.cs' = $modernFileKeysFull }
+Assert-That 'T7 an unscannable legacy tree does not exit 0' ($t7.ExitCode -ne 0) ("exit {0}" -f $t7.ExitCode)
+```
+
+Written today that assertion **fails** — which is the point. Adding it first, then
+fixing the gate to satisfy it, is the correct order and takes under an hour.
+
+### What this changes about the earlier findings
+
+Several entries in this review have described gate defects as if nobody had
+thought about gate quality. That framing was too harsh, and this file is the
+evidence. The kit's authors clearly understand that gates need regression tests,
+false-positive coverage, process-level exit-code assertions, and cleanup — and
+implemented all of it here.
+
+The consistent pattern across `.github/scripts/parity/` is now unmistakable and
+worth stating as the single most useful conclusion of this whole review:
+
+> **Every practice needed to make these gates trustworthy already exists somewhere
+> in this directory. None of them exists everywhere.**
+
+Missing-input guards (in the ledger), honest waivers (in the UI gate), drain
+semantics (in scaffold-debt and the UI gate), self-reported blind spots (the
+discovery probe), false-positive discipline (stated in the UI gate, enforced
+here), and executable regression tests (here). Six good ideas, each present in one
+or two of six files.
+
+The highest-value work before the hackathon is therefore **not** writing new
+gates. It is a normalisation pass: extract the shared helpers into
+`.github/scripts/shared/`, and write a `selftest-*.ps1` for each remaining gate
+modelled on this one — starting with the empty-input case that all of them
+currently get wrong.
+
+Whether the other gates have self-tests is unknown; the file tree lists
+`parity/` as *"11 scan-*/selftest-*/verify-gate-integrity scripts"*, so at least
+one more `selftest-*` and a `verify-gate-integrity` exist. **Those are now the
+files worth photographing next** — `verify-gate-integrity` in particular sounds
+like the meta-gate that would run these self-tests in CI.
 
 ---
 
@@ -13489,6 +13613,20 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (`selftest-backend-parity.ps1`)
+
+- Complete at 170 content lines (gutter 171). All fifteen photographed anchors
+  match (25 `[CmdletBinding()]`, 34 `Assert-That`, 48 `Invoke-BackendCase`, 83 the
+  banner, 86/104/113 the three fixtures, 130/136/141/147/158 the test cases, 162
+  the summary, 170 the close).
+- The three C# fixtures are PowerShell here-strings (`@'` … `'@`); their contents
+  are transcribed verbatim including the `[Authorize(Policy = "RequireAdministratorRole")]`
+  attribute, which is fixture data rather than real configuration.
+- Line 141's `$reg` JSON is one long single line that soft-wraps across three
+  editor rows in the photo; reproduced unwrapped.
+- **Not executed** — `pwsh` unavailable, and the self-test shells `powershell`
+  (Windows PowerShell 5.1) explicitly.
 
 ## Transcription uncertainties (`scan-ui-parity-gaps.ps1`)
 
