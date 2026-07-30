@@ -112,6 +112,7 @@ pattern-match against.
 | `starter/.../pages/test-datastore/test-datastore.component.ts` | private signals behind public getters (for `[(ngModel)]`); the only `try`/`finally` in the client | transcribed from 2 photos — complete (74 lines, **no trailing newline**) |
 | `starter/.../services/my-entities/my-entities.service.ts` | ★★ **confirms `FusionHttpService`** — the only worked example of client→API calls; ⚠ cached GETs, inverted arg order | transcribed from 1 photo — complete (26 content lines) |
 | `starter/.../services/my-entities/my-entities.services.spec.ts` | ⚠ **empty file** — zero-byte, no frontend testing exemplar | recorded as blank per the source |
+| `starter/.../services/public-text/public-text.service.ts` | ★★ closes the **PublicText vertical slice** — controller → domain service → DTO → client service → page | transcribed from 1 photo — complete (15 content lines) |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -1439,6 +1440,13 @@ exactly the kind of thing an instructions file is for, and it is currently absen
 
 ### ⚠ HIGH — `FusionHttpService` caches GETs by default
 
+> **REFINED to MEDIUM** after `public-text.service.ts`. Both client services
+> pass `useCache: false`, so the starter models the safe behaviour consistently
+> in every GET it ships. The risk is an agent writing *new* code that omits an
+> option it was never told about — not one copying a bad pattern. The
+> recommendation below is unchanged; the severity is not. See the
+> `services/public-text` section.
+
 ```ts
 this._fusionHttp.get<MyEntity[]>('MyEntities', { useCache: false })
 ```
@@ -1533,6 +1541,113 @@ convention, would serve as the frontend testing answer key the same way
   fine at starter scale, wasteful at list scale.
 - **The editor shows 3 unresolved diagnostics**, same `node_modules` signature as
   the other files. Not a defect in the file.
+
+---
+
+## `src/app/services/public-text/` — completing the vertical slice
+
+Fifteen lines, and it closes a loop that runs the full height of the starter.
+
+```ts
+@Injectable({
+    providedIn: 'root'
+})
+export class PublicTextService {
+    private readonly _endpoint = 'PublicText';
+    private readonly _fusionHttp = inject(FusionHttpService);
+
+    async get(): Promise<PublicTextResponse> {
+        return (await this._fusionHttp.get<PublicTextResponse>(this._endpoint, { useCache: false })) ?? { message: '' };
+    }
+}
+```
+
+### The exemplar is a complete vertical slice, and it is the starter's best asset
+
+The `PublicText` name now appears at four layers, each a small, clean, fully
+worked example of its tier:
+
+| Layer | File | Notes |
+|---|---|---|
+| API controller | `Starter.Web.Api/Controllers/PublicTextController.cs` | 43 lines, the backend exemplar |
+| Domain service | `Starter.Library/Services/PublicTextService.cs` | 22 lines, full XML docs, stateless, `CancellationToken` |
+| Response DTO | `Starter.Web.Api/Models/PublicTextResponse.cs` ↔ `src/app/types.ts` | same type name both sides |
+| Client service | `src/app/services/public-text/public-text.service.ts` | 15 lines, this file |
+| Page | `src/app/pages/home/home.component.ts` | calls it on a button click |
+
+That is a request travelling from a Fusion page, through `FusionHttpService`, to
+a Fusion-hosted controller, into a stateless domain service, and back — in about
+95 lines total, with no dead code and nothing that contradicts anything else in
+the slice.
+
+This is worth stating plainly because most of the recent findings have been about
+inconsistency: **this slice is the part of the starter that works as an answer
+key, end to end.** If the kit's frontend instructions need one thing to point
+agents at, it is this chain, named explicitly. The `My*` chain
+(`MyEntitiesController` → `MyService` → `my-entities.service.ts` →
+`my-entity.component.ts`) is the richer example but carries the singleton-state
+HIGH on the backend and the forms/layout divergences on the front. `PublicText`
+carries nothing.
+
+### REFINED: the caching finding is a documentation gap, not an exemplar defect
+
+Both client services pass `useCache: false`:
+
+```ts
+this._fusionHttp.get<PublicTextResponse>(this._endpoint, { useCache: false })   // public-text
+this._fusionHttp.get<MyEntity[]>('MyEntities', { useCache: false })             // my-entities
+```
+
+Two for two. That raises the earlier inference — that `FusionHttpService`
+defaults to caching GETs — from likely to near-certain, and it also **corrects the
+tone of the earlier entry**. The starter does not model the risky behaviour; it
+models the safe one, consistently, in every GET it ships.
+
+So the finding narrows. It is not "the exemplar teaches a parity hazard". It is:
+
+- the exemplar does the right thing **without saying why**, and
+- nothing in any instructions file mentions the default, so a ported service that
+  simply omits the option inherits caching silently.
+
+That is still worth fixing, and the fix is unchanged — state the default in
+`angular.instructions.md`, and add the grep gate for `_fusionHttp.get(` without
+`useCache`. But the severity drops: the risk is an agent writing *new* code that
+omits an option it was never told about, not an agent copying a bad pattern. Down
+from HIGH to MEDIUM.
+
+### The two services disagree on one small thing
+
+`PublicTextService` names its route in a private field:
+
+```ts
+private readonly _endpoint = 'PublicText';
+```
+
+`MyEntitiesService` inlines the string three times (`'MyEntities'`,
+`` `MyEntities/${entity.id}` ``, `'MyEntities'`). Trivial in isolation, and the
+`_endpoint` version is clearly the better of the two — but it is one more entry
+on the list of "the starter shows two ways and adjudicates neither", which is now
+long enough to be the dominant theme of this review rather than a collection of
+nits.
+
+### Smaller observations
+
+- **DTO names match across the language boundary.** `PublicTextResponse` is the
+  C# model name and the TypeScript type name, unchanged. Same for `MyEntity`.
+  This is a genuinely useful convention for the pipeline — it makes the
+  `endpoint-inventory` and `component-map` artifacts able to key on a single
+  identifier across both sides of the hourglass — and, like most of the good
+  conventions found so far, it is nowhere written down.
+- **`?? { message: '' }`** is the null-object default, matching `?? []` in
+  `MyEntitiesService`. Consistent, and consistent with `FusionHttpService.get<T>()`
+  being able to resolve null.
+- **Both services are `providedIn: 'root'`, stateless, and hold no cache of their
+  own** — the correct shape, and a useful contrast with the backend `MyService`,
+  which was flagged HIGH for keeping a mutable `Dictionary<Guid, MyEntity>` in a
+  singleton.
+- **No spec file was mentioned for `public-text/`.** `my-entities/` has one (empty).
+  Whether `public-text/` has none at all, or one that was not photographed, is
+  unknown — recorded as a question, not a finding.
 
 ---
 
@@ -10898,6 +11013,16 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (`services/public-text`)
+
+- `public-text.service.ts` line 13 is a long single line whose tail
+  (`?? { message: '' };`) renders alongside gutter 14 because of the photo's tilt.
+  Lines 14 and 15 are the two closing braces, at different indents — resolved by
+  their x-offsets, not by the y-position of the tail.
+- Line count verified against the gutter: 15 content lines, closing brace on 15.
+- No spec file was mentioned or photographed for this folder. Whether
+  `public-text/` has no spec, or one that simply was not sent, is unknown.
 
 ## Transcription uncertainties (`services/my-entities`)
 
