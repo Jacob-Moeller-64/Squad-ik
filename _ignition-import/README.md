@@ -94,6 +94,9 @@ pattern-match against.
 | File | Role | Status |
 |---|---|---|
 | `starter/Starter.Library/Entities/MyEntity.cs` | reference domain entity | transcribed from 1 photo — complete (source lines 1-28) |
+| `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
+| `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
+| `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
 | `starter/Starter.Web.Api/appsettings.json` | ★★ the full Fusion platform config — **heavily redacted, see the security finding** | transcribed from 4 photos — complete (206 lines, validates as JSONC) |
 | `starter/Starter.Web.Api/entrypoint.sh` | container entrypoint — OpenShift `PORT` handling | transcribed from 1 photo — complete (13 lines); no redactions needed |
 | `starter/Starter.Web.Api/appsettings.Development.json` | ★ empirical proof the API surface is **config-driven and Development-gated** | transcribed from 1 photo — complete (11 lines, **validates as JSON**) |
@@ -709,6 +712,141 @@ Headline coverage:
    implies.
 6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
    `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## ★★ `Program.cs` — the Fusion boot shape confirmed, in 11 lines
+
+The last unverified load-bearing claim from `fusion-mcp-restructure.instructions.md`
+is now checked against source. The entire file:
+
+```csharp
+using Fusion.Fx.App;
+using Fusion.Fx.App.Web;
+
+var builder = FusionWebBuilder.CreateBuilder(
+    args,
+    new FusionWebBuilderOptions() { Configure = AppConfiguration.Configure }
+);
+
+builder.AddMyApplication();
+
+await builder.BuildAndRunAsync();
+```
+
+`fusion-mcp-restructure` said: *"compose the host with
+`FusionWebBuilder.CreateBuilder(...)` + `await builder.BuildAndRunAsync()`."*
+Exactly right, including the `await`. There is **no** `WebApplication.CreateBuilder`,
+no `app.Use*` middleware chain, no `MapControllers`, no `Run()`. Fusion owns the
+entire pipeline; the app contributes one line of its own registration.
+
+This closes the platform-ownership case completely:
+
+| Claim | Verified by |
+|---|---|
+| Host composed via `FusionWebBuilder.CreateBuilder` + `BuildAndRunAsync` | **`Program.cs`** ✅ |
+| No hand-written auth/middleware in the extension seams | `FusionWebBuilderExtensions.cs`, `FusionApplicationBuilderExtensions.cs` (grep = 0) ✅ |
+| API/docs surface enabled by appsettings, not code | `appsettings.json` + `.Development.json` ✅ |
+| Okta arrives as a **package**, not code | `Fusion.Fx.Security.Web.OAuth.Okta` in the `.csproj` ✅ |
+
+`copilot.instructions.md`'s rule — *"Prefer minimal hosting in `Program.cs`"* — is
+satisfied about as completely as it can be.
+
+### ⚠ Fair correction: `AppConfiguration` is load-bearing, not stray
+
+I flagged `FusionApplicationBuilderExtensions.cs` for declaring a second public
+class (`AppConfiguration`) as a `dotnet.instructions.md` violation. `Program.cs`
+shows why it exists: it is passed as the `Configure` delegate into
+`FusionWebBuilderOptions`. So it is **deliberate and functional**, not leftover.
+
+The file-organisation rule still applies (it is a non-trivial public type in a
+file named after something else, and `AppConfiguration.cs` would be the correct
+home) — but "someone left a class lying around" was the wrong characterisation
+and I am withdrawing it. It is a wiring type with a real consumer.
+
+---
+
+## Structural facts from `Starter.Web.Api.csproj`
+
+**`Fusion.Fx.Security.Web.OAuth.Okta` 2026.3.5** — the package that actually
+delivers Okta. Third independent confirmation that auth is package + config, and
+the final nail in the `fusion-auth-standards.md` code blocks.
+
+Full package set (all Fusion at CalVer `2026.3.5`):
+`Fusion.Fx.App.Web`, `Fusion.Fx.Logging.Providers.FusionApi`,
+`Fusion.Fx.Security.Web.OAuth.Okta`, `OpenTelemetry.Api` 1.15.3,
+`OpenTelemetry.Exporter.OpenTelemetryProtocol` 1.15.3, plus a `ProjectReference`
+to `Starter.Library`.
+
+Note `Fusion.Fx.Logging.Providers.FusionApi` — that is the package behind the
+commented-out `Logging:FusionApi:Queue` block in `appsettings.json`. The queue
+sink is referenced but disabled, so switching it on is configuration-only.
+
+**Deliberate GC tuning**, with the reason stated:
+
+```xml
+<!-- Turn off Server GC for when on shared server -->
+<ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+<ServerGarbageCollection>false</ServerGarbageCollection>
+```
+
+Workstation GC for shared/containerised hosts — a real, correct decision for
+memory-constrained OpenShift pods, and one a modernization agent must not
+"optimise" away.
+
+**One narrowing of an earlier flag:** this project does **not** reference
+`Microsoft.Extensions.Configuration.Json`. That 9.0.0-against-net10.0 pin exists
+only in `Starter.Library.csproj`, so the `check-pins` question is scoped to one
+project, not the solution.
+
+---
+
+## ⚠ `web.config` enables Windows Authentication on an Okta bearer-token API
+
+14 lines, and one element worth a decision:
+
+```xml
+<security>
+  <authentication>
+    <anonymousAuthentication enabled="true" />
+    <windowsAuthentication enabled="true" />
+  </authentication>
+</security>
+```
+
+**Stating this precisely, because the severity depends on framing:**
+
+- This is **IIS server configuration**, not application code. The kit's
+  deterministic CRITICAL patterns are C# —
+  `AddAuthentication(IISDefaults.AuthenticationScheme)` and
+  `NegotiateDefaults` — and neither appears anywhere in the starter. So a
+  compliance scan searching for the code pattern **will not flag this**.
+- Anonymous is *also* enabled, so Windows auth is not being forced; IIS will
+  allow unauthenticated requests through to the app, which is what a bearer-token
+  API needs.
+- The app authenticates via Okta bearer tokens validated by Fusion, and is
+  deployed to **OpenShift via `entrypoint.sh`** — on that path `web.config` is
+  not read at all.
+
+So this is not the CRITICAL violation the rubric describes. **But it is
+unexplained**, and it is the kind of thing a security review will stop on:
+Windows Authentication enabled on an application whose entire identity model is
+OAuth. `AppMod-Acceptance-Criteria.md` does list *"Windows/role-centric
+authorization patterns instead of OAuth/OIDC"* under **High**, and a human
+reviewer reading this file has no way to tell whether it is vestigial or load-bearing.
+
+**Recommended:** either remove `windowsAuthentication` if the IIS path is
+legacy/unused, or add a one-line comment stating why it is required (e.g. an
+IIS-hosted deployment lane that still needs it). The existing comment explains
+the `<location>`/Feature Delegation mechanics but says nothing about *why
+Windows auth*.
+
+**And a gap this exposes in the review lane:** the kit's Windows-auth detection is
+code-pattern-based, so a modernized app that carries Windows auth forward **in
+`web.config`** passes the scan. Given the kit explicitly targets legacy .NET
+Framework apps — where `web.config` Windows auth is the norm — that is a realistic
+miss. Worth adding a `web.config` check to `compliance-scan` alongside the C#
+patterns.
 
 ---
 
