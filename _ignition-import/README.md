@@ -141,7 +141,7 @@ pattern-match against.
 | `scripts/parity/scan-backend-parity.ps1` | ★★ endpoint-level sibling; quantified postmortem (35 mutations → 0, shipped green); ⚠ same vacuous pass, ⚠ `controller\|verb` key under-counts | transcribed from 5 photos — complete (241 content lines) |
 | `scripts/parity/scan-functional-parity-ledger.ps1` | ★★ the **composition** gate — cross-references the other scans; ★ has the missing-input guard the siblings lack; ⚠ evidence inputs still degrade to "clean" | transcribed from 7 photos — **complete** (376 content lines) |
 | `scripts/parity/scan-scaffold-debt.ps1` | ★★ detects surviving "wired in a later step" deferral markers; **drain semantics** via `-CurrentStep` | transcribed from 4 photos — complete (221 content lines) |
-| `scripts/parity/scan-ui-parity-gaps.PARTIAL.ps1` | ★★ produces `ui-parity-gap-scan.json` (the ledger's `filter` input); ★ **honesty rules**; ★ **discovery probe** — self-reporting rule-coverage gaps | **PARTIAL** — lines 1-394 of N, from 7 photos; do not execute |
+| `scripts/parity/scan-ui-parity-gaps.PARTIAL.ps1` | ★★ produces `ui-parity-gap-scan.json` (the ledger's `filter` input); ★ **honesty rules**; ★ **discovery probe** — self-reporting rule-coverage gaps | **PARTIAL** — lines 1-454 of ~950+; **gap at 455-831**; do not execute |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -4077,6 +4077,46 @@ Also worth noting: `Scan-File` strips **both** `<!--...-->` and Razor `@*...*@`
 comments before scanning, *"so commented-out legacy markup is not treated as live
 UI"* — a false-positive source that would otherwise inflate the legacy control
 count and make the modern side look worse than it is.
+
+---
+
+### Extended to 454 — the interactivity test
+
+`Scan-File`'s control record is where the `MissingControl` severity is actually
+decided, and the breadth of the interactivity test is the point:
+
+```powershell
+$interactive = ($tag -eq 'button') -or (-not [string]::IsNullOrWhiteSpace($handler)) -or $hasRealHref -or $hasRouterLink -or $hasSubmit -or $hasTrigger -or ($iconList.Count -gt 0)
+```
+
+with the reasoning stated above it:
+
+```
+# Interactivity: is this control's absence a real parity defect? This
+# captures far more than the click handler alone so navigation links,
+# routerLinks, form submits, and modal/dropdown triggers are never
+# silently dropped the way a routerLink-only nav link used to be.
+```
+
+Seven independent signals — tag, click handler, a **real** href (`#` and
+`javascript:void` explicitly excluded), `routerLink`, `type="submit"` /
+`(ngSubmit)`, Bootstrap/ngb trigger attributes, and the presence of an icon. A
+control only has to satisfy one. That breadth is deliberate: the named
+regression was *"a routerLink-only nav link"* that had no click handler and was
+therefore invisible to a handler-only check.
+
+Two smaller notes:
+
+- **The discovery probe runs on the legacy side only** (`if ($kind -eq 'legacy'
+  -and $script:DiscoveryBag)`), which is right — the point is to learn what
+  legacy vocabulary the rule packs do not yet cover.
+- **A control with no label is still recorded** when it has a `testId` or a
+  handler (`if (IsNullOrWhiteSpace($label) -and -not $testId -and -not $handler)
+  { continue }`). That partially mitigates the `Normalize-Label` interpolation
+  risk flagged earlier: an icon-only or `{{...}}`-labelled button survives into
+  the record set as long as it carries a test id or a handler. Whether the
+  *matcher* can then pair it with a legacy control is decided in the untranscribed
+  455-831 range, so the risk is reduced but not yet closed.
 
 ---
 
@@ -13452,8 +13492,12 @@ not corrected:
 
 ## Transcription uncertainties (`scan-ui-parity-gaps.ps1`)
 
-- **PARTIAL** — source lines **1-394**, with a delimited trailing note in the
-  committed copy. Not photographed: the rest of the `Scan-File` body, the
+- **PARTIAL — and now with a known interior gap.** Source lines **1-454** are
+  transcribed. **Lines 455-831 are missing.** A separate photographed set covers
+  roughly **832 to the end** and is also not transcribed. The committed copy's
+  trailing note states this. Do not execute.
+- The file is ~950+ lines, making it by far the largest script transcribed. It
+  needs two more passes: the 455-831 range, then the 832-end tail. Not photographed: the rest of the `Scan-File` body, the
   legacy↔modern matcher, gap emission, the summary and the exit. Deliberately
   incomplete; must not be run.
 - The 291-394 extension needed a blank line inserted at **291** (before

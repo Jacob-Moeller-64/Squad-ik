@@ -392,10 +392,71 @@ function Scan-File([string]$path, [string]$kind) {
     $blockPattern = "(?si)<(a|button|li|fusion-button$appTagAlt)\b([^>]*)>(.*?)</\1>"
     $matches = [regex]::Matches($text, $blockPattern)
     foreach ($m in $matches) {
+        $tag   = $m.Groups[1].Value.ToLowerInvariant()
+        $attrs = $m.Groups[2].Value
+        $inner = $m.Groups[3].Value
+        # Discovery probe: harvest unrecognized attribute names + class tokens
+        # from legacy-side controls so future apps can see "what we don't yet
+        # check" ranked by frequency. Cheap, side-effect only.
+        if ($kind -eq 'legacy' -and $script:DiscoveryBag) {
+            Probe-LegacyControl $tag $attrs $script:DiscoveryBag
+        }
+        # Skip nested control wrappers that aren't user-facing buttons (e.g. tab <li> containing another <a>)
+        # but still record the outer if it has its own icon class.
+        $classMatch = [regex]::Match($attrs, '(?i)class\s*=\s*"([^"]*)"')
+        $ownClasses = if ($classMatch.Success) { $classMatch.Groups[1].Value } else { '' }
+        $ownIcons = Extract-IconClasses $ownClasses
+
+        # Find inline icons inside the inner text
+        $innerIconMatches = [regex]::Matches($inner, '(?i)<(i|span)\b([^>]*class\s*=\s*"([^"]*)"[^>]*)>\s*</\1>')
+        $innerIcons = @()
+        foreach ($im in $innerIconMatches) {
+            $innerIcons += Extract-IconClasses $im.Groups[3].Value
+        }
+
+        # testId / data-testid
+        $tidMatch = [regex]::Match($attrs, '(?i)(?:data-testid|testid|testId)\s*=\s*"([^"]+)"')
+        $testId = if ($tidMatch.Success) { $tidMatch.Groups[1].Value } else { '' }
+
+        # ng-click / (click) / (pressed)
+        $clickMatch = [regex]::Match($attrs, '(?i)(ng-click|\(click\)|\(pressed\))\s*=\s*"([^"]+)"')
+        $handler = if ($clickMatch.Success) { $clickMatch.Groups[2].Value } else { '' }
+
+        $label = Normalize-Label $inner
+        if ([string]::IsNullOrWhiteSpace($label) -and -not $testId -and -not $handler) { continue }
+        # Skip absurdly long labels (likely a whole panel)
+        if ($label.Length -gt 80) { $label = $label.Substring(0,80) }
+
+        $iconList = @($ownIcons + $innerIcons | Where-Object { $_ -match '^(fa-|glyphicon-)' } | Select-Object -Unique)
+        # Color/severity dimension: legacy uses Bootstrap btn-* classes.
+        $colorTok = Extract-ColorToken $ownClasses ''
+
+        # Interactivity: is this control's absence a real parity defect? This
+        # captures far more than the click handler alone so navigation links,
+        # routerLinks, form submits, and modal/dropdown triggers are never
+        # silently dropped the way a routerLink-only nav link used to be.
+        $hrefMatch = [regex]::Match($attrs, '(?i)\bhref\s*=\s*"([^"]*)"')
+        $hrefVal = if ($hrefMatch.Success) { $hrefMatch.Groups[1].Value.Trim() } else { '' }
+        $hasRealHref = $hrefVal -and ($hrefVal -notmatch '(?i)^\s*(#|javascript:\s*void)')
+        $hasRouterLink = [regex]::IsMatch($attrs, '(?i)\[?routerLink\]?\s*=')
+        $hasSubmit = [regex]::IsMatch($attrs, '(?i)\btype\s*=\s*"submit"') -or [regex]::IsMatch($attrs, '(?i)\(ngSubmit\)\s*=')
+        $hasTrigger = [regex]::IsMatch($attrs, '(?i)\b(data-toggle|data-bs-toggle|data-target|data-bs-target|ngbPopover|\(change\))\s*=')
+        $interactive = ($tag -eq 'button') -or (-not [string]::IsNullOrWhiteSpace($handler)) -or $hasRealHref -or $hasRouterLink -or $hasSubmit -or $hasTrigger -or ($iconList.Count -gt 0)
+
+        $records.Add([pscustomobject]@{
+            kind    = $kind
+            file    = $path
+            tag     = $tag
+            label   = $label
+            icons   = $iconList
+            color   = $colorTok
+            testId  = $testId
+            handler = $handler
 
 # ---------------------------------------------------------------------------
 # TRANSCRIPTION NOTE -- NOT PART OF THE SOURCE FILE.
-# This import covers source lines 1-394. The remainder of the Scan-File body,
-# the legacy<->modern matcher, gap emission, the summary and the exit are not
-# yet photographed. Deliberately incomplete; must not be executed.
+# This import covers source lines 1-454. Source lines 455-831 are NOT yet
+# transcribed (they were in photos not read). A separate photographed set covers
+# roughly 832-end and is also not yet transcribed. Deliberately incomplete;
+# must not be executed.
 # ---------------------------------------------------------------------------
