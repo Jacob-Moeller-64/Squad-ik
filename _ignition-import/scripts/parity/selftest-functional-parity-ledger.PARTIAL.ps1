@@ -122,6 +122,8 @@ $oldSchemaLedger = @'
 
 # ---------------------------------------------------------------------------
 # TRANSCRIPTION NOTE -- NOT PART OF THE SOURCE FILE.
-# This import covers source lines 1-121 only. Photos 3-5 of the batch were not
-# read. Deliberately incomplete; must not be executed.
+# This import covers source lines 1-121 only. Source lines 122-283 are NOT
+# transcribed. Lines 284-341 (the tail) are held separately in
+# selftest-functional-parity-ledger.TAIL-284-341.ps1. The source file is 340
+# content lines. Deliberately incomplete; must not be executed.
 # ---------------------------------------------------------------------------

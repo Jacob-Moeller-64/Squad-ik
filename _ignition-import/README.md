@@ -143,7 +143,7 @@ pattern-match against.
 | `scripts/parity/scan-scaffold-debt.ps1` | ★★ detects surviving "wired in a later step" deferral markers; **drain semantics** via `-CurrentStep` | transcribed from 4 photos — complete (221 content lines) |
 | `scripts/parity/scan-ui-parity-gaps.PARTIAL.ps1` | ★★ produces `ui-parity-gap-scan.json` (the ledger's `filter` input); ★ **honesty rules**; ★ **discovery probe** — self-reporting rule-coverage gaps | **PARTIAL** — lines 1-454 of ~950+; **gap at 455-831**; do not execute |
 | `scripts/parity/selftest-backend-parity.ps1` | ★★★ **the gates are tested** — runs the real gate against synthetic fixtures, 8 assertions over 6 cases | transcribed from 3 photos — complete (170 content lines) |
-| `scripts/parity/selftest-functional-parity-ledger.PARTIAL.ps1` | ★★★ second self-test — confirms self-testing is the **convention**, not a one-off | **PARTIAL** — lines 1-121; 2 of 5 photos read; do not execute |
+| `scripts/parity/selftest-functional-parity-ledger.PARTIAL.ps1` | ★★★ second self-test — confirms self-testing is the **convention**, not a one-off | **PARTIAL** — lines 1-121 + tail 284-341 (separate fragment); **gap 122-283**; file is 340 lines |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -4310,6 +4310,59 @@ The harness makes the fix trivial: `Invoke-LedgerCase` would need a switch to
 *skip* writing one of the artefacts, then an assertion that the run does not exit
 0. Same one-hour shape as the backend suggestion, and the two together would
 close the vacuous-pass family across the whole `parity/` directory.
+
+---
+
+### The tail (284-341) — six cases confirmed, and the summary
+
+The last photo covers the final four case blocks and the summary. Held as
+`selftest-functional-parity-ledger.TAIL-284-341.ps1` rather than spliced into the
+partial, because **lines 122-283 are still missing** and a file with an invented
+gap would be worse than two honest fragments. The source is **340 content lines**.
+
+Cases 3-6 as written:
+
+| Case | Fixture | Asserts |
+|---|---|---|
+| 3 | mutate entry, backend fully ported | exit 0, `mutate.implemented = 1`, `majorGaps = 0` |
+| 4 | filter entry, UI scan has `PlaceholderAction` | exit **2**, `filter.unimplemented = 1`, `majorGaps ≥ 1` |
+| 5 | mutate entry blocked **+ registry waiver** | exit 0, `mutate.waived = 1`, `majorGaps = 0` |
+| 6 | navigate entry, route absent from `routes.config.ts` | exit 0, `navigate.unimplemented = 1`, `majorGaps = 0`, **`minorGaps = 1`** |
+
+Two things stand out.
+
+**Case 6 asserts the Minor/Major boundary in both directions.** It checks
+`majorGaps -eq 0` *and* `minorGaps -eq 1` — so a future change that promoted
+`navigate` to blocking would fail the suite, and so would one that dropped the
+gap entirely. Most test suites assert only the direction they care about; this
+one pins both sides. That is the same false-positive discipline seen in
+`selftest-backend-parity.ps1`'s case 3, applied to severity rather than presence.
+
+**Case 5 asserts the waiver is *counted*, not just tolerated** —
+`byEffectClass.mutate.waived -eq 1`, not merely `exit 0`. That is the executable
+form of the honesty rule stated in `scan-ui-parity-gaps.ps1`: a waiver must
+remain visible in the output. Two files apart, principle and enforcement.
+
+The summary reports `$script:passCount` on success — so a green run states **how
+many** assertions passed, which makes a silently-shrinking suite detectable.
+
+### Net position on the two self-tests
+
+Between them, `selftest-backend-parity.ps1` (complete, 170 lines) and this one
+(340 lines) establish that the kit's gate layer is regression-tested to a
+standard most internal tooling never reaches: real scanner invoked
+out-of-process, exit codes asserted, artefact contents asserted, both severity
+directions pinned, waiver accounting verified, temp fixtures cleaned up, and
+neutral app identity throughout.
+
+The single gap remains the same in both, and is now precisely stated:
+
+> **Neither self-test constructs a case where an input the gate depends on is
+> absent.** Every fixture writes every artefact; every legacy tree contains
+> matching files.
+
+That is the one test that would catch the vacuous-pass family, and both harnesses
+are one parameter away from being able to express it.
 
 ---
 
@@ -13685,10 +13738,14 @@ not corrected:
 
 ## Transcription uncertainties (`selftest-functional-parity-ledger.ps1`)
 
-- **PARTIAL — 2 of the 5 photos in the batch were read.** Source lines **1-121**
-  are transcribed; the file continues (the `$oldSchemaLedger` here-string is cut
-  mid-literal). The committed copy carries a delimited trailing note. Must not be
-  executed.
+- **PARTIAL, in two fragments with a known interior gap.** `…PARTIAL.ps1` holds
+  source lines **1-121**; `…TAIL-284-341.ps1` holds **284-341**. **Lines 122-283
+  are not transcribed.** The source file is **340 content lines**. The tail was
+  deliberately kept as a separate file rather than spliced in, so nothing in the
+  repository misrepresents itself as contiguous. Neither is runnable.
+- In the tail fragment the **case-block boundaries** were read directly from the
+  photo; individual `Assert-That` line positions within each block may be off by
+  one. The assertions themselves and their order are as photographed.
 - All fifteen photographed anchors in the transcribed range match (34
   `[CmdletBinding()]`, 37 `$ErrorActionPreference`, 44 `Assert-That`, 57
   `Invoke-LedgerCase`, 62 `$BackendScanJson`, 73 `$root`, 81 the fixture writes,
