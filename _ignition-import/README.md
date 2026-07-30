@@ -151,7 +151,7 @@ pattern-match against.
 | `scripts/shared/Invoke-StepReconciliation.PARTIAL.ps1` | ★★★★ **settles the highest-severity finding** — *"a step with no registered rules reconciles to OK"* | **PARTIAL** — 1-67, 274-336, 755-804 of **803**; gaps at 68-273 and 337-754 |
 | `scripts/shared/verify-step-artifacts.PARTIAL.ps1` | ★★★ layer 1 of the two-layer model; ★ **`-EnsureControlPlane` explains why the skeleton stops at 3 files** | **PARTIAL** — lines 1-66; 1 of 5 photos read; do not execute |
 | `scripts/shared/verify-upgrade-invariants.PARTIAL.ps1` | ★★★ the **fourth and last** `shared/` script — catches diamond / split-version breaks a clean build hides | **PARTIAL** — lines 1-66 + tail 251-307 of **306**; gap 67-250 |
-| `scripts/maintenance/audit-step-number-drift.PARTIAL.ps1` | ★★★ **corrects the "+2 drift" terminology** — it was a 26→24 *compression*; three checks + an explicit unjudgeable-residue enumeration | **PARTIAL** — lines 1-67; 1 of 5 photos read; do not execute |
+| `scripts/maintenance/audit-step-number-drift.PARTIAL.ps1` | ★★★ **corrects the "+2 drift" terminology** — it was a 26→24 *compression*; three checks + an explicit unjudgeable-residue enumeration | **PARTIAL** — lines 1-67 + tail 248-291 of **290**; gap 68-247 |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -5682,6 +5682,79 @@ would be right not to.
 
 `-IncludeEnumeration` being off by default is the correct call for a routine
 gate: violations stay signal, residue stays available.
+
+---
+
+### Tail (248-291) — the residue is counted, and the tally reaches eight
+
+The file is **290 content lines**. Three things in the tail.
+
+**1. It reports what it scanned.**
+
+```powershell
+Write-Host ("Step-number drift audit  (scanned {0} files)" -f $targets.Count) -ForegroundColor Cyan
+```
+
+**2. The clean verdict names which checks were clean.**
+
+```powershell
+Write-Host "  No deterministic drift violations found (Checks A, B, C clean)." -ForegroundColor Green
+```
+
+Not "no violations" — *"Checks A, B, C clean."* A reader knows exactly which three
+questions were asked, which is the difference between a pass and an informative
+pass.
+
+**3. The unjudgeable residue is quantified.**
+
+```powershell
+Write-Host ("  Enumeration: {0} total 'Step N' references; {1} carry no title and need human review." -f $enumeration.Count, $review.Count)
+```
+
+The count of references the script **cannot** decide is itself reported, next to
+the total — so the ratio of automatable to non-automatable drift is visible at a
+glance.
+
+That makes **eight** places in `.github/scripts/` that report a non-check or a
+scope, against the one that does not:
+
+> reconciliation with no rules · a rule that found nothing · gate-integrity with
+> no self-tests (blocks) · no declared inputs/outputs · a skipped artefact · a
+> materialised skeleton · a skipped publish cross-check · **files scanned +
+> unjudgeable-reference count** — versus the behavioural-parity checkpoint.
+
+### ⚠ MINOR — the residue count is behind `-IncludeEnumeration`
+
+The count line sits **inside** the `if ($IncludeEnumeration)` block along with the
+per-reference listing. So a routine run reports `RESULT: OK - no deterministic
+step-number drift` without mentioning that, say, 40 references exist which no rule
+could judge.
+
+Suppressing the *list* by default is right, and the header says so explicitly
+(*"Off by default to keep the routine gate output focused on violations"*). But
+the *count* is a one-line summary, not noise, and it is the difference between
+"clean" and "clean, with 40 items nobody has looked at."
+
+Moving that single `Write-Host` outside the `if` preserves the intent and closes
+the gap — the same one-line shape as the behavioural-checkpoint fix, and the same
+principle: **a tool that reports what it could not judge is more trustworthy than
+one that reports only what it could.** This script already believes that; it just
+applies it under a flag.
+
+### Verdict strings
+
+```
+RESULT: DRIFT FOUND - {0} deterministic violation(s). Fix from the list above.
+RESULT: OK - no deterministic step-number drift.
+```
+
+Note the qualifier in both: **deterministic**. The script never claims there is no
+drift — only that there is none it can prove. That word is doing real work, and it
+is consistent with the enumeration's existence.
+
+Violations are grouped by check (`Group-Object Check | Sort-Object Name`) and
+printed as `[A]  3 issue(s)` with `file:line  message` beneath, so a maintainer
+sees which *class* of drift dominates before reading individual lines.
 
 ---
 
