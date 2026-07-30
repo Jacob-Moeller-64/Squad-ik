@@ -129,6 +129,14 @@ pattern-match against.
 | `starter/Starter.Web.Client/.npmrc` | the **root** copy `npmAuth()` actually reads — no token markers; **host redacted** | transcribed from 1 photo — complete (5 content lines) |
 | `starter/Starter.Web.Client/.dockerignore` | excludes `cert.pem`/`cert.key` from the image; reveals a `Dockerfile` exists | transcribed from 1 photo — complete (16 content lines) |
 | `starter/Starter.Web.Client/angular.json` | ★★ resolves the `local` config + fileReplacement scheme; ⚠ warning-only budgets, CLI cache off, lint covers `src/**` only | transcribed from 5 photos — complete (234 lines, validates as JSON) |
+| `starter/Starter.Web.Client/nginx.conf` | ⚠⚠ **ANSWERS the deployment question** — the live OpenShift config, with **zero** security headers | transcribed from 1 photo — complete (23 content lines) |
+| `starter/Starter.Web.Client/default.conf` | vestigial stock-nginx config; cannot work as written | transcribed from 1 photo — complete (23 content lines) |
+| `starter/Starter.Web.Client/package.json` | ⚠⚠ **`"latest"` on five toolchain packages**; serve is port **5001**; no `engines` field | transcribed from 1 photo — complete (58 lines, validates as JSON) |
+| `starter/Starter.Web.Client/eslint.config.js` | explains the `void` prefix; a11y rules on; no Prettier integration | transcribed from 2 photos — complete (73 lines, parses under `node --check`) |
+| `starter/Starter.Web.Client/tsconfig.json` | ★ the strongest config in the client — full `strict` + `strictTemplates` | transcribed from 1 photo — complete (34 content lines) |
+| `starter/Starter.Web.Client/tsconfig.{app,spec}.json` | per-target tsconfigs | transcribed from 2 photos — complete (15 / 14 content lines) |
+| `starter/Starter.Web.Client/AppInfo.xml` | ★ **already uses the `{Placeholder}` convention** — no redaction needed | transcribed from 2 photos — complete (77 lines, validates as XML) |
+| `starter/Starter.Web.Client/Starter.Web.Client.esproj` | `ShouldRunNpmInstall=false`; maps MSBuild onto the npm scripts | transcribed from 1 photo — complete (11 content lines) |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -2706,6 +2714,297 @@ That makes the question sharper rather than answering it. A reviewer who finds
   `inlineStyleLanguage: "scss"` — consistent with every component transcribed.
 - **`angular.json` itself has no trailing newline**, matching `test-datastore`'s
   files and reinforcing the no-formatter-gate finding above.
+
+---
+
+## Client root configs — the deployment question answered, and the drift mechanism found
+
+Nine files: `AppInfo.xml`, `default.conf`, `nginx.conf`, `eslint.config.js`,
+`package.json`, `Starter.Web.Client.esproj`, `tsconfig.json`,
+`tsconfig.app.json`, `tsconfig.spec.json`. **No redaction was needed** — the
+client `AppInfo.xml` uses placeholder tokens throughout and neither nginx config
+contains a hostname.
+
+---
+
+### ⚠ HIGH (security) — ANSWERED: the container path serves no security headers
+
+The `.dockerignore` entry opened this question and called it the thing to settle
+before the hackathon. It is settled, and the answer is the bad one.
+
+**`nginx.conf`** (23 lines) is the live OpenShift config — `listen 8080`,
+`root /opt/app-root/src`, and five `*_temp_path` directives redirected under
+`/tmp`, which is the standard pattern for OpenShift's read-only root filesystem
+and arbitrary-UID containers:
+
+```nginx
+events {}
+
+http {
+    include mime.types;
+
+    client_body_temp_path /tmp/nginx/client_temp;
+    ...
+    server {
+        listen 8080;
+        server_name _;
+
+        root /opt/app-root/src;
+        index index.html;
+
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+    }
+}
+```
+
+That is the entire file. **No `add_header` anywhere.** No
+`Content-Security-Policy`, no `Referrer-Policy`, no `X-Frame-Options`, no
+`X-Content-Type-Options`, and no cache-control directives.
+
+So the position recorded earlier is confirmed: the careful CSP in
+`src/web.config` — `default-src 'self'`, a hash-pinned inline script, an explicit
+`connect-src` allow-list, `Referrer-Policy: strict-origin-when-cross-origin` —
+applies **only to the IIS path**. And because `angular.json` copies
+`src/web.config` into `dist/`, that file is physically present in the container
+image while being completely inert there. A reviewer who greps the deployed
+artefact for `Content-Security-Policy` finds it and concludes the app is
+protected.
+
+**The cache policy is lost too, and that one bites operationally.** `web.config`
+sets `no-cache, no-store, must-revalidate` on `index.html`,
+`manifest.webmanifest`, and the four service-worker files, with a one-day
+`max-age` on `assets` and `favicon.ico`. nginx sets none of it. With
+`outputHashing: "all"` the hashed bundles are safe to cache forever, but
+`index.html` — the file that *names* those hashes — can be held by any
+intermediary. That is the classic SPA stale-shell deployment failure: users keep
+loading an old `index.html` that references bundles no longer on disk, and the
+app fails with chunk-load errors after a deploy.
+
+Both are cheap to fix in the same block:
+
+```nginx
+add_header Content-Security-Policy "..." always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+add_header X-Content-Type-Options "nosniff" always;
+
+location = /index.html {
+    add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+}
+```
+
+Given the hackathon multiplies this across every participating app, and given the
+kit already *has* the correct policy written down one file over, porting it into
+`nginx.conf` is probably the single highest-value security change available.
+
+**`default.conf` is vestigial and cannot work as written.** It is the other
+23-line file, with `listen 80`, `root /usr/share/nginx/html` (the stock nginx
+image path, not the OpenShift one), and everything structural commented out —
+including `events { }` and `include /etc/nginx/mime.types`. As a main config it
+fails to start (nginx requires an `events` section); as a `conf.d/` snippet its
+`http { }` wrapper is a syntax error. It is a leftover from a different base
+image. Deleting it removes a file that an agent asked to "update the nginx
+config" has a fifty-fifty chance of editing instead of the real one.
+
+---
+
+### ⚠ HIGH — `"latest"` on four toolchain packages is the drift mechanism
+
+```json
+"@typescript-eslint/eslint-plugin": "latest",
+"@typescript-eslint/parser": "latest",
+"eslint": "latest",
+"prettier": "latest",
+"typescript-eslint": "latest"
+```
+
+`"latest"` is a **dist-tag, not a version range**. It resolves to whatever is
+newest at install time, with no upper bound — not even a major one.
+
+This is the most direct drift generator found anywhere in the kit, and it is
+worth being explicit about why it matters more here than in an ordinary repo:
+
+- **It contradicts the kit's own stated law.** `CLAUDE.md` says *"Version pins
+  are preconditions"* and `.squad/gates/check-pins` must pass before
+  structure/swap steps, with placeholders in `pins.json` meaning *halt, not
+  improvise*. Five dependencies in the starter every participant clones are
+  unpinned by construction.
+- **It breaks the build, not just the output.** `preBuild` runs `npm run lint`
+  on **every** build. A major bump in `eslint` or `typescript-eslint` changes
+  rule names and config schema; the flat config here calls
+  `tseslint.config(...)` and spreads `tseslint.configs.*`, all of which have
+  moved between majors. The failure mode is "lint worked yesterday, fails today,
+  nobody changed anything."
+- **The documented recovery step makes it worse.** `npm run update` →
+  `update.mjs` → `npmUpdate()` → `npm update`, which re-resolves `latest` to
+  whatever shipped since. The kit's own drift-recovery instruction is also a
+  drift-*introduction* instruction for these five packages.
+- **Two participants who clone on different days get different linters**, and
+  therefore different verdicts on identical code. For an event whose purpose is a
+  consistent modernization outcome, that is the failure mode in miniature.
+
+The rest of the file is pinned sensibly by comparison — `@fusion/*` at exactly
+`2026.3.5` (five packages now, `@fusion/icons` being new), `@angular/*` at `"20"`,
+`@playwright/test` at `^1.59.1`. Bringing the five `latest` entries in line with
+that is a five-line change and, of everything in this review, it is the one most
+directly aimed at the drift concern.
+
+---
+
+### CORRECTED (twice) — there is **no** `engines` field
+
+The `tmpt/.npmrc` entry reasoned that `engine-strict=true` means npm enforces a
+declared `engines` range, and concluded that the earlier *"undeclared
+minimum-Node constraint"* observation against `getFullPath`'s `entry.parentPath`
+was *"likely wrong — the constraint is probably declared and enforced."*
+
+**`package.json` has no `engines` field.** `engine-strict=true` has nothing to
+enforce. So:
+
+- the **original** observation was right — the Node floor implied by
+  `entry.parentPath` (≥ 20.12 / ≥ 21.4) is genuinely undeclared;
+- the **correction** was wrong, and is withdrawn.
+
+I inferred the existence of a field from a setting that governs it, without
+seeing the field. Recording it plainly because the net effect is a real gap:
+`engine-strict=true` reads like a guardrail and currently is not one. Adding
+`"engines": { "node": ">=20.12" }` makes it one, and turns a silent
+`undefined/<name>` on Node 18 into a refused install.
+
+---
+
+### CORRECTED — the dev server runs on port **5001**, not 4200
+
+```json
+"serve": "ng serve --port 5001 --ssl --ssl-cert cert.pem --ssl-key cert.key",
+"start": "node ./scripts/pre-start.mjs && npm run serve",
+```
+
+The `.vscode/` entry read `launch.json`'s `http://localhost:4200/` and stated
+that *"4200 is the modern side of that pair"* for the dual-port visual-parity
+gate. **That is wrong.** 4200 is stock Angular CLI scaffolding in a `launch.json`
+that does not match the project's actual serve script. The real port is **5001**,
+over HTTPS.
+
+Three things fall out of this, all useful:
+
+1. **`pre-start.mjs`'s certificate export is load-bearing, not incidental.** The
+   earlier entry flagged `dotnet dev-certs https --export-path ./cert.pem --format
+   Pem --no-password` as writing an unencrypted key into the working tree. It does
+   — and now the reason is clear: `ng serve --ssl --ssl-cert cert.pem --ssl-key
+   cert.key` requires exactly those two files at exactly those paths. The security
+   observation stands; the "why is this here" question is answered, and any fix
+   has to keep the dev server working.
+2. **`fusion.config.base.ts`'s `redirectUri: 'https://localhost:5001/login/callback'`
+   now makes sense.** The base config is the *local development* config. Which
+   sharpens the `fusion.config.prd.ts` finding rather than softening it:
+   production inherits a redirect URI that was written for a developer's laptop.
+3. **`launch.json` is stale.** Debugging via the VS Code launch config attaches to
+   a port nothing is listening on.
+
+### NEW — the local Fusion config points at the wrong port
+
+```ts
+// fusion.config.ts (used by the default `local` configuration)
+api: {
+    baseUrl: 'https://localhost:4200/'
+}
+```
+
+The app is served from **5001**; the local API base URL points at **4200**. Every
+other environment config uses the relative `'/api'`. There is no `proxy.conf.json`
+in the transcribed tree. So a default `npm start` issues API calls to a port
+nothing serves — almost certainly a stale value left behind when the serve port
+changed, and exactly the kind of thing a participant hits in their first ten
+minutes.
+
+---
+
+### RESOLVED — the `void` prefix is required, not stylistic
+
+```js
+'@typescript-eslint/no-floating-promises': 'error'
+```
+
+`my-entity.component.ts`'s `void this.refresh();` and `test-datastore`'s
+`void this.loadStoredText();` were recorded without explanation. This is the
+explanation: `void` is the sanctioned way to satisfy `no-floating-promises`, and
+the rule is set to `error`. Worth stating in `angular.instructions.md`, because an
+agent that writes `this.refresh();` in `ngOnInit` will fail lint and may not know
+why.
+
+`@typescript-eslint/await-thenable` and `require-await` are also `error`, and all
+three require **type-aware** linting — which is configured
+(`parserOptions.project: 'tsconfig.json'`). That is a deliberate, good setup.
+
+### CONFIRMED — no formatter gate, and the missing Angular rule
+
+Two predictions from the `angular.json` entry both hold:
+
+1. **`prettier` is a devDependency** — and there is no `format` script, no
+   `eslint-config-prettier`, and no `eslint-plugin-prettier` in the flat config.
+   Prettier is installed and **never executed by anything**. That is the direct
+   evidence for the "linter but no formatter gate" conclusion, and it explains
+   every trailing-newline, member-ordering and import-sorting divergence recorded
+   across six files in one stroke. A `"format": "prettier --write ."` plus a
+   `--check` in `preBuild` closes the whole category.
+2. **`@angular-eslint/no-unused-standalone-imports` is not enabled.** The `rules`
+   block overrides only the two selector rules and the three promise rules;
+   nothing else is added on top of `angular.configs.tsRecommended`. So the
+   unnecessary `CommonModule` in two components is genuinely unreported.
+
+### Strengths worth stating plainly
+
+After a long run of findings, three parts of this batch are genuinely good:
+
+- **`tsconfig.json` is the strongest config in the client.** `strict: true`,
+  `noImplicitOverride`, `noPropertyAccessFromIndexSignature`, `noImplicitReturns`,
+  `noFallthroughCasesInSwitch`, plus `strictTemplates`,
+  `strictInjectionParameters` and `strictInputAccessModifiers` in
+  `angularCompilerOptions`. That is a stricter posture than most production
+  Angular apps run, and it is the right thing to tell agents to preserve when
+  porting. (`resolveJsonModule: true` also confirms the requirement noted against
+  `app.config.ts`'s `import * as pack from '../../package.json'`.)
+- **Accessibility linting is on.** `angular.configs.templateAccessibility` is
+  extended for `**/*.html`. For a modernization kit whose output is internal
+  line-of-business apps, shipping a11y rules by default in the starter is a real
+  and uncommon strength.
+- **`AppInfo.xml` already uses the placeholder convention.**
+  `{TeamEmail}`, `{TeamSupportGroup}`, `{TeamADGroup}`, `{TeamADGroupDomain}`,
+  `{ApplicationInfoUrl}`, `{ApplicationRepoUrl}` — and the API's `AppInfo.xml`
+  uses the same tokens. **This upgrades the recommendation made against
+  `appsettings.json` and `fusion.config.base.ts` from "adopt a placeholder
+  mechanism" to "apply the mechanism you already have, consistently."** The kit
+  invented the right answer for one file type and did not carry it to the two
+  that ship live credentials. That is a much easier argument to win internally.
+
+### Smaller observations
+
+- **Playwright is installed and never invoked.** `@playwright/test` and
+  `playwright` at `^1.59.1` are devDependencies; there is **no `e2e` script**.
+  Given the kit's dual-port visual-parity gate and `.squad/tools/visual`, E2E
+  infrastructure exists in the starter with nothing wired to it. Either the wiring
+  lives in the kit rather than the starter, or this is another
+  installed-but-unused dependency alongside Prettier.
+- **`"install"` is an npm lifecycle script name.** `"install": "node
+  ./scripts/install.mjs"` means `npm install` would invoke it as a lifecycle hook.
+  `ignore-scripts=true` in `.npmrc` currently suppresses that, so it is dormant —
+  but anyone running with `--ignore-scripts=false` (which
+  `installSafePackages()` does per-package) gets `npm install` calling a script
+  that itself installs. Worth renaming to `install:deps` to remove the hazard
+  entirely.
+- **`Starter.Web.Client.esproj` sets `ShouldRunNpmInstall=false`**, which is why
+  dependency installation is owned entirely by the `.mjs` harness rather than by
+  Visual Studio. It also maps `BuildCommand`/`CleanCommand`/`StartupCommand` onto
+  the npm scripts, so MSBuild and npm agree — a tidy seam, and the reason
+  `build.mjs` hand-creates `obj/Debug`.
+- **`@fusion/icons` is a fifth Fusion package**, pinned at the same `2026.3.5`
+  CalVer as the other four. The CalVer pinning is consistent and correct.
+- **`tsconfig.spec.json` includes only `src/**/*.spec.ts`**, and `types: ["jasmine"]`
+  — so the spec tsconfig is wired correctly. The problem with the frontend tests
+  has never been configuration; it is that the two specs that exist assert
+  nothing.
 
 ---
 
@@ -12078,6 +12377,30 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (client root configs)
+
+- **No redaction was required in this batch.** The client `AppInfo.xml` uses
+  `{TeamEmail}`-style tokens throughout, and neither nginx config contains a
+  hostname. The API's `AppInfo.xml` redactions (`serviceAccountDomain`,
+  `serviceAccountPasswordSource`) have no counterpart here — a static site has no
+  service account. A full sweep across `_ignition-import/` is clean.
+- Line counts verified against the photo gutters: `AppInfo.xml` 77 (gutter 78),
+  `default.conf` 23, `nginx.conf` 23, `eslint.config.js` 73 (74),
+  `package.json` 58 (59), `esproj` 11, `tsconfig.json` 34 (35),
+  `tsconfig.app.json` 15 (16), `tsconfig.spec.json` 14 (15).
+- `AppInfo.xml` and `web.config` validate as XML; `package.json`,
+  `tsconfig*.json` parse as JSON with comments stripped mentally (the `tsconfig`
+  files open with a `/* … */` banner, which is JSONC and is reproduced as
+  photographed). `eslint.config.js` parses under `node --check`.
+- `AppInfo.xml`'s twelve `<environment>` blocks are highly repetitive; the four
+  with a `<webSite>`/`<healthCheckUrl>` child (1-DEVL, 2-UAT, 4-STAGING,
+  6-PRODUCTION) were read individually and the rest reproduced mechanically.
+  Photo coverage overlapped at lines 36-67, so every block boundary was read.
+- Indentation for `AppInfo.xml` is 2-space, matched to the already-transcribed
+  `Starter.Web.Api/AppInfo.xml` rather than measured from the photo.
+- The `eslint.config.js` comment on line 8 is long and soft-wraps in the photo;
+  transcribed as one line.
 
 ## Transcription uncertainties (`angular.json`)
 

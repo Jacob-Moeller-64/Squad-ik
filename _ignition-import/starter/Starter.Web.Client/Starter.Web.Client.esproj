@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/1.0.2752196">
+  <PropertyGroup>
+    <BuildCommand>npm run build</BuildCommand>
+    <BuildOutputFolder>$(MSBuildProjectDirectory)\dist</BuildOutputFolder>
+    <CleanCommand>npm run clean</CleanCommand>
+    <JavaScriptTestFramework>Jasmine</JavaScriptTestFramework>
+    <ProductionBuildCommand>npm run build:prd</ProductionBuildCommand>
+    <ShouldRunNpmInstall>false</ShouldRunNpmInstall>
+    <StartupCommand>npm run start</StartupCommand>
+  </PropertyGroup>
+</Project>
