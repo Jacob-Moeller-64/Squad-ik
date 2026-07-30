@@ -144,7 +144,7 @@ pattern-match against.
 | `scripts/parity/scan-ui-parity-gaps.PARTIAL.ps1` | ★★ produces `ui-parity-gap-scan.json` (the ledger's `filter` input); ★ **honesty rules**; ★ **discovery probe** — self-reporting rule-coverage gaps | **PARTIAL** — lines 1-454 of ~950+; **gap at 455-831**; do not execute |
 | `scripts/parity/selftest-backend-parity.ps1` | ★★★ **the gates are tested** — runs the real gate against synthetic fixtures, 8 assertions over 6 cases | transcribed from 3 photos — complete (170 content lines) |
 | `scripts/parity/selftest-functional-parity-ledger.PARTIAL.ps1` | ★★★ second self-test — confirms self-testing is the **convention**, not a one-off | **PARTIAL** — lines 1-121 + tail 284-341 (separate fragment); **gap 122-283**; file is 340 lines |
-| `scripts/parity/selftest-parity-gate.PARTIAL.ps1` | ★★★★ **anti-re-blinding guards** — asserts against the scanner's own SOURCE, not just its behaviour | **PARTIAL** — 1-66, 291-353, 610-669; ⚠ **the runtime checkpoint every static gate defers to is opt-in** |
+| `scripts/parity/selftest-parity-gate.PARTIAL.ps1` | ★★★★ **anti-re-blinding guards** — asserts against the scanner's own SOURCE, not just its behaviour | **PARTIAL** — 1-66, 291-353, 610-669, 951-1017 of ~**1017**  ⚠ the runtime checkpoint every static gate defers to is opt-in |
 | `scripts/parity/selftest-scaffold-debt.PARTIAL.ps1` | ★★★ **fourth** self-test — four of six scanners now confirmed to have paired regression tests | **PARTIAL** — lines 1-65; 1 of 3 photos read; do not execute |
 | `scripts/parity/verify-gate-integrity.ps1` | ★★★★ **the meta-gate** — auto-discovers and runs every `selftest-*.ps1`; ★ **refuses to pass when it finds none** | transcribed from 2 photos — complete (86 content lines) |
 | `scripts/shared/field-contract.PARTIAL.ps1` | ★★ **the `opx-field-contract/v1` validator**; ★ its *authoring rule* reframes the loose-schema finding | **PARTIAL** — lines 1-63; 1 of 5 photos read; do not dot-source |
@@ -5345,6 +5345,98 @@ to eliminate, and it is the first concrete instance found in executable code
 rather than in filenames. It may equally be that Steps 9 and 12 are two
 legitimately different gates. **`audit-step-number-drift` settles it**, and this
 raises that script from Tier 4 to worth-having-soon.
+
+---
+
+### Tail (951-1017) — and the finding sharpens into an outlier
+
+The file is roughly **1017 content lines**, the largest in `shared/`. The tail is
+the reporting and exit block, and it does three things that matter to the
+behavioural-checkpoint finding above.
+
+**1. A `Skipped` status is a first-class, rendered state.**
+
+```powershell
+$color = switch ($r.Status) { 'Present' { 'Green' } 'Skipped' { 'DarkGray' } default { ... } }
+Write-Host ("    [{0}] {1} ({2})" -f $r.Status, $r.Path, $r.Gate)
+```
+
+Every artefact that was skipped is printed, in grey, with its path and gate. Not
+omitted — **listed as skipped.**
+
+**2. Zero declared artefacts prints `(none)`.**
+
+```powershell
+if (@($inputs).Count -eq 0) { Write-Host "    (none)" -ForegroundColor DarkGray }
+```
+
+The "nothing to check" case is visible here too, exactly as
+`Invoke-StepReconciliation.ps1` prints *"No reconciliation rules are registered
+for this step."*
+
+**3. Skeleton materialisation is announced.**
+
+```powershell
+Write-Host ("  Ensured control-plane skeletons: {0}" -f ($ensured -join ', ')) -ForegroundColor DarkYellow
+```
+
+When `-EnsureControlPlane` creates a file, it says which ones — in yellow. That
+addresses the residual concern about the skeleton generator: it never fabricates
+evidence artefacts, **and** when it does materialise a process artefact it
+reports it rather than silently conjuring a file the step then "verifies".
+
+The `-AsJson` path carries `ensured` too, so a caller can detect materialisation
+programmatically.
+
+### ⚠ This makes the behavioural-checkpoint skip an **outlier**, not a house style
+
+Tallying how `.github/scripts/` handles "I did not check this":
+
+| Situation | Reported? |
+|---|---|
+| reconciliation: no rules registered | ✅ `"No reconciliation rules are registered for this step."` |
+| reconciliation: rule ran, found nothing | ✅ `ReconNotes` states the count checked |
+| gate-integrity: no self-tests found | ✅ blocks — `exit 2` |
+| artifact verifier: no inputs/outputs declared | ✅ `(none)` |
+| artifact verifier: artefact skipped | ✅ `[Skipped]`, grey, with path |
+| artifact verifier: skeleton materialised | ✅ `"Ensured control-plane skeletons: …"` |
+| **behavioural-parity checkpoint not run** | ❌ **silent** |
+
+Six places where this codebase deliberately surfaces a non-check, and one where
+it does not — and the one is the deepest, the one every static gate names as the
+thing that covers what *it* cannot see.
+
+That is a much stronger form of the finding than "a gate skips when its input is
+missing". It is not a design philosophy the kit holds; it is a **single
+inconsistency** in a codebase that otherwise reports non-checks everywhere,
+sitting at the terminus of the deferral chain. The proposed `warn`-severity
+readiness finding is not a new idea being imposed — it is the pattern this file
+already applies to five other cases, applied to the sixth.
+
+### The final verdict strings
+
+```
+RESULT: BLOCKED - one or more required artifacts or semantic downstream checks failed (see above).
+RESULT: OK - all checked artifacts are present, non-empty, and semantically ready.
+```
+
+*"and semantically ready"* — confirming from the exit line what the
+`Get-StepSemanticReadinessFindings` fragment implied: this script is not the
+presence-checker its synopsis describes. It is presence **+ non-emptiness +
+schema (via `Write-SchemaResult`) + semantic readiness**, with `Semantic` as a
+distinct `Kind` alongside `Input` and `Output` in the results collection.
+
+So the layering across `shared/` is:
+
+| Layer | Question | Where |
+|---|---|---|
+| 1 | is it well-formed? | `field-contract.ps1` |
+| 1.5 | is the step semantically ready? | `verify-step-artifacts.ps1` |
+| 2 | is it true against the workspace? | `Invoke-StepReconciliation.ps1` |
+| 3 | does it actually behave at runtime? | behavioural-parity spec — **opt-in** |
+
+Recorded as the closing map of the directory. Three of the four layers report
+what they did not check; the fourth is the one that does not.
 
 ---
 
