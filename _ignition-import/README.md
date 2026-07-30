@@ -143,6 +143,7 @@ pattern-match against.
 | `scripts/parity/scan-scaffold-debt.ps1` | ★★ detects surviving "wired in a later step" deferral markers; **drain semantics** via `-CurrentStep` | transcribed from 4 photos — complete (221 content lines) |
 | `scripts/parity/scan-ui-parity-gaps.PARTIAL.ps1` | ★★ produces `ui-parity-gap-scan.json` (the ledger's `filter` input); ★ **honesty rules**; ★ **discovery probe** — self-reporting rule-coverage gaps | **PARTIAL** — lines 1-454 of ~950+; **gap at 455-831**; do not execute |
 | `scripts/parity/selftest-backend-parity.ps1` | ★★★ **the gates are tested** — runs the real gate against synthetic fixtures, 8 assertions over 6 cases | transcribed from 3 photos — complete (170 content lines) |
+| `scripts/parity/selftest-functional-parity-ledger.PARTIAL.ps1` | ★★★ second self-test — confirms self-testing is the **convention**, not a one-off | **PARTIAL** — lines 1-121; 2 of 5 photos read; do not execute |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -4241,6 +4242,74 @@ Whether the other gates have self-tests is unknown; the file tree lists
 one more `selftest-*` and a `verify-gate-integrity` exist. **Those are now the
 files worth photographing next** — `verify-gate-integrity` in particular sounds
 like the meta-gate that would run these self-tests in CI.
+
+---
+
+## `parity/selftest-functional-parity-ledger.ps1` (lines 1-121 of N) — PARTIAL
+
+A **second** self-test, and that matters more than its contents: one self-test is
+a good instinct, two is a **convention**. `.github/scripts/parity/` is listed in
+the file tree as *"11 scan-*/selftest-*/verify-gate-integrity scripts"*, so on
+this evidence most or all of the scanners have paired regression tests.
+
+Structurally it mirrors `selftest-backend-parity.ps1` closely — `Assert-That`,
+an `Invoke-*Case` harness that builds a synthetic tree, runs the real scanner
+out-of-process, reads the JSON artefact, and cleans up in `finally`. The fixtures
+are richer because the ledger is a composition gate: `Invoke-LedgerCase` writes
+**four** discovery artefacts plus a synthetic `routes.config.ts` and an optional
+controller, all under a temp `src/TestApp.Web.Client` / `src/TestApp.Web.Api`
+tree.
+
+### ★ It uses neutral fixture identity
+
+```powershell
+$clientDir = Join-Path $root 'src/TestApp.Web.Client/src/app'
+$apiDir    = Join-Path $root 'src/TestApp.Web.Api/Controllers'
+```
+
+`TestApp`, not the real application name — so the self-test exercises the
+kit's app-agnostic path derivation rather than accidentally depending on one
+app's identity. Consistent with the discipline recorded against
+`scan-ui-parity-gaps.ps1`.
+
+### CONFIRMED — the degraded-mode exit 0 is deliberate and locked in by a test
+
+Assertion 1 in the header:
+
+> *1. A ledger with NO effectClass schema (old format) -> scanner exits 0 but sets
+> hasEffectClassSchema: false (degraded mode, not blocking, warns operator).*
+
+The `scan-functional-parity-ledger.ps1` entry recorded that a pre-Phase-1 ledger
+marks every entry `ui-only`, which always evaluates true, so a **stale Step-3
+artefact silently disables the gate**. That is now confirmed as **intentional**,
+and there is a regression test asserting it.
+
+That changes the framing but not the recommendation. It is a deliberate
+backward-compatibility tradeoff, not an oversight — so it should be argued with
+rather than "fixed". The argument: the operator warning is the only signal, and
+it is suppressed by `-Quiet`, which is how the gate is invoked in the documented
+examples. Emitting `WARNING:` unconditionally would preserve the intended
+non-blocking degradation while removing the silence. One line, no behaviour
+change to the exit code, and the existing assertion still passes.
+
+### The six cases, and what is still missing
+
+Cases 2-6 cover blocking mutate gaps, passing mutate gaps, blocking filter gaps
+via `PlaceholderAction`, waiver respect, and `navigate` gaps staying Minor. That
+is thorough — including case 3 and case 6, both of which assert a **non**-block,
+which is the false-positive direction.
+
+As with the backend self-test, **no case exercises a missing evidence artefact.**
+Every fixture supplies all four discovery JSON files, with `$BackendScanJson` and
+`$UiScanJson` defaulting to well-formed "everything is clean" content. The
+finding recorded against the scanner — that an absent `backend-parity-scan.json`
+is indistinguishable from a clean one — is therefore untested in exactly the same
+way the empty-legacy-tree case is untested for the backend gate.
+
+The harness makes the fix trivial: `Invoke-LedgerCase` would need a switch to
+*skip* writing one of the artefacts, then an assertion that the run does not exit
+0. Same one-hour shape as the backend suggestion, and the two together would
+close the vacuous-pass family across the whole `parity/` directory.
 
 ---
 
@@ -13613,6 +13682,23 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (`selftest-functional-parity-ledger.ps1`)
+
+- **PARTIAL — 2 of the 5 photos in the batch were read.** Source lines **1-121**
+  are transcribed; the file continues (the `$oldSchemaLedger` here-string is cut
+  mid-literal). The committed copy carries a delimited trailing note. Must not be
+  executed.
+- All fifteen photographed anchors in the transcribed range match (34
+  `[CmdletBinding()]`, 37 `$ErrorActionPreference`, 44 `Assert-That`, 57
+  `Invoke-LedgerCase`, 62 `$BackendScanJson`, 73 `$root`, 81 the fixture writes,
+  87 `$routeLines`, 96 `try {`, 101 the scanner invocation, 105 `$scanOut`, 114
+  the fixture-helpers banner, 118/121 the `$oldSchemaLedger` start).
+- Line 99's comment says *"Use the current shell (pwsh) directly since the
+  scanner is PS7-compatible"* while line 101 invokes `powershell` (5.1). That
+  inconsistency is transcribed as photographed and is worth checking against the
+  real file — the comment and the code disagree about which shell runs the gate.
+- **Not executed** — `pwsh` unavailable and the file is incomplete.
 
 ## Transcription uncertainties (`selftest-backend-parity.ps1`)
 
