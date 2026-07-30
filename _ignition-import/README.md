@@ -94,6 +94,7 @@ pattern-match against.
 | File | Role | Status |
 |---|---|---|
 | `starter/Starter.Library/Entities/MyEntity.cs` | reference domain entity | transcribed from 1 photo — complete (source lines 1-28) |
+| `starter/Starter.Web.Client/.vscode/{extensions,launch,tasks}.json` | stock Angular CLI scaffolding — no customisation, no findings | transcribed from 3 photos — complete (4 / 20 / 42 lines) |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -712,6 +713,37 @@ Headline coverage:
    implies.
 6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
    `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## `Starter.Web.Client/.vscode/` — unmodified Angular CLI output
+
+Three files, all stock `ng new` scaffolding, identifiable by their standard
+fwlink IDs (`827846`, `830387`, `733558`). No Fusion customisation, no kit
+additions, nothing sensitive, and no findings worth the name. Recording them for
+completeness and for two small operational facts:
+
+**Ports.** `launch.json` pins `ng serve` to `http://localhost:4200/` and
+`ng test` to `http://localhost:9876/debug.html` (Karma default). The 4200 figure
+matters because the **dual-port visual-parity gate** in
+`frontend-modernization-learning.instructions.md` boots the modern app alongside
+the legacy one and diffs matching routes — 4200 is the modern side of that pair,
+and `copilot.instructions.md`'s port-freeing helper needs it.
+
+**A small task-definition ambiguity.** This is a *nested* `.vscode/` under
+`src/Starter.Web.Client/`, and the repo root has its own `.vscode/` as well.
+`copilot.instructions.md` says *"If you need task definitions, read
+`/.vscode/tasks.json` first"* — the root one — while `launch.json` here
+references `"npm: start"` / `"npm: test"` resolved from *this* file. Both are
+legitimate (nested `.vscode` is normal Angular CLI output), but an agent told to
+read the root file will not see these two tasks. Worth one clarifying clause in
+the instruction, since the kit's documented client run flow (`npm run update` →
+`npm run install` → `npm run start`) is a third set of commands defined in
+neither `tasks.json` — it lives in the client's `package.json` scripts.
+
+Trivial inconsistency, noted only so a cleanup pass does not "discover" it:
+`ng serve` uses `"type": "pwa-chrome"` while `ng test` uses `"type": "chrome"`.
+That is exactly what the Angular CLI generates; both work.
 
 ---
 
