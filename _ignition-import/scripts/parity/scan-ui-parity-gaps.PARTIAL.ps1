@@ -289,9 +289,113 @@ $BootstrapColorMap = @{
     'btn-link'    = 'link'
 }
 
+function Extract-ColorToken([string]$classAttr, [string]$colorAttr) {
+    if ($colorAttr) {
+        $c = $colorAttr.Trim().ToLowerInvariant()
+        if ($c) { return $c }
+    }
+    if (-not $classAttr) { return '' }
+    foreach ($t in ($classAttr -split '\s+')) {
+        if ($BootstrapColorMap.ContainsKey($t)) { return $BootstrapColorMap[$t] }
+    }
+    return ''
+}
+
+# ---------------------------------------------------------------------
+# DISCOVERY PROBE
+# ---------------------------------------------------------------------
+# The discovery probe is the answer to "future mysteries": after every known
+# rule pack runs, we walk every legacy <a>/<button>/<li> block and collect the
+# attribute names + AngularJS directives + class-token families that NO rule
+# pack consumed. The output ranks them by frequency so the next app's first
+# parity defect immediately tells you which rule pack to add next. Coverage
+# converges to 100% as the registry grows.
+$KnownLegacyAttributes = @(
+    'class','id','type','href','target','rel','title','alt','name','value',
+    'role','aria-label','aria-labelledby','aria-controls','aria-expanded',
+    'data-toggle','data-target','data-dismiss','data-testid','data-test-id',
+    'tabindex','autofocus','disabled','readonly','required','maxlength','minlength',
+    'placeholder','autocomplete','for','form','formaction','formmethod',
+    'ng-click','ng-show','ng-hide','ng-if','ng-disabled','ng-class','ng-style',
+    'ng-model','ng-bind','ng-href','ng-src','ng-repeat','ng-options','ng-init',
+    'ng-mouseover','ng-mouseleave','ng-mouseenter','ng-blur','ng-focus','ng-keydown',
+    'ng-keypress','ng-change','ng-submit','ng-controller','ng-app','ng-include',
+    'ng-show','ng-cloak','ng-bind-html','ng-attr','onclick','style'
+)
+$KnownLegacyClassPrefixes = @(
+    'fa-','fa','glyphicon-','glyphicon','btn-','btn','col-','row','container','panel-','panel','navbar-',
+    'nav-','nav','tab-','tab','active','disabled','pull-','text-','bg-','label-','label',
+    'alert-','form-','input-','well','well-','help-','close','clearfix',
+    'ng-','dropdown-','dropdown','divider','hidden','visible','show','hide','collapse','collapsed','in','fade'
+)
+function Probe-LegacyControl([string]$tagName, [string]$attrsRaw, [hashtable]$bag) {
+    if (-not $attrsRaw) { return }
+    # Attribute name harvest: name="value" pairs and bare boolean attrs.
+    $attrPairs = [regex]::Matches($attrsRaw, '(?i)([a-z_:][\w\-:]*)\s*(?:=\s*(?:"[^"]*"|''[^'']*''|[^\s>]+))?')
+    foreach ($ap in $attrPairs) {
+        $name = $ap.Groups[1].Value.ToLowerInvariant()
+        if (-not $name) { continue }
+        if ($KnownLegacyAttributes -contains $name) { continue }
+        # Collapse data-* and aria-* into known buckets when prefix matches.
+        if ($name -like 'aria-*') { continue }
+        if ($name -like 'data-*' -and $name -ne 'data-testid' -and $name -ne 'data-test-id') {
+            $bag['data-*'] = ($bag['data-*'] + 1)
+            continue
+        }
+        $bag[$name] = ($bag[$name] + 1)
+    }
+    # Class-token family harvest: capture unrecognized class roots.
+    $cm = [regex]::Match($attrsRaw, '(?i)class\s*=\s*"([^"]*)"')
+    if ($cm.Success) {
+        foreach ($tk in ($cm.Groups[1].Value -split '\s+')) {
+            if (-not $tk) { continue }
+            $known = $false
+            foreach ($p in $KnownLegacyClassPrefixes) {
+                if ($p.EndsWith('-')) {
+                    if ($tk.StartsWith($p)) { $known = $true; break }
+                } else {
+                    if ($tk -eq $p) { $known = $true; break }
+                }
+            }
+            if (-not $known) {
+                $key = "class:$tk"
+                $bag[$key] = ($bag[$key] + 1)
+            }
+        }
+    }
+}
+
+# Scan a single file content; return list of records.
+function Scan-File([string]$path, [string]$kind) {
+    $text = Get-Content -LiteralPath $path -Raw -ErrorAction SilentlyContinue
+    if (-not $text) { return @() }
+    # Strip HTML comments so commented-out legacy markup is not treated as live UI.
+    # Razor server comments (@*...*@) and Angular HTML comments (<!--...-->) both ignored.
+    $text = [regex]::Replace($text, '(?s)<!--.*?-->', '')
+    $text = [regex]::Replace($text, '(?s)@\*.*?\*@', '')
+    $records = New-Object System.Collections.Generic.List[object]
+
+    # Match <a> / <button> / <li> blocks (non-greedy, single-line forced via (?s)).
+    # Also match the app's button-shaped control wrappers (e.g. <filelog-command-button>) so
+    # wrapped buttons and links are seen; without this the scanner is blind to every wrapped
+    # control and reports false MissingControl gaps.
+    # IMPORTANT: only match button-action-shaped wrappers (names ending in -button/-btn/-link/
+    # -action/-cmd). Container-shaped wrappers like <filelog-modal>, <filelog-data-grid>,
+    # <filelog-dropdown> must NOT be included here: the block regex is non-overlapping, so
+    # if a container wrapper is matched as one block its inner <filelog-command-button> children
+    # are swallowed and never seen as separate records - producing false MissingControl gaps for
+    # the Cancel/Submit buttons inside the modal. The suffix heuristic is generic: any app that
+    # names its button wrapper *-button, *-btn, *-link, *-action, or *-cmd is covered.
+    $appTagAlt = if ($script:AppComponentPrefix) {
+        '|' + [regex]::Escape($script:AppComponentPrefix) + '-[a-z0-9\-]*-(?:button|btn|link|action|cmd)'
+    } else { '' }
+    $blockPattern = "(?si)<(a|button|li|fusion-button$appTagAlt)\b([^>]*)>(.*?)</\1>"
+    $matches = [regex]::Matches($text, $blockPattern)
+    foreach ($m in $matches) {
+
 # ---------------------------------------------------------------------------
 # TRANSCRIPTION NOTE -- NOT PART OF THE SOURCE FILE.
-# This import covers source lines 1-290 ("the first part"). Everything from
-# $ParityDimensions / Scan-File onward is not yet photographed. The file as
-# committed is deliberately incomplete and must not be executed.
+# This import covers source lines 1-394. The remainder of the Scan-File body,
+# the legacy<->modern matcher, gap emission, the summary and the exit are not
+# yet photographed. Deliberately incomplete; must not be executed.
 # ---------------------------------------------------------------------------

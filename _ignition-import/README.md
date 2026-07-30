@@ -141,7 +141,7 @@ pattern-match against.
 | `scripts/parity/scan-backend-parity.ps1` | ★★ endpoint-level sibling; quantified postmortem (35 mutations → 0, shipped green); ⚠ same vacuous pass, ⚠ `controller\|verb` key under-counts | transcribed from 5 photos — complete (241 content lines) |
 | `scripts/parity/scan-functional-parity-ledger.ps1` | ★★ the **composition** gate — cross-references the other scans; ★ has the missing-input guard the siblings lack; ⚠ evidence inputs still degrade to "clean" | transcribed from 7 photos — **complete** (376 content lines) |
 | `scripts/parity/scan-scaffold-debt.ps1` | ★★ detects surviving "wired in a later step" deferral markers; **drain semantics** via `-CurrentStep` | transcribed from 4 photos — complete (221 content lines) |
-| `scripts/parity/scan-ui-parity-gaps.PARTIAL.ps1` | ★★ produces `ui-parity-gap-scan.json` (the ledger's `filter` input); ★ **honesty rules** — a waiver that cannot hide what it waives | **PARTIAL** — lines 1-290 of N, from 5 photos; do not execute |
+| `scripts/parity/scan-ui-parity-gaps.PARTIAL.ps1` | ★★ produces `ui-parity-gap-scan.json` (the ledger's `filter` input); ★ **honesty rules**; ★ **discovery probe** — self-reporting rule-coverage gaps | **PARTIAL** — lines 1-394 of N, from 7 photos; do not execute |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -4022,6 +4022,61 @@ confirmed defect** — the rest of the file may already handle it.
   postmortem, caught from the UI side instead of the DTO side.
 - **`throw` on an unresolvable client root**, matching `scan-scaffold-debt.ps1`
   and unlike the two `scan-*-parity` scripts.
+
+---
+
+### Extended to line 394 — the discovery probe
+
+Two more design ideas worth recording, both from the 291-394 range.
+
+#### ★★ The discovery probe — a gate that reports its own blind spots
+
+```
+# The discovery probe is the answer to "future mysteries": after every known
+# rule pack runs, we walk every legacy <a>/<button>/<li> block and collect the
+# attribute names + AngularJS directives + class-token families that NO rule
+# pack consumed. The output ranks them by frequency so the next app's first
+# parity defect immediately tells you which rule pack to add next. Coverage
+# converges to 100% as the registry grows.
+```
+
+`Probe-LegacyControl` harvests every attribute and class token the scanner did
+**not** understand, tallies them, and emits them ranked by frequency. Two
+allow-lists (`$KnownLegacyAttributes`, ~60 entries including the full AngularJS
+`ng-*` set; `$KnownLegacyClassPrefixes`, the Bootstrap-3 vocabulary) define
+"understood"; everything else is surfaced as unexplained.
+
+This is the structural answer to the single most repeated finding in this review.
+Every other gate silently ignores what it cannot parse — the `*View.cs` filename
+filter, the `[HttpPost]`-without-template regex, the attribute-only endpoint
+discovery. **This one measures its own ignorance and hands you a prioritised
+worklist.** Applied to a hackathon it is worth more than any individual rule:
+each participant's unusual legacy app makes the shared rule packs better instead
+of silently passing.
+
+If one idea from `parity/` should be generalised across the kit, it is this one.
+
+#### ★ The wrapper-suffix heuristic, and why containers are excluded
+
+```
+# IMPORTANT: only match button-action-shaped wrappers (names ending in -button/-btn/-link/
+# -action/-cmd). Container-shaped wrappers like <filelog-modal>, <filelog-data-grid>,
+# <filelog-dropdown> must NOT be included here: the block regex is non-overlapping, so
+# if a container wrapper is matched as one block its inner <filelog-command-button> children
+# are swallowed and never seen as separate records - producing false MissingControl gaps for
+# the Cancel/Submit buttons inside the modal.
+```
+
+A precise, hard-won constraint: because `[regex]::Matches` is non-overlapping,
+matching a container wrapper hides every control inside it. The fix is a generic
+suffix heuristic (`*-button`, `*-btn`, `*-link`, `*-action`, `*-cmd`) rather than
+an app-specific list — *"any app that names its button wrapper ... is covered."*
+Third instance in this file of app-agnosticism achieved by derivation.
+
+Also worth noting: `Scan-File` strips **both** `<!--...-->` and Razor `@*...*@`
+comments before scanning, *"so commented-out legacy markup is not treated as live
+UI"* — a false-positive source that would otherwise inflate the legacy control
+count and make the modern side look worse than it is.
 
 ---
 
@@ -13397,10 +13452,17 @@ not corrected:
 
 ## Transcription uncertainties (`scan-ui-parity-gaps.ps1`)
 
-- **PARTIAL** — source lines 1-290, with a delimited trailing note in the
-  committed copy. Not photographed: `$ParityDimensions`, `Scan-File`, the
-  legacy/modern matcher, gap emission, the summary and the exit. Deliberately
+- **PARTIAL** — source lines **1-394**, with a delimited trailing note in the
+  committed copy. Not photographed: the rest of the `Scan-File` body, the
+  legacy↔modern matcher, gap emission, the summary and the exit. Deliberately
   incomplete; must not be run.
+- The 291-394 extension needed a blank line inserted at **291** (before
+  `Extract-ColorToken`) to align; after that all fourteen anchors in that range
+  match (292, 313, 325, 331, 334, 348, 369, 390, 393, 394 among them).
+- Line 335's attribute-harvest regex and line 392's `$blockPattern` are the least
+  legible tokens in this range and both carry embedded quote-escaping; re-check
+  them against the real file before acting on anything that depends on their
+  exact form.
 - Fifteen photographed anchors match the written file (53 `param(`, 75
   `$ErrorActionPreference`, 82 the root resolution, 114 `$script:AppComponentPrefix`,
   129 the registry banner, 148 `$inertControlAllowlist`, 155 the registry path,
