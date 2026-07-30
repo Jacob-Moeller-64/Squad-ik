@@ -113,6 +113,10 @@ pattern-match against.
 | `starter/.../services/my-entities/my-entities.service.ts` | ★★ **confirms `FusionHttpService`** — the only worked example of client→API calls; ⚠ cached GETs, inverted arg order | transcribed from 1 photo — complete (26 content lines) |
 | `starter/.../services/my-entities/my-entities.services.spec.ts` | ⚠ **empty file** — zero-byte, no frontend testing exemplar | recorded as blank per the source |
 | `starter/.../services/public-text/public-text.service.ts` | ★★ closes the **PublicText vertical slice** — controller → domain service → DTO → client service → page | transcribed from 1 photo — complete (15 content lines) |
+| `starter/.../src/app/app.config.ts` | ★★ **the bootstrap** — `provideNgxFusion()`, `provideNgxFusionAuthOAuthOkta()`, `provideHttpClient` + date interceptor, `FusionUrlSerializer` | transcribed from 1 photo — complete (50 content lines) |
+| `starter/.../src/app/fusion.config.base.ts` | ⚠ **2 live Okta values REDACTED**; `devMode`/`isDebug` true in base; Okta Management API scopes | transcribed from 1 photo — complete (38 content lines) |
+| `starter/.../src/app/app.component.{html,ts}` | the Fusion app shell — `fusion-app` / `fusion-header` / `fusion-footer` | transcribed from 2 photos — complete (7 / 11 content lines) |
+| `starter/.../src/app/app.component.spec.ts` | ⚠ `describe('Dummy')` with an assertion-free `it` — the frontend test suite is a placebo | transcribed from 1 photo — complete (11 content lines) |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -1648,6 +1652,253 @@ nits.
 - **No spec file was mentioned for `public-text/`.** `my-entities/` has one (empty).
   Whether `public-text/` has none at all, or one that was not photographed, is
   unknown — recorded as a question, not a finding.
+
+---
+
+## `src/app/` root — bootstrap, providers, and the Okta config
+
+Five files: `app.component.{html,ts,spec.ts}`, `app.config.ts`, and
+`fusion.config.base.ts`. **`fusion.config.base.ts` carried live Okta
+identifiers; both are redacted in the committed copy** — see the security
+section below.
+
+### RETRACTED: "no `HttpClient`, no `provideHttpClient()`, no interceptor"
+
+> The `services/my-entities` entry above states that the Angular HTTP stack is
+> replaced wholesale by `FusionHttpService`, with **"no `HttpClient`, no
+> `provideHttpClient()`, no interceptor, no `firstValueFrom`"**. The first three
+> are **wrong**. `app.config.ts` line 25:
+>
+> ```ts
+> provideHttpClient(withFetch(), withInterceptors([FusionHttpFromApiDateConverterInterceptorFn])),
+> ```
+>
+> `HttpClient` **is** provided, with the fetch backend and a Fusion interceptor.
+> `FusionHttpService` wraps it rather than replacing it. I inferred the app-level
+> arrangement from two service files that never mention `HttpClient`, which was
+> not evidence of its absence.
+
+What survives, and is still the useful rule: **application code goes through
+`FusionHttpService`, not `HttpClient` directly.** A ported service that injects
+`HttpClient` bypasses the base URL, the caching layer, the `actionName` plumbing
+and the date interceptor — it just does so by skipping a wrapper, not by
+reaching for something the app does not provide.
+
+The interceptor is itself a modernization rule worth stating:
+`FusionHttpFromApiDateConverterInterceptorFn` converts API dates centrally, so
+**per-service date parsing in a legacy app should be deleted, not ported.** An
+agent that faithfully carries across `new Date(dto.someDate)` will be
+double-converting.
+
+### CONFIRMED: `fusion-mcp-restructure.instructions.md` was right
+
+```ts
+provideNgxFusion(),
+provideNgxFusionAuthOAuthOkta(),
+```
+
+Both present, exactly as that instructions file claimed, with the Okta provider
+coming from a **separate package**, `@fusion/ngx-fusion-auth-oauth-okta`.
+
+Recording this because the earlier `pages/common-components` entry said that
+file's claims "were not something to take on trust", on the grounds that
+`fusion-auth-standards.md` had been found describing backend code that does not
+exist. That caution was reasonable about `fusion-auth-standards.md` and
+**over-applied** to `fusion-mcp-restructure.instructions.md`, which is accurate.
+
+### The app shell, and a partial answer to the "no error handling" gap
+
+```html
+<fusion-app
+    [errorDisplayDuration]="5000"
+    [messageDisplayDuration]="10000"
+>
+    <fusion-header label="Fusion Starter" />
+    <fusion-footer />
+</fusion-app>
+```
+
+Three more components (`FusionAppComponent`, `FusionHeaderComponent`,
+`FusionFooterComponent`), taking the demonstrated inventory to **twelve**.
+
+More importantly, `[errorDisplayDuration]` and `[messageDisplayDuration]` mean
+**Fusion provides a global error/message surface at the app shell**. That
+partially answers the "no frontend error convention" gap recorded earlier: the
+surface exists. The gap narrows to — *no page uses it*. None of the four pages
+raises an error into it, and nothing documents how. Still worth closing, but the
+missing piece is a convention and one worked example, not infrastructure.
+
+Also of note for the modernization steps:
+
+- **`withDisabledInitialNavigation()`** — routing is deliberately deferred until
+  after initialization (i.e. auth bootstrap) completes. A ported app that
+  navigates or reads route state during startup will behave differently here than
+  it did in the legacy app. The source comments this, which is good.
+- **`UrlSerializer` is replaced by `FusionUrlSerializer`.** Any legacy code doing
+  manual URL parsing or serialisation is now going through Fusion's rules.
+- **`PACKAGE_INFO` is `import * as pack from '../../package.json'`**, which
+  requires `resolveJsonModule` in `tsconfig` — a build setting a ported project
+  must not lose.
+- **`provideRouter(routes.routes, …)` alongside `useValue: routes`** means
+  `routes.config.ts` exports an object with a `.routes` property, and Fusion
+  consumes the *whole* object while Angular consumes only the array. So Fusion
+  gets richer route metadata (nav labels, permissions?) than the router does.
+  `routes.config.ts` is now high on the outstanding list.
+
+---
+
+### ⚠ HIGH (security) — live Okta client ID and tenant issuer in the base config
+
+`fusion.config.base.ts` shipped a real `clientId` and a real `issuer` tenant URL.
+Both are replaced with `<OKTA_CLIENT_ID>` and `<OKTA_ISSUER_URL>` in the
+committed copy. The `https://localhost:5001/...` redirect and logout URLs are
+localhost and were kept verbatim.
+
+This is the **second** file to do this — `Starter.Web.Api/appsettings.json` was
+flagged for the same thing (Okta ClientId, tenant URL, AD groups, corporate
+domains, an OpenShift hostname, internal CIDRs). The recommendation there was
+placeholders resolved from `kit-params.md` at the Step 2 rename; it now applies
+to the client too, and the case is stronger because the hackathon multiplies it:
+
+A public SPA client ID is not a secret in the cryptographic sense — it is visible
+in any browser. The problem is **operational**. Every participant who clones the
+starter points at the *same* Okta application. That application's allowed
+redirect URIs, grant types, and scope grants are a single shared mutable
+resource. One participant adding a redirect URI, or an admin tightening the app
+during the event, affects every other participant simultaneously. That is a
+same-day outage waiting for a room full of people, and it is invisible until it
+happens.
+
+### ⚠ HIGH — `devMode: true` and `isDebug: true` are in the *base* config
+
+```ts
+devMode: true,
+…
+isDebug: true,
+```
+
+`fusion.config.base.ts` is the file the five environment configs
+(`.dvl`, `.qa`, `.uat`, `.prd`, and the unsuffixed default) spread. Unless
+`fusion.config.prd.ts` explicitly overrides **both**, production ships with
+Fusion's dev mode and debug output enabled.
+
+Defaults belong at their safest value, with environments opting *up*, not down —
+a `prd` config that forgets one line should degrade to secure, not to debug.
+**This cannot be confirmed without `fusion.config.prd.ts`, which is now the
+single highest-priority outstanding file in the client.** Recorded as a
+must-check, not a confirmed defect.
+
+### ⚠ MEDIUM (security) — Okta Management API scopes requested from a browser client
+
+```ts
+'okta.clients.read',
+'okta.groups.read',
+'okta.myAccount.profile.read',
+'okta.profileMappings.read',
+'okta.userTypes.read',
+'okta.users.read',
+'okta.users.read.self'
+```
+
+The first seven scopes (`openid` … `groups`) are ordinary OIDC. The `okta.*`
+entries are **Okta Management API** scopes. `okta.users.read` is directory-wide
+read across the tenant; `okta.groups.read`, `okta.clients.read`,
+`okta.profileMappings.read` and `okta.userTypes.read` are similarly
+administrative.
+
+Requesting them does not by itself grant them — the Okta application must be
+authorised for each. But a starter template requests the *minimum*, and this one
+requests directory read by default, in a token delivered to a browser, in a file
+every participant will clone and never revisit. If the tenant does grant them,
+every modernized app in the hackathon carries tenant-wide directory read it has
+no use for. `okta.users.read.self` is the only one an app like this plausibly
+needs.
+
+Recommendation: strip the `okta.*` scopes from `base`, and let any app that
+genuinely needs one add it in its own config with a comment saying why.
+
+### ⚠ MEDIUM — the frontend test suite is a placebo
+
+```ts
+describe('Dummy', () => {
+    beforeEach(async () => {
+        await TestBed.configureTestingModule({}).compileComponents();
+    });
+
+    it('should create', () => {
+        return;
+    });
+});
+```
+
+That is `app.component.spec.ts` in full. It is named `Dummy`, it configures an
+**empty** `TestBed`, it never instantiates `AppComponent`, and its single test
+body is `return;`. It asserts nothing. Together with the zero-byte
+`my-entities.services.spec.ts`, the starter's demonstrated frontend testing
+practice is: **one empty file and one vacuous pass.**
+
+This escalates the earlier MEDIUM, and it collides with the kit's own gates. The
+Dominion rubric requires **coverage ≥ 80%** and *review complete = 100% of files
+plus every category judged*; D-001 makes characterization tests evidence that
+cannot be modified without a logged decision. So the kit needs an answer to a
+question it currently does not address:
+
+- If the coverage gate applies to `Starter.Web.Client`, **the starter fails its
+  own gate** — a suite of one assertion-free test cannot reach 80%.
+- If it does not apply, that exemption is nowhere stated, and every participant
+  will discover it independently and draw their own conclusion about whether
+  frontend tests matter.
+
+Either answer is defensible; the silence is not. And an assertion-free test is
+worse than no test, because Karma reports it as a passing suite and any
+"do specs exist" check is satisfied.
+
+The fix is the same shape as before and still cheap: one real spec — ideally on
+`public-text.service.ts`, written to the kit's own Gherkin-comment convention
+(`CaseId` / `Scenario` / `Description` / `Input` / `Expected`, then `Given` /
+`When` / `Then`) — turns the frontend testing step from invention into imitation.
+
+---
+
+### ⚠ MEDIUM — an "unused" import that a linter will delete and break the build
+
+```ts
+import { FusionConfig } from '@fusion/ngx-fusion';
+import {} from '@fusion/ngx-fusion-auth-oauth-okta';
+```
+
+The second import has **empty braces**. It is a module-augmentation import: it
+pulls in the declaration merging that adds the `auth` property to `FusionConfig`.
+Without it, the `auth: { … }` block below does not typecheck.
+
+It also looks exactly like dead code. `no-empty-pattern`, `no-unused-vars`, and
+most "organize imports" autofixes will remove it, and the failure will surface as
+a confusing type error on `auth` in a different part of the file. Given that the
+kit runs `npm run lint` on every build and instructs agents to satisfy analyzers
+and clean up unused code, this is a live trap.
+
+One comment line above it (`// module augmentation — do not remove`) costs
+nothing and prevents an afternoon of confusion.
+
+### Smaller observations
+
+- **`app.component.ts` orders `styleUrls` before `templateUrl`** — strict
+  alphabetical. All four page components do `templateUrl` first. The root
+  component of the app disagrees with every page in it. This is now the fourth
+  distinct `@Component` member-ordering variant found, and the strongest single
+  argument for writing the convention down rather than hoping it propagates.
+- **`AppComponent` is an empty class** (`export class AppComponent {}`) with no
+  base class — unlike every page, which extends `FusionPageBaseComponent`. Correct
+  (it is a shell, not a page), and worth stating so agents do not extend it.
+- **`app.config.ts` puts the Okta provider import last**, after the two relative
+  imports, breaking the package-imports-then-relative-imports grouping the rest of
+  the file follows. Cosmetic; consistent with everything else about this codebase.
+- **`createProviders()` builds an array and returns it** rather than returning the
+  literal. Harmless, and gives an obvious place to add conditional providers —
+  possibly the intent.
+- **`api.baseUrl: ''`** in base, so the API is same-origin by default and the
+  environment configs presumably override it. Consistent with the relative
+  `'MyEntities'` / `'PublicText'` URLs in the two services.
 
 ---
 
@@ -11013,6 +11264,28 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (`src/app/` root)
+
+- **Two redactions applied to `fusion.config.base.ts`**: `clientId` and `issuer`
+  are replaced with `<OKTA_CLIENT_ID>` and `<OKTA_ISSUER_URL>`. The
+  `https://localhost:5001/login/callback` and `/logout/callback` URLs are
+  localhost and were kept verbatim; the scope list, `pkce`, `devMode`,
+  `signInAttempts`, `theme` and `secure` are not sensitive and are as
+  photographed. A regex sweep for Okta client-ID and tenant patterns across
+  `_ignition-import/` and across this branch's history returns clean.
+- `app.config.ts` lines 1-4 and 25/30 are long single lines whose tails render
+  alongside the following gutter number. Each was resolved by row slope; the
+  bodies are complete statements, which cross-checks the mapping.
+- `import {} from '@fusion/ngx-fusion-auth-oauth-okta';` on line 2 of
+  `fusion.config.base.ts` has genuinely **empty braces** — transcribed exactly.
+  It is a module-augmentation import, not a typo or a partial read.
+- Line counts verified against the gutters: `app.component.html` 7 (gutter 8),
+  `app.component.ts` 11 (12), `app.component.spec.ts` 11 (12), `app.config.ts`
+  50 (51), `fusion.config.base.ts` 38 (39).
+- **Still outstanding and now highest priority:** `fusion.config.prd.ts` — it
+  decides whether `devMode: true` / `isDebug: true` reach production. Then
+  `routes.config.ts`, `fusion.config.ts`, `types.ts`, and `src/styles.scss`.
 
 ## Transcription uncertainties (`services/public-text`)
 
