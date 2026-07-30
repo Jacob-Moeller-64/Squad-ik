@@ -95,6 +95,7 @@ pattern-match against.
 |---|---|---|
 | `starter/Starter.Library/Entities/MyEntity.cs` | reference domain entity | transcribed from 1 photo — complete (source lines 1-28) |
 | `starter/Starter.Web.Client/.vscode/{extensions,launch,tasks}.json` | stock Angular CLI scaffolding — no customisation, no findings | transcribed from 3 photos — complete (4 / 20 / 42 lines) |
+| `starter/Starter.Web.Client/scripts/build.mjs` | Node build wrapper around `ng build` — pre-build hook + `obj/Debug` shim | transcribed from 1 photo — complete (13 content lines) |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -713,6 +714,103 @@ Headline coverage:
    implies.
 6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
    `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## `Starter.Web.Client/scripts/` — the Node build harness (partial)
+
+The client does not drive Angular through raw `ng` commands or through
+`dotnet build`; it drives it through a set of hand-written ESM scripts under
+`src/Starter.Web.Client/scripts/`. The file tree lists these, and the user named
+five of them for transcription: `build.mjs`, `clean.mjs`, `install.mjs`,
+`npm-clean.mjs`, `npm-safe-package-installs.mjs`. **Only `build.mjs` is
+transcribed so far** — see the uncertainties note below.
+
+### `build.mjs` (13 content lines)
+
+```
+import process from 'node:process';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { execute } from './tools.mjs';
+import { preBuild } from './pre-build.mjs';
+```
+
+Four structural facts, all of which matter to the pipeline:
+
+**1. There are two more scripts in this folder that were not in the batch.**
+`build.mjs` imports `execute` from `./tools.mjs` and `preBuild` from
+`./pre-build.mjs`. Both appear in the transcribed file tree under
+`Starter.Web.Client/scripts/`, but neither was among the five files named for
+this batch. `tools.mjs` owns `execute()` — the single choke point through which
+every one of these scripts shells out — so it is the highest-value untranscribed
+file in the folder. Added to the outstanding list.
+
+**2. The build is gated on a pre-build hook that runs unconditionally.**
+`await preBuild(false)` is the first statement after the imports; nothing calls
+`ng build` until it resolves. Whatever `pre-build.mjs` does — and the Kendo
+licence patch from `angular.instructions.md` is the obvious candidate for a hook
+in exactly this position — it runs on **every** build, on every developer
+machine and every CI agent, with no opt-out flag visible at this layer. The
+`false` argument is the only knob and its meaning is defined in the file we do
+not have. This is a concrete, checkable version of the risk flagged earlier
+against the `\b174733\d{4}\b` regex: if that patch has been wired into
+`preBuild`, it is no longer a documented manual workaround, it is an automated
+mutation of `node_modules/` at build time. **Cannot be confirmed or ruled out
+until `pre-build.mjs` is transcribed** — flagged, not asserted.
+
+**3. `obj/Debug` is created by hand before `ng build` runs.**
+
+```
+await fs.mkdir(path.join(process.cwd(), 'obj', 'Debug'), { recursive: true });
+```
+
+`obj/Debug` is an MSBuild convention, not an Angular one. Angular has no use for
+it; the directory is created because something downstream in the .NET build
+expects the Angular project to look like a project MSBuild has already touched.
+`recursive: true` makes it idempotent and non-fatal if it already exists. Two
+consequences for the kit: any "clean" step that deletes `obj/` must run *before*
+`build.mjs` rather than after (which is presumably what `clean.mjs` is for), and
+any modernization step that reasons about `obj/**` as a legacy build artifact to
+be purged — `copilot.instructions.md` line 54-55 explicitly names `.vs`/`obj`
+as stale outputs to remove — must not treat this particular `obj/Debug` as
+legacy residue. It is created fresh on every build by design.
+
+**4. Configuration is selected by a positional `configuration:` argv token, not
+a flag, and it defaults to `local`.**
+
+```
+const configuration = process.argv.find((p) => p.startsWith('configuration:'))?.replace('configuration:', '') || 'local';
+```
+
+This is a bespoke argument convention — not `--configuration`, not an env var,
+and not anything `npm` or `ng` parses natively. It scans the whole of
+`process.argv` for the first token starting with `configuration:` and strips the
+prefix. Three things follow:
+
+- The default is **`local`**, so a bare `npm run build` produces a *local*
+  configuration build. Any pipeline step that shells `npm run build` and then
+  asserts on production-shaped output will be reading a local build unless it
+  passes the token explicitly.
+- Because it is a bare positional token, it must survive `npm run` argument
+  forwarding (`npm run build -- configuration:production`), and the `--`
+  separator is easy to omit. There is no validation and no allow-list: an
+  unrecognised or misspelled value is passed straight through to
+  `ng build --configuration <value>`, where Angular decides whether to fail.
+- A typo'd token (e.g. `config:production`) does not error — `find` returns
+  `undefined` and the script silently falls back to `local`. That is a
+  fail-quiet path in a build script, and it is the kind of thing that produces
+  "it worked on my machine" drift across a hackathon-scale rollout.
+
+The `configuration` value is echoed to stdout before the build runs, which is
+the one mitigation: the log line `building with configuration: local` is
+evidence a gate could assert on.
+
+**Not present in `build.mjs`:** no Sonatype registry configuration, no Kendo
+licence handling, no `npm ci`/`npm install` invocation, no error handling around
+`execute`, no exit-code management. Whatever the kit's Sonatype-only npm policy
+looks like in practice, it is not in the build script — the candidates are
+`install.mjs` and `npm-safe-package-installs.mjs`, both still outstanding.
 
 ---
 
@@ -9783,3 +9881,15 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (`Starter.Web.Client/scripts/`)
+
+- The batch contained five photos: `build.mjs`, `clean.mjs`, `install.mjs`,
+  `npm-clean.mjs`, `npm-safe-package-installs.mjs`. **Only `build.mjs` was read.**
+  The context window ended mid-batch and the remaining four images are no longer
+  retrievable, so the other four files are *not* transcribed and are not guessed
+  at. Re-send needed.
+- `build.mjs` line 11 is a single long line in the source (the `configuration`
+  const). Transcribed unwrapped; the photo showed it soft-wrapped across two
+  editor rows with no continuation character, so this is a wrap, not a line break.
+- Line 14 of the file is blank (13 content lines + trailing newline).
