@@ -148,6 +148,7 @@ pattern-match against.
 | `scripts/parity/selftest-scaffold-debt.PARTIAL.ps1` | ★★★ **fourth** self-test — four of six scanners now confirmed to have paired regression tests | **PARTIAL** — lines 1-65; 1 of 3 photos read; do not execute |
 | `scripts/parity/verify-gate-integrity.ps1` | ★★★★ **the meta-gate** — auto-discovers and runs every `selftest-*.ps1`; ★ **refuses to pass when it finds none** | transcribed from 2 photos — complete (86 content lines) |
 | `scripts/shared/field-contract.PARTIAL.ps1` | ★★ **the `opx-field-contract/v1` validator**; ★ its *authoring rule* reframes the loose-schema finding | **PARTIAL** — lines 1-63; 1 of 5 photos read; do not dot-source |
+| `scripts/shared/Invoke-StepReconciliation.PARTIAL.ps1` | ★★★★ **settles the highest-severity finding** — *"a step with no registered rules reconciles to OK"* | **PARTIAL** — lines 1-67; 1 of 5 photos read; do not execute |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -4763,6 +4764,128 @@ kit.
   *"Pure functions only - dot-sourcing this file has no side effects."* That is
   the right contract for a shared library and the thing that makes it safe for
   every gate to dot-source.
+
+---
+
+## `shared/Invoke-StepReconciliation.ps1` (lines 1-67 of N) — PARTIAL
+
+The file this review has named as its highest-value target since the schema
+section. Sixty-seven lines in, it settles the question.
+
+### CONFIRMED — the two-layer model, in the kit's own words
+
+```
+    Field contracts (.github/contracts/schemas/ via verify-step-artifacts.ps1) prove an
+    artifact is well FORMED. Reconciliation proves it is TRUE against the rest of the
+    workspace. This is the second half of the artifact-reliability story: it is the only
+    layer that catches a hallucinated-but-believable entry, because such an entry is valid
+    JSON and passes every schema check.
+```
+
+Exactly the model reconstructed earlier from the schemas and their consumers —
+*schema = well-formed, reconciliation = true* — now stated verbatim. And the
+motivation is named explicitly: **a hallucinated-but-believable entry.** The
+reconciliation layer exists because an LLM writing a modernization artifact will
+produce a testcase catalog that names a test file which does not exist, and that
+file is perfect JSON. That is the sharpest statement of the AI-specific failure
+mode anywhere in the kit.
+
+### ★★★★ SETTLED — the vacuous pass is documented design, in one sentence
+
+```
+    Rules are registered per numbered step. The engine loads the rules for the requested
+    step, runs them ... A step with no registered rules reconciles to OK (nothing to check).
+```
+
+**"A step with no registered rules reconciles to OK."**
+
+That is the finding this review has been circling across nine files, stated by
+the kit itself as intended behaviour. And it lands precisely on the
+highest-severity item recorded here:
+
+> `control-point-inventory.json` is a `hardStop` for nine steps, validated only
+> as a non-empty object, consumed only by `Test-Path`, with no reconciliation
+> rule before Step 17.
+
+Now confirmed at the mechanism level. Steps 8-16 have **no registered
+reconciliation rules**, so they exit 0 — not because anything was verified, but
+because nothing was registered. The `hardStop` for those nine steps is enforced
+by file *existence* alone.
+
+Three things follow, and the third is the important one.
+
+**1. This is defensible as a rule-engine default.** "No rules → nothing to check
+→ OK" is the only sane behaviour for a generic engine; the alternative (no rules
+→ block) would make the engine unusable until every step had coverage.
+
+**2. But it is indistinguishable from success at the call site.** A pipeline step
+that shells `Invoke-StepReconciliation.ps1 -Step 12` and gets exit 0 cannot tell
+whether twelve rules passed or zero rules ran. This is the *same* shape as the
+four `scan-*` gates that exit 0 on an empty input set — and here it is
+load-bearing for nine consecutive steps of the pipeline.
+
+The fix has a working precedent in the kit and costs almost nothing: report the
+rule count. `verify-gate-integrity.ps1` already prints
+*"Discovered {0} gate self-test(s)"* before running them, and exits 2 at zero.
+The reconciliation engine emitting *"Step 12: 0 rules registered — nothing
+reconciled"* would make the distinction visible without changing the exit code at
+all. Whether zero rules should also *block* is a policy call; making it **visible**
+is not.
+
+**3. Adding the missing rule is a documented two-step task.**
+
+```
+    Add a rule:
+      1. Write a function Invoke-Recon-<Name> that takes -RepoRoot and -Violations (a
+         System.Collections.Generic.List[object]) and calls Add-Violation for each problem.
+      2. Register it in $RuleRegistry under the step(s) it applies to.
+    Each violation should carry actionable remediation text, not just a description.
+```
+
+So the remediation for the review's top finding is: write
+`Invoke-Recon-ControlPointInventory` that checks the inventory's entries resolve
+against the source tree, and register it at the step that produces it. Two steps,
+a documented extension point, and a stated quality bar — *"actionable remediation
+text, not just a description."*
+
+### ★ The step-registry migration is wired in here
+
+```
+.PARAMETER StepId
+    6-char lowercase hex ID from .github/instructions/step-registry.json (e.g. '26b4e1').
+    Resolved to the numeric step number at runtime. Provide either -StepId or -Step, not both.
+```
+
+First evidence of `step-registry.json` being **consumed** rather than merely
+existing. The `+2` renumbering drift recorded early in this import was assessed
+as "already solved by the registry; the remediation is to finish the migration."
+This file has finished it — it accepts either form and resolves the token at
+runtime. That is one concrete data point that the migration is genuinely
+underway rather than aspirational, and it raises the value of
+`audit-step-number-drift` (still untranscribed), which would show how much of the
+kit still uses bare numbers.
+
+### ★ Remediation is a first-class output, not an error message
+
+```
+    ... and prints DEVELOPER-GUIDING remediation for every violation - so when
+    a step cannot self-heal, the developer is still told exactly how to finish the step by
+    hand and proceed.
+```
+
+Same design value as `scan-functional-parity-ledger.ps1`'s `$reason` strings,
+stated as an explicit requirement here (*"Each violation should carry actionable
+remediation text"*). For an agent-driven pipeline this is the difference between
+a gate that stops work and a gate that redirects it.
+
+### ★ QA-independence is declared
+
+> *"This self-check is QA-independent and safe on `No QA` runs: it reads only
+> DEV-authored artifacts and the source tree."*
+
+So reconciliation runs regardless of whether the QA lane is active — which
+matters because the kit has a large `QA/` script directory and a documented
+"No QA" mode. Worth knowing that the truth-checking layer is not gated behind it.
 
 ---
 
@@ -14135,6 +14258,24 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (`shared/Invoke-StepReconciliation.ps1`)
+
+- **PARTIAL — 1 of the 5 photos in the batch was read.** Source lines **1-67**
+  (through `Set-StrictMode`); the rule registry, the rule functions,
+  `Add-Violation`, the engine and the exit are all unphotographed here.
+  Delimited trailing note in the committed copy. Must not be executed.
+- All fifteen photographed anchors in range match (14/17 the rule-registration
+  paragraph, 22/25 the `Step`/`StepId` parameters, 35 `.OUTPUTS`, 39/42 the two
+  examples, 45 `.NOTES`, 51 `#>`, 52 `[CmdletBinding()]`, 55 `$Step`, 58
+  `$StepId`, 64 `$AsJson`, 67 `Set-StrictMode`).
+- `$StepSummaryPath` (line 62) is declared in `param()` but has **no matching
+  `.PARAMETER` block** in the comment help, unlike `Step`, `StepId`, `RepoRoot`
+  and `AsJson`. Transcribed as photographed; it is an undocumented parameter, and
+  what it does is in the unphotographed remainder.
+- The example `-StepId '0576c8'` and the doc example `'26b4e1'` are different
+  tokens; both are as photographed.
+- **Not executed** — `pwsh` unavailable and the file is incomplete.
 
 ## Transcription uncertainties (`shared/field-contract.ps1`)
 
