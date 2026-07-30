@@ -94,6 +94,7 @@ pattern-match against.
 | File | Role | Status |
 |---|---|---|
 | `starter/Starter.Library/Entities/MyEntity.cs` | reference domain entity | transcribed from 1 photo — complete (source lines 1-28) |
+| `starter/Starter.Web.Api/AppInfo.xml` | deployment descriptor — 12 environments, Azure DevOps pipelines | transcribed from 2 photos — complete (89 lines, **validates as XML**); **2 values redacted** — see below |
 | `starter/Starter.Web.Api/Models/PublicTextResponse.cs` | ✅ `sealed record`, XML `<summary>` + `<param>` | transcribed from 1 photo — complete (7 lines) |
 | `starter/Starter.Web.Api/Models/MyModel.cs` | input DTO — correct `[Required]` + `required` pairing, no docs | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Models/MyModelSearch.cs` | search filter DTO — all-nullable, no docs | transcribed from 1 photo — complete (8 lines) |
@@ -705,6 +706,101 @@ Headline coverage:
    implies.
 6. **`fusion.config` has five environment variants** (`.base`, `.dv1`, `.qa`,
    `.uat`, `.prd`) that no transcribed file enumerates.
+
+---
+
+## 🔒 REDACTION APPLIED: `AppInfo.xml` (2 values)
+
+This is the first transcribed file containing real internal infrastructure
+identifiers rather than placeholders. Per the standing rule for this import
+(*never commit real secrets, credentials, tenant IDs, or internal
+infrastructure identifiers*), two values were replaced:
+
+| Element | Committed as | What it was |
+|---|---|---|
+| `<serviceAccountDomain>` | `[REDACTED-AD-DOMAIN]` | the real Active Directory domain for service accounts |
+| `<serviceAccountPasswordSource>` | `[REDACTED-VAULT]` | the real credential-vault identifier |
+
+Both appear four times (once per active environment). **Nothing analytically
+useful is lost** — the structure, element names, and deployment model are intact,
+and it is the *shape* that matters for kit analysis.
+
+**Say the word if you want them verbatim** and I will restore them; they are not
+secrets in the password sense, just infrastructure names, so it is your call
+rather than a hard block. Everything else in the file is committed exactly as
+photographed.
+
+Worth noting in the kit's favour: every genuinely app-specific value is already
+templated — `{TeamEmail}`, `{TeamSupportGroup}`, `{TeamADGroup}`,
+`{TeamADGroupDomain}`, `{ApplicationInfoUrl}`, `{ApplicationRepoUrl}`,
+`{ServiceAccount}`. That is exactly the discipline `kit-update.instructions.md`
+demands ("do not hard-code the current app… use placeholders"). The two redacted
+values are the only literals, and they are org-wide rather than app-specific,
+which is presumably why they were left concrete.
+
+---
+
+## Structural facts added by `AppInfo.xml`
+
+The first deployment-topology file in the import. 89 lines, validates as XML.
+
+**Twelve environments, four active:**
+
+| Environment | Active | Has service account |
+|---|---|---|
+| `00-DEVLOR_DEVL` | N | — |
+| `00-DEVLOR_QUAL` | N | — |
+| **`1-DEVL`** | **Y** | ✅ |
+| **`2-UAT`** | **Y** | ✅ |
+| `2-UATQA` | N | — |
+| `3-RELEASE` | N | — |
+| **`4-STAGING`** | **Y** | ✅ |
+| `4-STAGING-INTERNAL` | N | — |
+| `4-STAGING-EZONE` | N | — |
+| `5-TRAINING` | N | — |
+| `6-PREPROD` | N | — |
+| **`6-PRODUCTION`** | **Y** | ✅ |
+
+Only active environments carry `serviceAccount` / `webApp` blocks — a clean
+pattern, and one a modernization agent must preserve when renaming the starter.
+
+**Azure DevOps, not GitHub Actions**, for the app pipeline:
+`azure-pipelines.yml` and `azure-pipelines.verify-build.yml`. **Neither file
+appears in the transcribed repo tree**, so they are either app-supplied at
+onboarding or live somewhere the tree summary collapsed. Given
+`copilot.instructions.md` mentions "current DevOps or CI location" and
+`modernization-deep-scan-checklist` mentions "ADO CI/CD planning", this is the
+first concrete confirmation that the CI target is Azure DevOps. (Note the kit's
+own `.squad/workflows/` holds 11 GitHub Actions — those are kit-maintenance
+workflows, a different thing from the app pipeline.)
+
+**⚠ A health-endpoint mismatch worth resolving.** This file declares the
+deployment health check as:
+
+```xml
+<healthCheckUrl>fusion/health</healthCheckUrl>
+```
+
+…but `copilot.instructions.md` says:
+
+> If the app exposes `GET /health`, preserve its response shape; prefer
+> `{ "status": "ok" }` when establishing a new baseline.
+
+…and instructs agents to open *"the primary smoke endpoint(s) (at minimum
+`GET /health`)"* after any local start. So the **platform** health endpoint is
+`fusion/health` (Fusion-owned, consistent with Fusion owning the middleware
+pipeline as `FusionWebBuilderExtensions.cs` proved), while the **instructions**
+point agents at `/health`. An agent following the operational rule will probe a
+path the deployment descriptor does not use, get a 404, and may "fix" it by
+hand-adding a `/health` endpoint — introducing exactly the kind of parallel
+app-owned implementation of a Fusion-owned concern that
+`modernization-starter-boundaries` forbids.
+
+Cheap fix: change `copilot.instructions.md` to say `fusion/health` for
+Fusion-backed apps, or state that `/health` applies only to non-Fusion legacy
+baselines. This is the same failure shape as the `fusion-auth-standards.md`
+finding — an instruction file describing an app-owned implementation of something
+Fusion already owns — just much smaller.
 
 ---
 
