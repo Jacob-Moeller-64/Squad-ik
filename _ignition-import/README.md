@@ -145,6 +145,7 @@ pattern-match against.
 | `scripts/parity/selftest-backend-parity.ps1` | ★★★ **the gates are tested** — runs the real gate against synthetic fixtures, 8 assertions over 6 cases | transcribed from 3 photos — complete (170 content lines) |
 | `scripts/parity/selftest-functional-parity-ledger.PARTIAL.ps1` | ★★★ second self-test — confirms self-testing is the **convention**, not a one-off | **PARTIAL** — lines 1-121 + tail 284-341 (separate fragment); **gap 122-283**; file is 340 lines |
 | `scripts/parity/selftest-parity-gate.PARTIAL.ps1` | ★★★★ **anti-re-blinding guards** — asserts against the scanner's own SOURCE, not just its behaviour | **PARTIAL** — lines 1-66; 1 of 5 photos read; do not execute |
+| `scripts/parity/selftest-scaffold-debt.PARTIAL.ps1` | ★★★ **fourth** self-test — four of six scanners now confirmed to have paired regression tests | **PARTIAL** — lines 1-65; 1 of 3 photos read; do not execute |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -4460,6 +4461,87 @@ The outstanding recommendation is unchanged and now has a proven template:
 **add one empty-input case to each self-test.** Assertions 6-8 here prove the
 authors are willing to write unusual, high-value tests; the vacuous-pass case is
 ordinary by comparison.
+
+---
+
+## `parity/selftest-scaffold-debt.ps1` (lines 1-65 of N) — PARTIAL
+
+A **fourth** self-test. That is now four paired regression suites across the six
+`scan-*` gates transcribed, which settles the question raised earlier: the file
+tree's *"11 scan-\*/selftest-\*/verify-gate-integrity scripts"* is almost
+certainly **~5 scanners + ~5 self-tests + the integrity checker**. Self-testing is
+not a habit some author had once; it is how this directory is built.
+
+### It tests the false-positive direction explicitly, again
+
+```
+proves the scaffold-debt detector flags
+surviving deferral markers, extracts owning steps, drains overdue markers, honors -Strict and
+the accepted-marker registry, and does NOT false-flag real code (HTML placeholder attributes
+or comments describing an improvement over an old placeholder).
+```
+
+That final clause is the one worth noting. `scan-scaffold-debt.ps1`'s own rule
+set documents a rule that was tried and removed — matching the bare word
+`placeholder` produced false positives on known-good wrappers. **The self-test
+locks that removal in.** A future contributor who "improves" the detector by
+re-adding a `placeholder` pattern fails this suite immediately.
+
+That is the same anti-re-blinding intent as `selftest-parity-gate.ps1`'s static
+guards, expressed behaviourally: the rule set's documented history is not just a
+comment, it is an executable constraint. Two different mechanisms, same
+discipline.
+
+Note also the specific false-positive fixture described: *"comments describing an
+improvement over an old placeholder"*. That is a genuinely subtle case — a
+comment saying "replaced the old placeholder grid with a real data grid" contains
+the trigger vocabulary while describing the **opposite** of debt. Testing for it
+shows the author thought about how their own detector reads English.
+
+### CORRECTED — the harness convention is out-of-process; `selftest-parity-gate` is the outlier
+
+```
+# Run the scaffold-debt scanner against a synthetic modern tree. Child-process invocation keeps
+# the exit code reliable; assertions read the JSON output file, never stdout.
+```
+
+The `selftest-parity-gate.ps1` entry recorded an inconsistency between siblings —
+one running the scanner in-process, one out-of-process — and treated it as an
+even split. With this file the tally is **3 out-of-process
+(`backend-parity`, `functional-parity-ledger`, `scaffold-debt`) vs 1 in-process
+(`parity-gate`)**.
+
+So there **is** a house convention, and it is the safer one. `selftest-parity-gate.ps1`
+is the single outlier, and aligning it is a small, unambiguous cleanup rather than
+a judgement call between two defensible styles. Recording the correction because
+the previous framing implied a genuine disagreement; it is closer to one file
+drifting.
+
+### The harness handles nested fixture paths
+
+```powershell
+$fp = Join-Path $mod $name
+$dir = Split-Path $fp -Parent
+if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
+```
+
+Fixture keys may be relative paths (`pages/home/home.component.ts`), and the
+harness creates intermediate directories. That matters for this particular gate,
+because `scan-scaffold-debt.ps1` excludes `.spec.ts` and walks `*.ts,*.html`
+recursively — so testing the exclusion logic requires fixtures at realistic
+depths, not a flat directory.
+
+### Position after four self-tests
+
+The recommendation stands unchanged and is now the only substantive item left
+open against the gate layer: **none of the four self-tests constructs a case
+where an input the gate depends on is absent.** Every fixture writes every file.
+
+Everything else this review flagged in `parity/` — inconsistent guards,
+inconsistent `-Quiet` contracts, divergent verb regexes, permanent waivers — is
+either already solved in a sibling file or already locked down by one of these
+suites. The gap is singular, well-defined, and each harness is one parameter away
+from closing it.
 
 ---
 
@@ -13832,6 +13914,17 @@ not corrected:
   import graph") — transcribed as-is; possibly an intentional escalation, possibly a
   source duplication.
 - Minor wrapped-line reconstruction in the Step Artifact Self-Check block (lines 22-24).
+
+## Transcription uncertainties (`selftest-scaffold-debt.ps1`)
+
+- **PARTIAL — 1 of the 3 photos in the batch was read.** Source lines **1-65**;
+  the file continues (the `Invoke-DebtCase` `try` block is cut before its
+  `finally`). Delimited trailing note in the committed copy. Not runnable.
+- All thirteen photographed anchors in range match (14 `[CmdletBinding()]`, 17
+  `$ErrorActionPreference`, 18 `$scanner`, 21 `$script:failures`, 23
+  `Assert-That`, 34 the harness comment, 36 `Invoke-DebtCase`, 43 `$root`, 53
+  `$reg`, 57 `$psArgs`, 60 the invocation, 65 the `try` close).
+- **Not executed** — `pwsh` unavailable and the file is incomplete.
 
 ## Transcription uncertainties (`selftest-parity-gate.ps1`)
 
