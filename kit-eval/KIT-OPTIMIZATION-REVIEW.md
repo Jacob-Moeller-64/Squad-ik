@@ -256,3 +256,105 @@ per-run math — they add to it, so the savings figures are conservative. Planne
 dynamic verification (fixture apps, route-render crawl, gate mutation testing) was
 descoped by request to keep the repo untouched; §4/§6 claims about gate efficacy rest
 on the line-verified static review plus the kit's own self-test suite, not on live runs.
+
+---
+
+## 8. Addendum: target architecture — artifacts, skills, and tiered planning
+
+*(Written in answer to: "steps create artifacts other steps use — how can independent
+skills do this? Is our artifact methodology incorrect? Should we plan with higher-tier
+models and execute with lower ones?")*
+
+### 8.1 Artifacts and skills are orthogonal — one carries state, the other carries knowledge
+
+The kit has four layers doing four different jobs, and the confusion comes from two of
+them being discussed as if they competed:
+
+| Layer | Carries | Direction | Lifetime |
+|---|---|---|---|
+| **Artifacts** (`.modernization/**.json`) | **state** — what was discovered/decided *for this app* | step → step | the run |
+| **Skills** | **knowledge** — how to do a class of work | library → any step, pulled | the kit version |
+| **Prompts** | the **work order** — what this step reads, writes, loads, and is judged by | per step | the kit version |
+| **Gates** | **judgment** — exit 0/2 | after every step | the kit version |
+
+Skills never carry state; artifacts never carry procedure. Moving how-to prose out of
+pushed instructions into pulled skills changes *nothing* about the artifact dataflow:
+Step 11 consumes `interaction-wiring-inventory.json` from disk whether the agent
+learned to read it from an instruction file, a skill, or the prompt itself.
+
+**The artifact methodology is the correct pattern** — externalized, schema-validated,
+reconciled state is precisely what lets every step run in a fresh context, which is
+also precisely what lets every step run on a *different model tier*. A kit that passed
+state conversationally would force one giant expensive context across all 24 steps.
+The hourglass is the enabler of the token strategy, not an obstacle to it. And the kit
+already encodes the dataflow as data: `AppMod-Artifact-Contract.json` declares
+`requiredInputs`/`producedOutputs` per step and `verify-step-artifacts -Mode
+Input/Output` enforces both ends. The step shape to standardize:
+
+```
+NN-step.prompt.md          (slim work order)
+  ├─ loads: skill-a, skill-b            ← named explicitly; pull made deterministic
+  ├─ reads: artifact-x.json (schema-checked on entry)
+  ├─ does the work (Codex/Sonnet/Haiku per §4)
+  ├─ writes: artifact-y.json (schema-checked, reconciled on exit)
+  └─ judged by: gate scripts, exit 0/2
+```
+
+Two artifact refinements for cheap-model consumers (the only real gaps found):
+1. **Self-describing handoffs** — a consumer must never need the producer's context.
+   Producers should stamp a small summary head (counts, rootKey, provenance) so a
+   Haiku-tier reader can navigate without loading everything; the reconciliation
+   engine's `ReconNotes` and the scanners' summary blocks already model this.
+2. **Slice-friendly reads** — large artifacts (legacy-system-analysis-report) should be
+   consumed by section, not wholesale; per-artifact indexes make that mechanical.
+
+### 8.2 Verdict on the methodology, layer by layer
+
+| Layer | Verdict | Action |
+|---|---|---|
+| Artifact hourglass + two-layer validation (+ runtime checkpoint) | **Correct — ahead of most internal AI tooling** | keep; add summary heads |
+| Gates-as-scripts + self-tests + meta-runner | **Correct — the kit's core asset** | grow (absorb checkable prose), normalize per §6 |
+| 24 sequential gated steps + step-registry | **Correct for drift control** | finish registry migration; split the two >14k multi-concern steps (06, 08) into slices only if weak-model runs show it |
+| Knowledge distribution (instructions vs skills) | **Misassembled — push-heavy** | reference mass → skills; loading named per step; guardrails stay pushed (§5, prior analysis) |
+| Agents (3 phase + 8 specialist) | Sound | fold personality baseline into agent files |
+| QA prompt lane (~17 prompts, untranscribed) | **Suspect redundancy** | any QA prompt that merely runs gates should become a hook/CI job — prompts cost tokens, hooks don't |
+| Starter (the answer key) | Right idea, internally contradictory | canonical-patterns pass (previously catalogued) |
+
+Nothing here says "rethink the methodology." It says: the state layer and the
+judgment layer are right; the knowledge layer is wearing the wrong delivery mechanism.
+
+### 8.3 Plan high, execute low — yes, and the kit already secretly does it
+
+The kit's P1 produces *plans* (solution-design, per-route-behavior-plan, quality
+design); P2 *executes* them; gates verify continuously; P3 audits once. That IS the
+plan/execute split — it just isn't tiered yet. Making it explicit:
+
+| Role | Steps | Tier | Why it holds |
+|---|---|---|---|
+| **Plan** (judgment, unrecoverable if wrong) | 3, 5 (+ 6 at Sonnet) | Opus-reserve / Sonnet | outputs are *plan artifacts* — pay once for quality that 12 cheap steps then consume |
+| **Execute** (transform against an answer key) | 7–17 | Codex-5.3 / Sonnet | every step is schema-checked, reconciled, and gate-judged; the plan artifact removes ambiguity |
+| **Mechanical + verify** (checklists, gate-running, cleanup) | 1, 2, 13, 18, 20, 23 | Haiku | scripts decide; the model just drives |
+| **Audit** (once) | 24 | Opus-reserve | cheapest place for a big model: single invocation |
+
+Three mechanics make this durable rather than aspirational:
+
+1. **Execution-grade plans.** A plan a cheap model can follow is itemized and
+   checkable — the behavior-plan's per-route entries with `effectClass` are the model;
+   prose-y sections of solution-design should gain structured, per-item sections. Rule
+   of thumb: *if the ledger can't reconcile it, an executor can't follow it.*
+2. **A two-strikes escalation valve.** Cheap model fails a gate → one retry with the
+   gate's remediation text in context → second failure escalates one tier *for that
+   step only*. This is both a correctness and a **token** rule: Haiku looping five
+   times on a red gate costs more than Sonnet passing once. The kit already owns the
+   trigger signal (`step-confidence-contract` + gate exit codes + remediation strings —
+   the gates' developer-guiding `Fix:` output was built for exactly this consumer).
+3. **Don't over-plan.** Tiering is per-step, not a universal plan-first ceremony —
+   for mechanical steps the planning overhead would exceed the execution cost. The
+   step table above is the whole policy.
+
+The reason this works here when it fails elsewhere: most orgs bolt cheap models onto
+workflows with no deterministic verification, so quality collapses silently. This kit
+spent its complexity budget on exactly the layer (gates + reconciliation + self-tests)
+that catches a weak executor's mistakes mechanically. The architecture was already
+built for tiering — it has just been running every step on one tier and paying
+Opus-class prices for Haiku-class work.
