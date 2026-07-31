@@ -5594,6 +5594,50 @@ and the review of it can be stated in three lines:
 
 ---
 
+# `instructions/AppMod-Artifact-Contract.json` — COMPLETE via word-wrap re-shoot (345 lines)
+
+The re-shoot (7 photos, word wrap on) closed every one of the ~30 `[CUT]`
+truncations from the original attempt. Transcribed by a fresh-context agent,
+30+ gutter anchors verified, `python3 -m json.tool` clean, 24 steps present with
+58 requiredInputs and 58 producedOutputs entries. The old working partial at
+`_wip/AppMod-Artifact-Contract-partial.md` is superseded and removed.
+
+**Three fidelity corrections vs the old partial (photos win, each verified on
+upscaled crops):**
+1. The producer legend's `qa-script`/`tool` rows were keystone-shifted in the old
+   copy: the "MUST also have a dev-agent or dev-script owner so No QA runs are
+   not blocked" sentence belongs to **qa-script**, and **tool**'s note ends
+   "**Evidence only, not a control-plane gate.**" — a sentence the old copy
+   dropped entirely.
+2. `Architecture-Structure.md` `consumedBySteps` = **[8]**, not `[6,7,8]` (row-
+   pairing error; the `[6,7,8]` tail belongs to `Modernization-Phase-Assessment.md`).
+3. `characterization-test-planning.json` lives under `portal/data/json/`
+   (resolves the old copy's flagged root-path uncertainty).
+
+**Findings from the recovered content:**
+- **The "Step 20 undeclared evidence" concern dissolves.** Step 20 produces
+  nothing per the contract; `step20-rollback-dryrun.json` and
+  `step20-perf-verification.json` are **Step 18 outputs** whose names are legacy
+  26-step fossils — the recovered notes say so verbatim: *"Filename retains the
+  legacy step number for tooling stability."* The contract is internally
+  consistent here; the fossil names are the defect (they fooled a careful
+  content-level reader), and renaming them via registry stepIds is the
+  refinement.
+- `behavioral-parity-checkpoint.json` carries a previously-invisible
+  **`"verify": false`** field and `consumedBySteps: []`, with the recovered note
+  confirming the linkage this review established: *"overall=fail keeps Step 12
+  open via the verify-step-artifacts semantic gate."*
+- The schemaNote tail documents exactly the two-severity behavior the gates
+  implement: present-but-invalid hardStop input **blocks like a missing one**;
+  present-but-invalid advisory/conditional input is a **non-blocking warning**.
+- `control-point-inventory.json` true consumer set: **[8,9,10,11,12,13,18,19,20,22,23]**.
+
+**Transcription notes:** file ends `}` at 345 + one blank line (`}\n\n`);
+wrap-joins corroborated by overlap crops (mid-token splits rejoined without
+spaces); no material uncertainties recorded.
+
+---
+
 # Backfill pass — all ten incomplete transcriptions completed from the preserved photos
 
 Executed as a 22-agent workflow (10 transcribers with fresh contexts, 10

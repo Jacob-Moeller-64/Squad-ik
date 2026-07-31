@@ -183,3 +183,27 @@ folds + `requires-artifacts` frontmatter + the coverage gate; (5) agent roster
 consolidation; (6) step merges (01, 16, 21–23) behind their fixtures; (7) the Step-24
 scoring script + split; (8) L2 tier certification, then flip `model:` frontmatter
 per certified step.
+
+---
+
+## Post-blueprint verification: the complete artifact contract (re-shoot)
+
+The word-wrap re-shoot of `AppMod-Artifact-Contract.json` arrived after this
+blueprint was written; every merge verdict has been re-audited against the true
+`consumedBySteps` arrays. Results:
+
+- **CONFIRMED — 15+16 merge:** `wrapper-versions.json → [16]` exactly; step 16
+  produces nothing. The iteration conversion stands on complete data.
+- **CONFIRMED — 21+22 and 22→23:** `figma-review.json → [22]`;
+  `final-review.json → [23]`; `FINAL-COMPLIANCE-REPORT.json → [23]`. Both folds
+  stand.
+- **CONFIRMED — 01→hook:** step 1 has zero contract entries in both directions.
+- **SUPERSEDED — the "Step 20 undeclared evidence" prerequisite.** The complete
+  contract shows Step 20 produces nothing; the `step20-*` files are **Step 18
+  outputs** with legacy-numbering fossil names (the contract's own notes:
+  *"Filename retains the legacy step number for tooling stability"*). The
+  contract is internally consistent; the actionable refinement is renaming the
+  fossils (registry stepIds), not amending the contract. The 19+20 merge
+  assessment reverts to purely the tier question (19's sole output → [20]).
+- The `[CUT]` caveat attached to this blueprint's §1 table is retired — consumer
+  sets are now ground truth, not reconstruction.
