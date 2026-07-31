@@ -36,7 +36,7 @@ now lives at its canonical path with the `.PARTIAL`/`.FRAGMENT`/`.TAIL`
 intermediates removed. See the "Backfill pass" section of
 `_ignition-import/README.md` for per-file verification stats and findings.
 
-**One gap remains:** `shared/verify-step-artifacts.ps1` source lines **354-398**
+**RESOLVED 2026-07-31:** the gap below was closed by a re-shoot; the file now parses clean. Historical note: `shared/verify-step-artifacts.ps1` source lines **354-398**
 (45 lines) are covered by no photo in this set — `06-23e594b2` ends at gutter
 353 and `07-4c3ec0a1` begins at 399. The file carries a delimited
 `# TRANSCRIPTION GAP` placeholder preserving true line numbers, and does not

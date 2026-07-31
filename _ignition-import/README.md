@@ -150,7 +150,7 @@ pattern-match against.
 | `scripts/parity/verify-gate-integrity.ps1` | ★★★★ **the meta-gate** — auto-discovers and runs every `selftest-*.ps1`; ★ **refuses to pass when it finds none** | transcribed from 2 photos — complete (86 content lines) |
 | `scripts/shared/field-contract.ps1` | ★★ the `opx-field-contract/v1` validator — full dialect engine; authoring rule reframed the loose-schema finding | **complete** (238 lines, backfill-verified) |
 | `scripts/shared/Invoke-StepReconciliation.ps1` | ★★★★ the truth layer — `$RuleRegistry` resolved: rules at steps 6/8/11/17, anti-hallucination + dead-shell rules | **complete** (803 lines, backfill-verified) |
-| `scripts/shared/verify-step-artifacts.ps1` | ★★★ presence + schema + semantic readiness; behavioural checkpoint opt-in finding stands | **complete except lines 354-398** (1017 lines; 45-line photo gap marked in-file) |
+| `scripts/shared/verify-step-artifacts.ps1` | ★★★ presence + schema + semantic readiness; behavioural checkpoint opt-in finding stands | **complete** (1017 lines; the 354-398 photo gap closed by re-shoot, file now parses clean under the PowerShell parser) |
 | `scripts/shared/verify-upgrade-invariants.ps1` | ★★★ diamond/split-version gate a green build cannot catch | **complete** (306 lines, backfill-verified) |
 | `scripts/maintenance/audit-step-number-drift.ps1` | ★★★ 26→24 compression audit — Checks A/B/C + honest unjudgeable-residue enumeration | **complete** (290 lines, backfill-verified) |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
@@ -5621,18 +5621,19 @@ script now lives at its canonical path.
 | `parity/selftest-parity-gate.ps1` | 265 lines | CONFIRMED (22 anchors + 75 lines) |
 | `parity/selftest-scaffold-debt.ps1` | 142 lines | CONFIRMED (21 anchors + 51 lines) |
 
-## ⚠ One photo-coverage gap remains: `verify-step-artifacts.ps1` lines 354–398
+## RESOLVED — the last photo gap is closed; `.github/scripts` is verbatim-complete
 
-Photo `06-23e594b2` ends at gutter 353 and photo `07-4c3ec0a1` begins at gutter
-399 — **45 source lines were never photographed**. Per the no-fabrication rule
-they were NOT reconstructed: the file contains a clearly delimited
-`# TRANSCRIPTION GAP` block occupying exactly lines 354–398, so every later line
-keeps its true source number. The missing region (inside
-`Get-StepSemanticReadinessFindings`) contains at least the tail of
-`Resolve-CaseOwnerStepNumbers`, the `Test-CaseIsUnitType` helper, and the
-`Get-CatalogCaseSet` loader referenced by later lines. **The file does not parse
-as-is** (braces opened in the gap are unclosed). One re-photograph of source
-lines 354–398 completes the import.
+The missing lines 354-398 of `verify-step-artifacts.ps1` arrived as a re-shoot and
+were spliced over the delimited placeholder, with indentation calibrated against the
+verified anchor lines on both sides (348-353 / 399-411). The range contains: the
+single-step fallback of `TryResolveFromPhase`, the phase-candidate resolution tail of
+`Resolve-CaseOwnerStepNumbers`, the `Test-CaseIsUnitType` helper (category/suite/
+suiteType/testType `-match '(?i)unit'`), and the catalog loader with its
+`Add-ReadinessFinding` catch (message + remediation on an unreadable catalog — the
+same honest-failure pattern as the rest of the file). **The file now passes
+`[Parser]::ParseFile` with zero errors** — the first time it has been syntactically
+whole since transcription began. Every script under `_ignition-import/scripts/` is
+now verbatim-complete.
 
 ## RESOLVED — `$RuleRegistry` (the last open question of the gate review)
 

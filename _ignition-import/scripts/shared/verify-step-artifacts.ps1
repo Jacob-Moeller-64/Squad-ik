@@ -351,51 +351,51 @@ function Get-StepSemanticReadinessFindings {
           if ($r.Count -gt 0) { return @($r.ToArray()) }
         } catch {}
       }
-# ===========================================================================
-# TRANSCRIPTION GAP -- NOT PART OF THE SOURCE FILE.
-# Source lines 354-398 (45 lines) are not covered by any photo in this batch:
-# photo 06-23e594b2 ends at source line 353 and photo 07-4c3ec0a1 begins at
-# source line 399. The missing region is inside Get-StepSemanticReadinessFindings
-# and, judging from what lines 399+ reference, contains at least:
-#   - the remainder of the TryResolveFromPhase helper (single "Step N" match
-#     fallback and closing braces) and the tail of Resolve-CaseOwnerStepNumbers
-#     (calls of TryResolveFromPhase on ownerPhase / materializationPhase and
-#     the final return),
-#   - the Test-CaseIsUnitType helper referenced at lines 425 and 448,
-#   - the loading of $catalogCases (via Get-CatalogCaseSet) referenced at
-#     lines 408 and 447,
-#   - whatever block the closing brace on line 399 terminates.
-# These lines are NOT reconstructed here; inventing them would violate the
-# verbatim transcription rules for this import. This placeholder block is
-# exactly 45 lines (354-398) so every later line keeps its true source line
-# number. NOTE: braces opened in the missing region are not closed by this
-# block, so the file does not parse as-is; re-photograph source lines
-# 354-398 and replace this block to complete the import.
-# ===========================================================================
-# (untranscribed source line 375)
-# (untranscribed source line 376)
-# (untranscribed source line 377)
-# (untranscribed source line 378)
-# (untranscribed source line 379)
-# (untranscribed source line 380)
-# (untranscribed source line 381)
-# (untranscribed source line 382)
-# (untranscribed source line 383)
-# (untranscribed source line 384)
-# (untranscribed source line 385)
-# (untranscribed source line 386)
-# (untranscribed source line 387)
-# (untranscribed source line 388)
-# (untranscribed source line 389)
-# (untranscribed source line 390)
-# (untranscribed source line 391)
-# (untranscribed source line 392)
-# (untranscribed source line 393)
-# (untranscribed source line 394)
-# (untranscribed source line 395)
-# (untranscribed source line 396)
-# (untranscribed source line 397)
-# ===========================================================================
+      $sm = [regex]::Match($ph, '(?i)Step\s*(\d+)')
+      if ($sm.Success) {
+        try {
+          $pf = [int]$sm.Groups[1].Value
+          if ($pf -gt 0) { $r.Add($pf); return @($r.ToArray()) }
+        } catch {}
+      }
+      return @()
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($phaseCandidate)) {
+      $fromOwner = @(TryResolveFromPhase $phaseCandidate)
+      if ($fromOwner.Count -gt 0) { return @($fromOwner) }
+    }
+    if (-not [string]::IsNullOrWhiteSpace($matPhaseCandidate)) {
+      $fromMat = @(TryResolveFromPhase $matPhaseCandidate)
+      if ($fromMat.Count -gt 0) { return @($fromMat) }
+    }
+
+    return @()
+  }
+
+  function Test-CaseIsUnitType {
+    param([Parameter(Mandatory = $true)]$Case)
+
+    $category = if ($Case.PSObject.Properties.Name -contains 'category') { [string]$Case.category } elseif ($Case.PSObject.Properties.Name -contains 'type') { [string]$Case.type } else { '' }
+    $suite = if ($Case.PSObject.Properties.Name -contains 'suite') { [string]$Case.suite } else { '' }
+    $suiteType = if ($Case.PSObject.Properties.Name -contains 'suiteType') { [string]$Case.suiteType } else { '' }
+    $testType = if ($Case.PSObject.Properties.Name -contains 'testType') { [string]$Case.testType } else { '' }
+
+    return ($category -match '(?i)unit' -or $suite -match '(?i)unit' -or $suiteType -match '(?i)unit' -or $testType -match '(?i)unit')
+  }
+
+  $catalogCases = @()
+  $catalogRootKey = '(none)'
+  if (Test-Path -LiteralPath $catalogPath) {
+    try {
+      $catalog = Get-Content -LiteralPath $catalogPath -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+      $catalogSet = Get-CatalogCaseSet -CatalogObj $catalog
+      $catalogCases = @($catalogSet.Cases)
+      $catalogRootKey = [string]$catalogSet.RootKey
+    }
+    catch {
+      Add-ReadinessFinding -Message 'The executable testcase catalog is present, but the semantic checker could not read it.' -Remediation 'Fix the catalog JSON or re-run Step 6 so the catalog can be rebuilt from the real planning evidence.'
+    }
   }
 
   if ($Step -eq 6) {
