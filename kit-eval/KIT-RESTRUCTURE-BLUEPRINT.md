@@ -207,3 +207,33 @@ blueprint was written; every merge verdict has been re-audited against the true
   assessment reverts to purely the tier question (19's sole output → [20]).
 - The `[CUT]` caveat attached to this blueprint's §1 table is retired — consumer
   sets are now ground truth, not reconstruction.
+
+## Post-blueprint verification 2: `testing-design-contract.instructions.md` (transcribed after this blueprint)
+
+The kit's largest testing file (484 lines, ~40KB ≈ 10k tokens) was analyzed only
+by reputation when the fold maps above were written. Now transcribed in full.
+Re-audit results:
+
+- **The §3.1 glob findings gain a counter-example, not a new defect.** Its
+  `applyTo` (`tests/**,.modernization/**/qa-test-plan.json,.github/prompts/08-*.prompt.md,.github/prompts/qaTestPrompts/*.prompt.md`)
+  is correctly lane-scoped — it taxes only QA-lane steps, unlike
+  `frontend-modernization-learning`'s all-step glob or the `**/*.cs`/`**/*.ts`
+  LegacyCode leak. The 8-glob issue list stands unchanged.
+- **Contradiction #13 (new):** its mandatory test-file header tag set
+  (`@file/@description/@feature/@scenario/@tags/@owner/@created`, L454–466)
+  diverges from `tests-commenting.instructions.md`'s CaseId/Scenario block, and
+  its L437–453 Gherkin section restates that file's territory. Same resolution
+  pattern as the other 12: declare one owner (tests-commenting owns style;
+  this contract owns *what* must be tested), delete the loser's copy.
+- **Fold classification (fills the gap in §3.1):** this file splits three ways
+  like `AppMod-Process` — the numeric contracts (pyramid targets, gate-threshold
+  ladder, smoke-probe tiers, Step 17 exit criteria, flake budget) are **data**
+  that belongs beside the step contracts/registry; the per-step gate table
+  duplicates the `testing-and-gates` skill and folds into it; the durable rules
+  (read-only default, no-orphan-controls, catalog-must-be-generated,
+  frozen-baseline-location) are card/standard material. Estimated recovery:
+  most of its ~10k tokens leave the QA-lane standing context.
+- **One genuine gap worth porting from Squad-ik:** it mandates characterization
+  tests but has no D-001-equivalent modification-discipline rule (no "never
+  modify without a logged intentional-behavior-change entry"). That is the only
+  place the two kits' testing philosophies actually differ.

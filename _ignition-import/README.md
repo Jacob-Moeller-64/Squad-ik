@@ -51,7 +51,7 @@ references, not values).
 |---|---|---|
 | `instructions/tests-commenting.instructions.md` | **Ignition-native** — tutorial-level commenting rules for everything under `tests/` | transcribed from 2 photos — complete (source lines 1-90, blank to 91); 12 anchors verified |
 | `instructions/ui-capture-reverse-engineering.instructions.md` | **Ignition-native** — ★ the canonical legacy-UI capture rulebook; **435 lines, the largest instruction file in the kit** | **PENDING** — photos received; lines 1-159 and 396-435 read, middle range not yet transcribed |
-| `instructions/testing-design-contract.instructions.md` | **Ignition-native** — testing design contract | **PENDING** — 10 photos received, not yet read |
+| `instructions/testing-design-contract.instructions.md` | **Ignition-native** — ★ the testing constitution: folder structure, parity gates by step, mandatory/optional test types, visual-parity thresholds, flake budget | transcribed from 10 photos — complete (source lines 1-483, blank to 484); 31 anchors verified; ⚠ source file is mojibake-damaged, see its uncertainties section |
 | `instructions/modernization-starter-boundaries.instructions.md` | **Ignition-native** — the canonical LegacyCode→src guardrail file; protected control points, editable seams, ownership model | transcribed from 4 photos — complete (source lines 1-194, blank to 203); 16 anchors verified |
 | `instructions/kit-update.instructions.md` | **Ignition-native** — guardrails for editing the kit *itself* (toolkit-maintenance, not app modernization) | transcribed from 4 photos — complete (source lines 1-178, blank to 180); 18 anchors verified |
 | `instructions/step-registry.json` | **Ignition-native** — ★ the stable step-identity registry; the kit's designed fix for numbering drift | transcribed from 4 photos — complete (source lines 1-205); **validates as JSON**, all 24 steps present |
@@ -5635,6 +5635,93 @@ upscaled crops):**
 **Transcription notes:** file ends `}` at 345 + one blank line (`}\n\n`);
 wrap-joins corroborated by overlap crops (mid-token splits rejoined without
 spaces); no material uncertainties recorded.
+
+---
+
+# `instructions/testing-design-contract.instructions.md` — COMPLETE (484 lines, 10 photos)
+
+Transcribed by a fresh-context agent from the two 5-photo batches; 31 gutter
+anchors verified against zoomed crops, all 9 photo-overlap seams agreed on their
+shared lines. The file is the kit's **testing constitution**: 38 headings across
+core principles, behavior families, the UI→API integration contract (Step 3
+catalog → Step 6 plan → Step 12 hard gate → Step 15 carry-over), catalog category
+routing, the designed `tests/` folder structure, per-step parity gates, visual
+thresholds, the API smoke-probe safety tiers, and the Step 17 final gate.
+
+## Structural facts
+
+- Frontmatter `applyTo`:
+  `tests/**,.modernization/**/qa-test-plan.json,.github/prompts/08-*.prompt.md,.github/prompts/qaTestPrompts/*.prompt.md`
+  — **this is one of the correctly-scoped globs** (contrast the `**/*.cs` /
+  `**/*.ts` findings): it taxes only the QA lane, not all 24 steps. `tests/**` is
+  bare (unanchored), so it also matches any nested `tests/` directory.
+- Key rules recovered verbatim: characterization + visual parity are
+  **MANDATORY, never deferred**; tests live in `tests/`, never colocated;
+  Step 12 cannot close while `brokenClientCalls.Count > 0` or the wiring verdict
+  is `BLOCKED`/`NOT GENERATED`; integration specs are **read-only by default**
+  (GET/HEAD only — restricted verbs need isolation + a declared `// data-safety:`
+  header + catalog `dataSafety: "mutates"` + a reviewer-approved Step 6 decision);
+  pyramid targets (`unit`+`characterization` ≥70%, `unit` ≥ 2× `integration`);
+  the catalog MUST be generated from the Service & Behavior Inventory, never
+  hand-written; frozen visual baseline lives under `LegacyCode/`, not `tests/`.
+- Visual-parity gate ladder: 25% Baseline / 50% Functional / 75% Near-parity /
+  85% Acceptable / 90% Polish — plus the **primitive-substitution clause**: for
+  design-system swaps (Step 15/16 slices) the full-route 75% gate "is the wrong
+  contract"; the primitive-scoped match **is** a numeric gate at **95%**, with
+  mandatory grayscale/blur preprocessing and shape-grid normalization.
+- API smoke probes: five safety tiers, every endpoint probed at the **lowest**
+  tier that proves reachability; "T5 is OFF by default. Real authenticated
+  POST / DELETE against persistent data is **never** an API smoke."
+- Step 17 exit: `frontend.routeStateParity` ≥ 90% across all non-dispositioned
+  `screenshotCoverageMatrix` rows; flake budget ≤1% per Playwright suite;
+  quarantined tests older than 14 days are a Step 17 gate failure; "Cross-test
+  ordering dependency is a contract violation."
+- "Step 6 designs this structure but does NOT create tests" — Step 6 is
+  plan-only, authoring starts at Step 8/9.
+
+## Overlap map (feeds the fold analysis)
+
+- **`tests-commenting.instructions.md`:** the entire "Test Style Requirements"
+  section (L437–466) restates Gherkin territory that file owns — and the two
+  files **disagree on the mandatory header tag set** (this file:
+  `@file/@description/@feature/@scenario/@tags/@owner/@created`;
+  tests-commenting: the CaseId/Scenario/Description/Input/Expected block). That
+  is a divergence, not just duplication — a test author following one file fails
+  the other's contract.
+- **`appmod-testing-and-gates` skill:** "Parity Gates by Step" (L234–252), the
+  gate-threshold ladder, and the Step 17 gate duplicate gate definitions in
+  prose. Note the mechanism difference vs Squad-ik's "gates are scripts": here
+  gates bind to `run-visual-parity.mjs` exit codes — compatible, differently
+  rooted.
+- **D-001:** nothing contradicts it, but this file has **no equivalent of the
+  "never modify a characterization test without a logged
+  intentional-behavior-change entry" rule** — modification discipline is only
+  implied (mandatory/cumulative/100%-preserved), never stated.
+- **`qa-portal-reporting.instructions.md`:** the Step 12 portal-report MUSTs
+  (surface wiring-map counts, explicit `Wiring Hard Gate Verdict` row) and the
+  portal data paths overlap that file's ownership.
+
+## Transcription uncertainties (`testing-design-contract.instructions.md`)
+
+1. **The source file itself is encoding-damaged (mojibake).** On screen, em
+   dashes, arrows, and every box-drawing character in the two folder trees render
+   as double-encoded UTF-8 (`Ã¢â‚¬â€¦`-style sequences). The committed copy
+   transcribes the **decoded intended characters** (`—`, `→`, `├── │ └──`)
+   because byte-exact reproduction of corrupt sequences from photographs is not
+   reliable. **This is the one place the golden copy knowingly differs from the
+   source bytes** — affected lines: 10, 11, 13, 14, 30, 45, 46, 129, 189–225,
+   240–251, 292–295, 334, 349–352. The real file should be checked for this
+   damage; it is worth fixing at the source regardless of the import.
+2. Dash width: cleanly-rendered dashes (259, 373, 390) transcribed as en dashes;
+   mojibake dashes decoded as em dashes. The true source may be inconsistent.
+3. Folder-tree comment-column spacing (192–225, 350–352) is approximate; relative
+   alignment preserved.
+4. Line 276 rendered `at gate <N>XX.` — transcribed `at gate <N>%.`; could be `<N>%%`.
+5. Line 231 casing ("All other", "legacy-green") read from an italic blockquote.
+6. Quotes transcribed as straight ASCII (curly quotes would have shown as
+   mojibake elsewhere, which supports this reading).
+7. Line 90's example label `Completing 37 calculations...` — odd but clear in
+   two photos.
 
 ---
 
