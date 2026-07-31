@@ -141,17 +141,18 @@ pattern-match against.
 | `scripts/parity/scan-backend-parity.ps1` | ★★ endpoint-level sibling; quantified postmortem (35 mutations → 0, shipped green); ⚠ same vacuous pass, ⚠ `controller\|verb` key under-counts | transcribed from 5 photos — complete (241 content lines) |
 | `scripts/parity/scan-functional-parity-ledger.ps1` | ★★ the **composition** gate — cross-references the other scans; ★ has the missing-input guard the siblings lack; ⚠ evidence inputs still degrade to "clean" | transcribed from 7 photos — **complete** (376 content lines) |
 | `scripts/parity/scan-scaffold-debt.ps1` | ★★ detects surviving "wired in a later step" deferral markers; **drain semantics** via `-CurrentStep` | transcribed from 4 photos — complete (221 content lines) |
-| `scripts/parity/scan-ui-parity-gaps.PARTIAL.ps1` | ★★ produces `ui-parity-gap-scan.json` (the ledger's `filter` input); ★ **honesty rules**; ★ **discovery probe** — self-reporting rule-coverage gaps | **PARTIAL** — lines 1-454 of ~950+; **gap at 455-831**; do not execute |
+| `scripts/parity/scan-ui-parity-gaps.ps1` | ★★ the UI parity scanner — honesty rules, discovery probe; ⚠ vacuous pass confirmed at exit | **complete** (1125 lines, backfill-verified) |
+| `scripts/parity/scan-styling-foundation.ps1` | ★★ the Step 10 styling gate — 5 checks incl. color-scheme pinning and grid widths | **complete** (288 lines, backfill-verified) |
 | `scripts/parity/selftest-backend-parity.ps1` | ★★★ **the gates are tested** — runs the real gate against synthetic fixtures, 8 assertions over 6 cases | transcribed from 3 photos — complete (170 content lines) |
-| `scripts/parity/selftest-functional-parity-ledger.PARTIAL.ps1` | ★★★ second self-test — confirms self-testing is the **convention**, not a one-off | **PARTIAL** — lines 1-121 + tail 284-341 (separate fragment); **gap 122-283**; file is 340 lines |
-| `scripts/parity/selftest-parity-gate.PARTIAL.ps1` | ★★★★ **anti-re-blinding guards** — asserts against the scanner's own SOURCE, not just its behaviour | **PARTIAL** — 1-66, 291-353, 610-669, 951-1017 of ~**1017**  ⚠ the runtime checkpoint every static gate defers to is opt-in |
-| `scripts/parity/selftest-scaffold-debt.PARTIAL.ps1` | ★★★ **fourth** self-test — four of six scanners now confirmed to have paired regression tests | **PARTIAL** — lines 1-65; 1 of 3 photos read; do not execute |
+| `scripts/parity/selftest-functional-parity-ledger.ps1` | ★★★ second self-test; no missing-artifact case (confirmed) | **complete** (340 lines, backfill-verified) |
+| `scripts/parity/selftest-parity-gate.ps1` | ★★★★ anti-re-blinding source guards; ⚠ stale in-process comment contradicts its own out-of-process code | **complete** (265 lines, backfill-verified) |
+| `scripts/parity/selftest-scaffold-debt.ps1` | ★★★ fourth self-test; no empty-input case (confirmed) | **complete** (142 lines, backfill-verified) |
 | `scripts/parity/verify-gate-integrity.ps1` | ★★★★ **the meta-gate** — auto-discovers and runs every `selftest-*.ps1`; ★ **refuses to pass when it finds none** | transcribed from 2 photos — complete (86 content lines) |
-| `scripts/shared/field-contract.PARTIAL.ps1` | ★★ **the `opx-field-contract/v1` validator**; ★ its *authoring rule* reframes the loose-schema finding | **PARTIAL** — lines 1-63; 1 of 5 photos read; do not dot-source |
-| `scripts/shared/Invoke-StepReconciliation.PARTIAL.ps1` | ★★★★ **settles the highest-severity finding** — *"a step with no registered rules reconciles to OK"* | **PARTIAL** — 1-67, 274-336, 755-804 of **803**; gaps at 68-273 and 337-754 |
-| `scripts/shared/verify-step-artifacts.PARTIAL.ps1` | ★★★ layer 1 of the two-layer model; ★ **`-EnsureControlPlane` explains why the skeleton stops at 3 files** | **PARTIAL** — lines 1-66; 1 of 5 photos read; do not execute |
-| `scripts/shared/verify-upgrade-invariants.PARTIAL.ps1` | ★★★ the **fourth and last** `shared/` script — catches diamond / split-version breaks a clean build hides | **PARTIAL** — lines 1-66 + tail 251-307 of **306**; gap 67-250 |
-| `scripts/maintenance/audit-step-number-drift.PARTIAL.ps1` | ★★★ **corrects the "+2 drift" terminology** — it was a 26→24 *compression*; three checks + an explicit unjudgeable-residue enumeration | **PARTIAL** — lines 1-67 + tail 248-291 of **290**; gap 68-247 |
+| `scripts/shared/field-contract.ps1` | ★★ the `opx-field-contract/v1` validator — full dialect engine; authoring rule reframed the loose-schema finding | **complete** (238 lines, backfill-verified) |
+| `scripts/shared/Invoke-StepReconciliation.ps1` | ★★★★ the truth layer — `$RuleRegistry` resolved: rules at steps 6/8/11/17, anti-hallucination + dead-shell rules | **complete** (803 lines, backfill-verified) |
+| `scripts/shared/verify-step-artifacts.ps1` | ★★★ presence + schema + semantic readiness; behavioural checkpoint opt-in finding stands | **complete except lines 354-398** (1017 lines; 45-line photo gap marked in-file) |
+| `scripts/shared/verify-upgrade-invariants.ps1` | ★★★ diamond/split-version gate a green build cannot catch | **complete** (306 lines, backfill-verified) |
+| `scripts/maintenance/audit-step-number-drift.ps1` | ★★★ 26→24 compression audit — Checks A/B/C + honest unjudgeable-residue enumeration | **complete** (290 lines, backfill-verified) |
 | `starter/Starter.Web.Api/Program.cs` | ★★ **confirms the Fusion boot shape** — 11 lines, no middleware | transcribed from 1 photo — complete (11 lines) |
 | `starter/Starter.Web.Api/Starter.Web.Api.csproj` | Web SDK, GC tuning, `Fusion.Fx.Security.Web.OAuth.Okta` | transcribed from 1 photo — complete (31 lines, validates as XML) |
 | `starter/Starter.Web.Api/web.config` | IIS config — ⚠ `windowsAuthentication enabled="true"` | transcribed from 1 photo — complete (14 lines, validates as XML) |
@@ -5590,6 +5591,219 @@ and the review of it can be stated in three lines:
 3. **One survives**: the behavioural-parity checkpoint is the single place in
    seven that skips silently — and the fix now has a working reference
    implementation in the same directory.
+
+---
+
+# Backfill pass — all ten incomplete transcriptions completed from the preserved photos
+
+Executed as a 22-agent workflow (10 transcribers with fresh contexts, 10
+independent adversarial verifiers, 2 fixers), each transcriber reading its full
+photo set from `_source-photos/` and anchor-verifying against the photographed
+gutters before finishing. Results: **8/10 verified clean on the first pass**;
+`scan-ui-parity-gaps.ps1` had 1 discrepancy and
+`selftest-functional-parity-ledger.ps1` had 14 (nearly all inherited from the
+hand-transcribed `.TAIL-284-341` fragment, whose header had warned its assert
+lines were ±1) — all 15 fixed against the photos and re-verified. 262 anchor
+checks by transcribers plus ~1,970 lines re-checked by verifiers, zero unresolved
+discrepancies. The `.PARTIAL` / `.FRAGMENT` / `.TAIL` files are deleted; every
+script now lives at its canonical path.
+
+| File | Final size | Verification |
+|---|---|---|
+| `shared/field-contract.ps1` | 238 lines | CONFIRMED (23 anchors + 127 lines) |
+| `shared/Invoke-StepReconciliation.ps1` | 803 lines | CONFIRMED (33 anchors + 760 lines — essentially the whole file) |
+| `shared/verify-step-artifacts.ps1` | 1017 lines | CONFIRMED (53 anchors + 62 lines); ⚠ **45-line photo gap remains, see below** |
+| `shared/verify-upgrade-invariants.ps1` | 306 lines | CONFIRMED (25 anchors + 70 lines) |
+| `maintenance/audit-step-number-drift.ps1` | 290 lines | CONFIRMED (33 anchors + 71 lines) |
+| `parity/scan-styling-foundation.ps1` | 288 lines | CONFIRMED (28 anchors + 60 lines) — first transcription |
+| `parity/scan-ui-parity-gaps.ps1` | 1125 lines | 1 discrepancy → fixed → re-verified (49 anchors + 634 lines) |
+| `parity/selftest-functional-parity-ledger.ps1` | 340 lines | 14 discrepancies → fixed → re-verified |
+| `parity/selftest-parity-gate.ps1` | 265 lines | CONFIRMED (22 anchors + 75 lines) |
+| `parity/selftest-scaffold-debt.ps1` | 142 lines | CONFIRMED (21 anchors + 51 lines) |
+
+## ⚠ One photo-coverage gap remains: `verify-step-artifacts.ps1` lines 354–398
+
+Photo `06-23e594b2` ends at gutter 353 and photo `07-4c3ec0a1` begins at gutter
+399 — **45 source lines were never photographed**. Per the no-fabrication rule
+they were NOT reconstructed: the file contains a clearly delimited
+`# TRANSCRIPTION GAP` block occupying exactly lines 354–398, so every later line
+keeps its true source number. The missing region (inside
+`Get-StepSemanticReadinessFindings`) contains at least the tail of
+`Resolve-CaseOwnerStepNumbers`, the `Test-CaseIsUnitType` helper, and the
+`Get-CatalogCaseSet` loader referenced by later lines. **The file does not parse
+as-is** (braces opened in the gap are unclosed). One re-photograph of source
+lines 354–398 completes the import.
+
+## RESOLVED — `$RuleRegistry` (the last open question of the gate review)
+
+`Invoke-StepReconciliation.ps1` lines 722–727 map integer step keys to arrays of
+**function-name strings**, invoked via `& $ruleName`:
+
+| Step | Rules |
+|---|---|
+| 6 | `Invoke-Recon-CatalogNormalizedFields`, `Invoke-Recon-BehaviorPlanDepthEnumerated` |
+| 8 | `Invoke-Recon-CatalogNormalizedFields` |
+| 11 | `Invoke-Recon-RouteLegacyReferenceResolve`, `Invoke-Recon-BehaviorPlanDepthEnumerated` |
+| 17 | `Invoke-Recon-TestcaseFilesResolve` |
+
+- **`Invoke-Recon-RouteLegacyReferenceResolve` IS wired** (step 11, first in its
+  list). The editor's "0 references" was exactly the hypothesised
+  string-registration artifact — all four rule functions show 0 references for
+  the same reason. Question closed, benign.
+- `Invoke-Recon-RouteLegacyReferenceResolve` is the **anti-hallucination rule**:
+  it builds a lowercased corpus from five Step-3 evidence files and blocks any
+  behavior-plan route whose normalized `legacyRoute` token appears in none of
+  them — a route the evidence never saw. It WARNS (not blocks) when zero
+  evidence sources exist.
+- `Invoke-Recon-BehaviorPlanDepthEnumerated` blocks "hollow" routes enumerating
+  zero interactive elements AND zero data calls unless explicitly marked static
+  with a rationale — the dead-shell failure mode, caught at the artifact layer.
+
+### CORRECTED — "no reconciliation before Step 17" was wrong
+
+An early entry claimed `control-point-inventory.json` had *"no reconciliation
+rule before Step 17."* The registry shows rules at **6, 8, and 11**. What
+survives is only the narrow form: **none of the four rules reads
+`control-point-inventory.json`** — steps 1-5, 7, 9-10, 12-16, 18-24 reconcile to
+OK with nothing registered (and, per the engine's tail, say so honestly).
+
+## CORRECTED — `selftest-parity-gate.ps1` is NOT an in-process outlier
+
+Line 87 shells out: `& powershell -NoProfile ... -File $scanner ...` — a child
+process, exactly like its three siblings; lines 83–86 even explain that an
+in-process `&` with stream redirection can reset `$LASTEXITCODE`. My "3-to-1
+house convention with one outlier" finding was based on the **stale header
+comment at lines 57–60**, which still describes the old in-process design and
+now contradicts the code below it. The real defect is a stale comment, not
+divergent implementation. (The harness convention is 4-for-4 out-of-process.)
+
+The static anti-re-blinding guards are confirmed concrete: T6 asserts the
+scanner source still matches `\$inertControlAllowlist\s*=\s*@\{\}` and that none
+of three known app tokens (`phase-calcs`, `TransformerOverload`,
+`view data all tx`) leak back in; T7 asserts `deferredInertControls` and
+`$CurrentStep` still exist; T8 greps `verify-step-artifacts.ps1` for its
+deferral-drain closeout gate.
+
+## REVISED — the `scan-ui-parity-gaps.ps1` matcher (lines 455-end)
+
+- **No `testId` fallback exists.** Matching is purely by normalized label
+  (`$modernByLabel` hashtable). The earlier false-`MissingControl` risk for
+  `{{interpolated}}` labels resolves the other way: such labels normalize to
+  empty and are **skipped before any gap can be emitted** — so no false
+  positives, but interpolation-labelled controls are *invisible to the matcher*
+  (a coverage hole, not a noise source). The captured `testId` field is carried
+  in records but never used to match.
+- **`$ParityDimensions` does not exist.** The "DIMENSION REGISTRY (rule packs)"
+  comment describes an aspirational data-driven design; the implementation is
+  four hand-written passes (label/icon, color, grid-column, inert/placeholder).
+  Same doc-describes-intent-not-code pattern as the ledger's `-Quiet` and the
+  parity-gate's stale harness comment.
+- Full gap-kind census (with severities): `MissingControl` (Major, Minor for
+  ambiguous labels like 'all'/'none'), **`DeadControl` (undocumented in the
+  header)**, `MissingIcon` (**Critical**), `IconMismatch` (Minor, allowlistable),
+  `ColorMismatch` (Minor), `MissingColumn` (Major), `InertControl` (Major, two
+  legacyTags: stubbed-handler / permanently-disabled), `PlaceholderAction`
+  (Major), `LowControlCoverage` (Critical, only with `-CoverageFloor`).
+- **The vacuous pass is confirmed at line 1120**: exit is driven purely by gap
+  severities; zero files scanned → zero gaps → exit 0. Counts are faithfully
+  written to JSON but nothing gates on them — and `-CoverageFloor` cannot catch
+  it because a zero legacy count nulls the ratio. Ironic in the file with the
+  kit's strongest anti-vacuous-pass rhetoric.
+- The deferral honesty rules are implemented as promised: suppressed handlers go
+  to `deferredInertControls` (comment: *"Suppressed but never invisible"*) and
+  re-flag as Major when `-CurrentStep` reaches `ownerStep`.
+
+## NEW — `parity/scan-styling-foundation.ps1` (288 lines, first transcription)
+
+The Step 10 styling gate — the sixth scanner, and the postmortem continues the
+house pattern: *"a Step 10 pass cannot be claimed from proxies"* (a clean build,
+a control-parity scan, or an HTTP-200 probe don't prove the app renders with the
+right color scheme, branded chrome, or bounded grids). Five checks, all
+severity-Major with PASS/WARN/FAIL statuses:
+
+1. `colorSchemePinned` — FAILs if `index.html` follows `prefers-color-scheme`
+   instead of the pinned legacy scheme (directly related to the theme-bootstrap
+   bug found in the starter's `index.html`);
+2. `styleIncludePaths` — `angular.json` must declare
+   `stylePreprocessorOptions.includePaths`;
+3. `sharedStylePartials` — those paths must contain `.scss` partials;
+4. `gridColumnWidths` — every `fusion-data-grid-column|kendo-grid-column` needs
+   an explicit width (in-file `$gridWidthAllowlist` with reasons);
+5. header-branding check — the Fusion default paints a neutral grey nav bar, so
+   an app-level override is asserted statically: *"a nav-bar-color defect that
+   otherwise only a render diff would catch."*
+
+Two divergences from its siblings: it does **not** use the `kit-params.md`
+appName derivation (it auto-discovers `angular.json` under `src/`), and it has
+**no external waiver registry** — exceptions are in-file edits. Vacuous-pass
+posture is partial: unresolvable client root hard-blocks (exit 2), but missing
+`index.html` / unparseable `angular.json` / zero grids are WARN-or-PASS paths
+that never block.
+
+## Completions on the remaining files
+
+- **`shared/field-contract.ps1` (238)** — full dialect engine confirmed as
+  documented; `rootPath` is honored by `Test-JsonFileAgainstContract`, not the
+  node walker. New findings: `enum` uses `-notcontains` (case-insensitive,
+  type-coercing — looser than JSON equality); `fields` children are only
+  recursed when the property is *present* (absence is reportable only via
+  `required` — a subtlety contract authors could miss); unknown/typo'd dialect
+  keys are silently ignored; and a contract whose JSON is literally `null`
+  yields `Ok=$true` with zero checks run — a residual vacuous-pass hole in an
+  otherwise well-guarded file (missing/corrupt contract → `Error`, corrupt
+  artifact → content violation).
+- **`shared/verify-upgrade-invariants.ps1` (306)** — confirmed: does not
+  distinguish "0 csproj found" from "no splits" (counts reported, not gated);
+  unresolvable `WorkspaceRoot` hard-blocks.
+- **`maintenance/audit-step-number-drift.ps1` (290)** — scans
+  `.github/{prompts,agents,instructions,scripts}` for
+  `.prompt.md|.agent.md|.instructions.md|.md|.ps1`; Check A/B/C regexes
+  transcribed; enumeration tags are `ok-title` / `mismatch-title` / `ok-self` /
+  `review`; zero-files-scanned is reported but not guarded. One quirk: the
+  explicit exclusion of the two contract JSONs is unreachable (`.json` never
+  passes the extension filter).
+- **`parity/selftest-functional-parity-ledger.ps1` (340)** — all five fixture
+  ledgers transcribed verbatim; **confirmed no case exercises a missing evidence
+  artifact** (all four discovery files are unconditionally written per case).
+- **`parity/selftest-scaffold-debt.ps1` (142)** — all cases transcribed;
+  **confirmed no empty-input case exists.**
+
+## Where the review's one surviving theme now stands
+
+The empty-input / vacuous-pass question is now answered for every file in
+`.github/scripts/`, from source: guarded and honest in
+`Invoke-StepReconciliation` (four RESULT strings + `rulesRun` in JSON),
+`verify-gate-integrity` (blocks at zero), `verify-step-artifacts` (`Skipped`
+rendered, `(none)`, skeletons announced), and partially in
+`scan-styling-foundation` (root-resolution guard only); **unguarded** in
+`scan-api-dto-coverage`, `scan-backend-parity`, `scan-ui-parity-gaps`,
+`scan-scaffold-debt`, `verify-upgrade-invariants`, `audit-step-number-drift`
+(all report counts nothing gates on), silent in the behavioural-parity
+checkpoint; and **untested** in all four self-tests. The remediation list from
+the review stands, with one addition (the `field-contract` null-contract hole)
+and one subtraction (`selftest-parity-gate`'s harness needs a comment fix, not
+an invocation change).
+
+## Backfill uncertainties (verbatim-fidelity caveats from the transcribers)
+
+- Em-dash vs en-dash in three long message strings
+  (`verify-step-artifacts.ps1` 613/624/715) — transcribed as em dash on glyph
+  width; en dash not fully excludable.
+- Soft-wrapped single-line `-Message`/`-Remediation` strings were rejoined with
+  an assumed single space at each wrap point (never visible in photos) across
+  ~30 lines in `verify-step-artifacts.ps1` and similar in the ledger self-test.
+- Aligned-column padding (hashtable keys, `.OUTPUTS` tables, `Write-Host`
+  interior spacing) reproduced by pixel-column measurement; one-space errors
+  conceivable in a handful of listed lines.
+- `verify-step-artifacts.ps1` line 136 `.Trim('`', '"', "'")` — the backtick is
+  the least legible token in that file.
+- The old hand-made fragments were found mis-anchored in two places
+  (`FRAGMENT-610-669` content actually at ~663+; `FRAGMENT-291-353` indentation
+  off by 2 in both directions) — both corrected against photos in the final
+  files. The `.TAIL-284-341` ledger fragment's ±1 warning proved accurate: 14
+  line-level differences, all fixed.
+- No redactions were required anywhere in the batch — the PowerShell gate layer
+  contains no secrets, hostnames, or tenant identifiers.
 
 ---
 

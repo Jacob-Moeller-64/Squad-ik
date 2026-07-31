@@ -28,24 +28,21 @@ Working method used so far, worth continuing:
 5. Never commit real secrets, credentials, Okta tenant/client IDs, or internal
    hostnames — redact with a placeholder and note it in the uncertainties section.
 
-## Current gaps
+## Status: BACKFILL COMPLETE (2026-07-31)
 
-| Target file | Total lines | Transcribed | Missing |
-|---|---|---|---|
-| `parity/scan-styling-foundation.ps1` | ? | **nothing** | all |
-| `parity/scan-ui-parity-gaps.ps1` | ~950+ | 1-454 | **455-end** |
-| `parity/selftest-functional-parity-ledger.ps1` | 340 | 1-121, 284-341 | **122-283** |
-| `parity/selftest-parity-gate.ps1` | ? | 1-66 | rest |
-| `parity/selftest-scaffold-debt.ps1` | ? | 1-65 | rest |
-| `shared/field-contract.ps1` | ? | 1-63 | rest |
-| `shared/Invoke-StepReconciliation.ps1` | 803 | 1-67, 274-336, 755-804 | **68-273, 337-754** |
-| `shared/verify-step-artifacts.ps1` | ~1017 | 1-66, 291-353, 610-669, 951-1017 | **67-290, 354-609, 670-950** |
-| `shared/verify-upgrade-invariants.ps1` | 306 | 1-66, 251-307 | **67-250** |
-| `maintenance/audit-step-number-drift.ps1` | 290 | 1-67, 248-291 | **68-247** |
+All ten files were transcribed from these photos by a 22-agent verification
+workflow (transcribe → independently verify against photos → fix). Every file
+now lives at its canonical path with the `.PARTIAL`/`.FRAGMENT`/`.TAIL`
+intermediates removed. See the "Backfill pass" section of
+`_ignition-import/README.md` for per-file verification stats and findings.
 
-Highest value first: **`shared/Invoke-StepReconciliation.ps1` lines 68-273** — that range
-holds `$RuleRegistry`, which is the last unanswered question in the review (see the
-"0 references" note in `_ignition-import/README.md`).
+**One gap remains:** `shared/verify-step-artifacts.ps1` source lines **354-398**
+(45 lines) are covered by no photo in this set — `06-23e594b2` ends at gutter
+353 and `07-4c3ec0a1` begins at 399. The file carries a delimited
+`# TRANSCRIPTION GAP` placeholder preserving true line numbers, and does not
+parse until that range is re-photographed and spliced in.
+
+These photos are retained as the source evidence for the import.
 
 ## What is already complete
 
