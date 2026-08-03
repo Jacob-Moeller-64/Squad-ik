@@ -249,6 +249,7 @@ pattern-match against.
 | `agents/OpX-AppMod-P1-Discovery.agent.md` | Phase 1 Discovery coordinator (Steps 1-6) | transcribed from 2 photos — complete (source lines 1-102, blank to 113) |
 | `agents/OpX-AppMod-P2-Modernize.agent.md` | Phase 2 Modernize coordinator (Steps 7-18) | transcribed from 3 photos — complete (source lines 1-136, blank to 140) |
 | `agents/OpX-AppMod-P3-Review.agent.md` | Phase 3 Review coordinator (Steps 19-24) | transcribed from 2 photos — complete (source lines 1-82, blank to 83) |
+| `agents/OpX-Code-Reviewer.agent.md` | ★ **The Step 4 + Step 22 compliance reviewer — the largest agent in the kit (1,228 lines).** Baseline / Final / Vendor-Acceptance reviews with verified 100% file coverage | transcribed from 22 photos — complete (source lines 1-1228, gutter ends 1229); 103 anchors verified. ⚠ mojibake-damaged source, see findings |
 | `agents/OpX-csharp-expert.agent.md` | .NET coding-violations fixer (specialist, user-invocable) | transcribed from 8 photos — complete (source lines 1-437, blank to 439); 20 heading line numbers spot-verified |
 | `agents/OpX-csharp-janitor.agent.md` | .NET cleanup / quick-wins specialist (user-invocable) | transcribed from 5 photos — complete (source lines 1-275, blank to 277); 18 heading line numbers spot-verified. **Source file is currently broken — 3 YAML errors, see findings** |
 | `agents/OpX-dotnet-upgrade.agent.md` | .NET Framework → .NET 10 upgrade specialist (Step 7 lane) | transcribed from 6 photos — complete (source lines 1-287); 25 heading line numbers spot-verified |
@@ -5635,6 +5636,126 @@ upscaled crops):**
 **Transcription notes:** file ends `}` at 345 + one blank line (`}\n\n`);
 wrap-joins corroborated by overlap crops (mid-token splits rejoined without
 spaces); no material uncertainties recorded.
+
+---
+
+# `agents/OpX-Code-Reviewer.agent.md` — COMPLETE (1,228 lines, 22 photos)
+
+The largest agent file in the kit and the last structural unknown in the agent
+roster. Transcribed in three batches; 103 gutter anchors verified against zoomed
+crops, all 21 photo seams agreed. The file ends at content line 1228 (gutter 1229).
+
+## What it is
+
+A **compliance reviewer with three modes** — Baseline (before modernization),
+Final (after, compared to baseline), and Vendor Acceptance (evaluating a
+supplier's delivery against a strict bar). Cross-referenced against
+`AppMod-Artifact-Contract.json`, it is the agent behind **Step 4**
+(`baseline-review.json` → consumed by [5, 22]) **and Step 22**
+(`final-review.json` → consumed by [23]) — both ends of the acceptance-criteria
+bookend, which bears directly on the blueprint's 21+22 and 22→23 merges.
+
+Its rubric is the clearest statement of the kit's review standard anywhere:
+**PART A** = 46 deterministic patterns (6 CRITICAL / 18 HIGH / 16 MEDIUM /
+5 LOW) with severity weights; **PART B** = 21 AI-judgment questions across SOLID
+(B1), security (B2), 12-Factor (B3), API design (B4) and Angular (B5), each with
+its own severity guide; **PART C** = file-level counts; **PART D** = an explicit
+*not-violations* list (DTO construction, `static readonly`, `IMemoryCache`,
+`new` in tests, generated code) that pre-empts the usual false positives. Every
+finding is tagged `"reviewMethod": "DET"` or `"AI"` in the output JSON — a
+ready-made tiering seam (PART A is Haiku work, PART B is not).
+
+**It already implements the artifact-based fresh-conversation protocol.** Lines
+119-121 tell the model to save progress and say *"Start a new chat and say
+'Continue the review' to resume"*; "Recovering from Confusion" (125-147) and
+"Step 1b: Check for Existing Progress" (229-245) define the reload path
+(`status: "in_progress"` → find `reviewed: false` → resume, never re-review).
+This is a working template for context-bounded execution of the other steps.
+
+## ⚠ Findings
+
+1. **The file cancels its own token-saving instruction.** Lines 81-96 —
+   *"Scripts Already Check These (Don't Duplicate) … don't spend time searching
+   for them"* — list ten regex-detectable patterns. PART A then requires the
+   model to hand-match **nine of those same ten**: hardcoded connection strings
+   (→A2.10), hardcoded URLs (→A2.11), `Console.WriteLine` (→A3.1),
+   `File.WriteAllText/ReadAllText` (→A2.15), `HttpContext.Session[` (→A2.13),
+   `static List<`/`static Dictionary<` (→A2.12), `new SqlConnection(`
+   (→A3.14/B3.2), class line count >500 (→PART C), constructor params >5
+   (→PART C). Only "Vendored DLLs" is genuinely not duplicated. The two
+   sections also disagree on the constructor threshold (>5 vs PART C's >7 HIGH /
+   5-7 MEDIUM). **Deleting PART A's overlap with the script-detected set is the
+   single largest per-chunk token saving available in this file**, and it loses
+   no coverage because the deterministic scan already runs.
+2. **The resume path is broken by a filename mismatch.** PART F (504) and
+   Step 5 (540, 575) save progress to **`review-results.json`** — a name that
+   appears **zero times** in `AppMod-Artifact-Contract.json`. Step 1b resumes by
+   reading `baseline-review.json` / `final-review.json`, the contract-declared
+   names. The agent therefore writes under one name and looks for another.
+   Given that resume-after-context-exhaustion is this agent's central mechanism,
+   this is a live defect.
+3. **`vendor-review.json` is undeclared.** The Vendor Acceptance mode — the one
+   with the strictest bar (0 HIGH issues) — produces `vendor-review.json` and
+   `VENDOR-ACCEPTANCE-REPORT.md` (Output Files table, 1222-1228). Neither is in
+   the artifact contract, so the whole vendor lane runs outside the artifact
+   hourglass where no gate can see it.
+4. **Two broken script paths.** Line 218 invokes
+   `./.github/scripts/P1-Discovery/03-P1-generate-manifest.ps1` (correct, and
+   matching the Step 3/4 prompts and both parity scripts) — but the artifact
+   contract's four `selfHeal` commands call it `generate-manifest.ps1` without
+   the `03-P1-` prefix, so **those self-heals cannot run**. Line 585 runs
+   `./verify-coverage.ps1` from the repo root; the real path is
+   `.github/scripts/P2-Modernize/verify-coverage.ps1`, which the Step 4 prompt
+   uses correctly.
+5. **Handoff target likely unresolvable.** The agent's own `name:` is
+   `OpX-Code-Reviewer` (prefixed), but the "Generate Tests" handoff targets
+   `agent: Pre-Modernization-Test-Generator` — unprefixed — while the file on
+   disk is `OpX-Pre-Modernization-Test-Generator.agent.md`.
+6. **Two independent step-numbering schemes, both skipping 8.** The Workflow
+   Overview (161-185) runs Step 1-7, **9**, 10, 11; the body headings run
+   Step 0, 1, 1b, 2, 3, 4, 5, 6, 7, **9**, 10. They also don't correspond —
+   overview "Step 9: Verify coverage" is body "Step 6", overview "Step 10:
+   Generate compliance report" is body "Step 7", overview "Step 11: Issue
+   verdict" is body "Step 10". An agent following the overview would look for
+   steps that do not exist. Same fossil family as the `step20-*` filenames.
+   The recommendations list (931-942) likewise numbers 1, 2, 3, 4, 5, **7**.
+7. **The scorecard's worked examples don't agree with each other or with the
+   formula.** Step 5's example JSON reports 23 findings (0/5/12/6); Step 7's
+   example report reports 13 (0/4/6/3) over the same 47-file manifest. And the
+   printed score, 72/100, matches neither: the formula
+   `100 - (CRITICAL × 10) - (HIGH × 5) - (MEDIUM × 2)` gives **68** for 0/4/6
+   and 51 for 0/5/12. An agent copying the template can propagate wrong
+   arithmetic into a real report.
+8. **The score is unclamped.** With no floor and a ≥80/100 acceptance bar, a
+   mid-size legacy app with ~40 HIGH findings scores −100. Usable as a ranking
+   signal, but it is not a percentage despite being printed as `NN/100`.
+9. **No `model:` frontmatter pin** (consistent with 1/35 kit-wide). Tools are
+   minimal and correctly least-privileged for a reviewer: six read/search/execute
+   tools, no edit tools.
+10. **Self-handoff loop:** two of the four handoffs target `OpX-Code-Reviewer`
+    itself (Generate Baseline Report / Generate Final Report), both routing via
+    `.github/prompts/P3-Review/compliance-report-routing.prompt.md` — a file in
+    the still-unphotographed prompt subfolders.
+
+## Transcription uncertainties (`OpX-Code-Reviewer.agent.md`)
+
+- **Same mojibake damage as `testing-design-contract`.** Affected characters,
+  all transcribed as their decoded intended forms: `≥` `×` `—` `↓` `✅` `❌`
+  `⚠️` `⏳` `⏸️` `🖥️` `🤖` `🎯` `📋` and the `═` box rules. This is now the
+  **second unrelated file** with the damage, so it is a repo-wide encoding
+  problem, not a one-file accident — worth a `grep -r 'Ã¢'` on the real repo.
+- **Emoji identities are byte-level inferences** from the mojibake sequences
+  (e.g. `ðŸ–¥ï¸` = 7 bytes = 🖥️; `ðŸ¤–` = 4 bytes = 🤖; `â³` = ⏳;
+  `â¸ï¸` = ⏸️). The byte arithmetic is unambiguous; the resulting glyph choice
+  is as certain as that arithmetic. **Correction:** an earlier reading of line 81
+  as 🤖 was wrong — at 7× zoom it is the same 7-byte 🖥️ as line 297.
+- **Repeat counts in the progress-tracking block are approximate.** The `═` rule
+  lines (976, 978, 991) measured 54-56 character-cells across three attempts on a
+  photographed (perspective-distorted) screen; transcribed as **55**. The
+  progress bar measured ~20 blocks and is transcribed as 10 `█` + 10 `░` to match
+  the printed `50%`. Both are cosmetic; neither is byte-verified.
+- Line 695's `https://api.production.company.com/v1` is an illustrative example
+  in the source, not an internal host — no redaction applied.
 
 ---
 
