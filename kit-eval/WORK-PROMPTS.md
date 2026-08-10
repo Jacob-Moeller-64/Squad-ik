@@ -16,6 +16,36 @@ Rules of engagement (why the prompts are written this way):
 
 ---
 
+## Prompt 0 — Reconnaissance (run FIRST, cheapest model, edits nothing)
+
+The live kit has files the analysis never saw. This prompt verifies every
+assumption the later prompts rely on, and its output is the drift report to
+bring back for reconciliation. If any count below surprises you, stop and
+compare before running Prompts 1-6.
+
+```text
+Reconnaissance only - make NO edits, create NO files.
+1. Print a tree of .github/ (instructions, prompts incl. subfolders, agents,
+   skills, scripts, contracts, templates) with per-file line counts.
+2. List every file whose content matches the mojibake pattern 'Ã¢|ðŸ|â€'.
+3. Report exact match counts and line numbers for:
+   a. "generate-manifest.ps1" inside .github/instructions/AppMod-Artifact-Contract.json
+   b. "review-results.json" inside .github/agents/
+   c. bare "./verify-coverage.ps1" invocations anywhere
+   d. the applyTo frontmatter lines of dotnet.instructions.md,
+      angular.instructions.md, frontend-modernization-learning.instructions.md
+   e. the literal regexes containing "[Http" in .github/scripts/parity/
+   f. the final exit decision lines of scan-api-dto-coverage.ps1 and
+      scan-backend-parity.ps1
+4. Report every directory in the repo that looks like a completed modernization
+   run or app (a src/ tree with a non-Starter app name, or a .modernization/
+   folder with artifacts): its path, file count, and total size. State whether
+   any .modernization/ folder sits at the REPO ROOT.
+Output one compact report, grouped by the numbers above.
+```
+
+---
+
 ## Preamble (prepend to every prompt below)
 
 ```text
